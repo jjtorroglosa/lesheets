@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.16",
+    "live-server": "^1.2.2",
+    "tailwindcss": "^4.1.16"
+  }
+}

@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+
+@layer base {
+  h1 {
+    @apply text-4xl font-bold;
+  }
+  h2 {
+    @apply text-3xl font-bold;
+  }
+  h3 {
+    @apply text-2xl font-bold;
+  }
+  h4 {
+    @apply text-xl font-bold;
+  }
+  h5 {
+    @apply text-lg font-bold;
+  }
+  h6 {
+    @apply text-base font-bold;
+  }
+  p {
+    @apply text-base;
+  }
+}
+
+body {
+    @apply m-8;
+}
+
+.bar {
+    @apply min-w-30;
+}
+
+.ch {
+    @apply mb-8;
+    @apply border-l border-solid;
+    @apply px-2 h-6;
+}
+
+.diamond {
+  position: relative;
+  height: 70px;
+  width: 70px;
+  line-height: 70px;
+  text-align: center;
+  /* margin: 00px 40px; */
+  top: -25px;
+}
+.diamond:after {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  content: '';
+  height: calc(100% - 22px);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
+  width: calc(100% - 22px);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
+  @apply border border-solid;
+  transform: rotateX(45deg) rotateZ(45deg);
+}
