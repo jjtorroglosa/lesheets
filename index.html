@@ -6,9 +6,39 @@
     <title>Document</title>
     <link href="./compiled.css" rel="stylesheet">
     <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+    .abcjs-staff {
+      stroke: none !important;
+    }
+  </style>
 </head>
 <body>
-        <h1 class="mb-8">Adelle - Hello</h1>
+        <h1 class="mb-8">Artist - Song</h1>
+
+<!-- <script src="https://cdn.jsdelivr.net/npm/abcjs@6.1.0/dist/abcjs-basic-min.js"></script> -->
+<!-- <script> -->
+<!--   ABCJS.renderAbc("paper", ` -->
+<!-- X:1 -->
+<!-- T:Percussion example -->
+<!-- M:4/4 -->
+<!-- L:1/8 -->
+<!-- K:none clef=perc stafflines=1 -->
+<!-- V:1 stem=up -->
+<!-- BB B2 B2 B/2B/2B/2B/2 | z3 B2 -->
+<!-- `); -->
+<!-- </script> -->
+        <div id="paper"></div>
+<script src="https://cdn.jsdelivr.net/npm/abcjs@6.1.0/dist/abcjs-basic-min.js"></script>
+<script>
+  ABCJS.renderAbc("paper", `
+X:1
+M:4/4
+L:1/8
+K:none clef=perc stafflines=1
+V:1 stem=up
+BB B2 B2 B/2(B/2B/2)B/2 (B/2B)| z3 B2
+`);
+</script>
         <div class="meta">
             <p>Tempo: 90</p>
             <p>Key: C#</p>

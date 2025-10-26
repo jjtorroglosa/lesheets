@@ -44,6 +44,7 @@ body {
   position: relative;
   @apply border-l-3 border-solid pl-8;
 }
+
 .repeat-start::before {
   content: ":";
   padding-top: 0.2rem;
@@ -99,4 +100,17 @@ body {
 }
 .barlines {
     @apply ml-4 flex flex-row;
+}
+
+
+.music{
+  font-family: 'Noto Music', sans-serif;
+  font-size: 2rem;
+}
+
+@font-face {
+  font-family: 'Noto Music';
+  src: url('/NotoMusic-regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
 }
