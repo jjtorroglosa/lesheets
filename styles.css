@@ -3,10 +3,10 @@
 
 @layer base {
   h1 {
-    @apply text-4xl font-bold;
+    @apply text-2xl font-bold;
   }
   h2 {
-    @apply text-3xl font-bold;
+    @apply text-2xl font-bold;
   }
   h3 {
     @apply text-2xl font-bold;
@@ -26,18 +26,53 @@
 }
 
 body {
-    @apply m-8;
+    @apply max-w-200 mx-auto mt-4;
 }
 
 .bar {
-    @apply min-w-30;
+    @apply min-w-30 h-8 mb-4;
+    @apply border-l border-solid;
+    @apply flex justify-between items-center;
 }
 
+
 .ch {
-    @apply mb-8;
-    @apply border-l border-solid;
-    @apply px-2 h-6;
+    @apply px-2 h-6 grow;
 }
+
+.repeat-start {
+  position: relative;
+  @apply border-l-3 border-solid pl-8;
+}
+.repeat-start::before {
+  content: ":";
+  padding-top: 0.2rem;
+  padding-left: 0.5rem;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 6px; /* distance between the two borders */
+  border-left: 3px solid currentColor; /* or a specific color */
+  pointer-events: none;
+}
+
+.repeat-end {
+  position: relative;
+  @apply border-r-3 border-solid pr-4;
+}
+
+.repeat-end::before {
+  content: ":";
+  padding-top: 0.2rem;
+  padding-right: 0.5rem;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 6px; /* distance between the two borders */
+  border-right: 3px solid currentColor; /* or a specific color */
+  pointer-events: none;
+}
+
 
 .diamond {
   position: relative;
@@ -57,4 +92,11 @@ body {
   width: calc(100% - 22px);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
   @apply border border-solid;
   transform: rotateX(45deg) rotateZ(45deg);
+}
+
+.section-name {
+    @apply border border-solid p-2 inline-block my-4;
+}
+.barlines {
+    @apply ml-4 flex flex-row;
 }
