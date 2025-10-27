@@ -1,10 +1,13 @@
 package internal
 
+import "log"
+
 func ParseSong(tokens []Token) *Song {
 	song := &Song{FrontMatter: make(map[string]string)}
 	var currentSection *Section
 	var currentBar *Bar
 	var currentLine []*Bar
+	currentAnnotation := &Annotation{}
 	var currentComment string
 	inFrontMatter := false
 	var pendingKey string
@@ -34,10 +37,23 @@ func ParseSong(tokens []Token) *Song {
 			currentSection = &Section{Header: tok.Value, Break: true}
 			song.Sections = append(song.Sections, currentSection)
 			currentBar = nil
-		case TokenChord, TokenAnnotation, TokenBacktick, TokenSymbol:
+		case TokenAnnotation:
+			log.Printf("annotation %s\n", tok.Value)
+			currentAnnotation = &Annotation{Value: tok.Value}
+		case TokenBacktick:
 			if currentBar == nil {
-				currentBar = &Bar{Tokens: []Token{}, Type: "Normal"}
+				currentBar = &Bar{Tokens: []Token{}, Type: "Normal", Chords: []Chord{}}
 			}
+			currentBar.Tokens = append(currentBar.Tokens, tok)
+		case TokenChord:
+			if currentBar == nil {
+				currentBar = &Bar{Tokens: []Token{}, Type: "Normal", Chords: []Chord{}}
+			}
+			currentBar.Chords = append(currentBar.Chords, Chord{
+				Value:      tok.Value,
+				Annotation: currentAnnotation,
+			})
+			currentAnnotation = &Annotation{}
 			currentBar.Tokens = append(currentBar.Tokens, tok)
 		case TokenComment:
 			currentComment = tok.Value

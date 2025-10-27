@@ -15,7 +15,6 @@ const (
 	TokenHeader           TokenType = "Header"
 	TokenHeaderBreak      TokenType = "HeaderBreak"
 	TokenChord            TokenType = "Chord"
-	TokenSymbol           TokenType = "Symbol"
 	TokenBar              TokenType = "Bar"
 	TokenReturn           TokenType = "Return"
 	TokenComment          TokenType = "Comment"
@@ -99,6 +98,7 @@ func (l *Lexer) Lex() []Token {
 				l.advance()
 			}
 			tokens = append(tokens, Token{Type: TokenAnnotation, Value: l.input[start:l.pos]})
+			l.advance()
 			continue
 		}
 
