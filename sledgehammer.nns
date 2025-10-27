@@ -1,11 +1,12 @@
 ---
 title: Sledgehammer
-tempo: 190bpm
+tempo: 100bpm
+key: Eb
 ---
 
 # Preintro
 
-Eb | % | % || % ||
+Eb | % | % | % |
 
 # Intro
 
@@ -16,21 +17,21 @@ Eb | % | % | Eb. |
 
 Eb | % | % | % |
 Eb | % | % | % |
-Cm | % | Eb| Eb. |
+Cm | % | Eb | Eb. |
 
 Eb | % | % | % |
-Eb | % | % | % |
+Eb | % | % | % ||
 
 # Chorus
 
 Db | F | Db | Ab |
-Db | F | Db | Ab |
+Db | F | Db | Ab ||
 
 # Postchorus
 
 Eb | % | % | !marcato!Eb |
 
-# Verse
+#- Verse
 
 Eb | % | % | % |
 Eb | % | % | % |
@@ -47,7 +48,7 @@ Db | F | Db | Ab |
 Eb | % | % | % |
 Eb | % | % | Eb. |
 
-# Coda
+#- Coda
 
 Eb | Ab | Eb | Ab |
 Eb | Ab | Eb | Ab |

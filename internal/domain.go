@@ -10,6 +10,7 @@ type Song struct {
 type Section struct {
 	Header    string
 	BarsLines [][]*Bar
+	Break     bool
 }
 
 type Bar struct {

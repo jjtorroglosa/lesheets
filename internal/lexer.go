@@ -13,6 +13,7 @@ const (
 	TokenYAMLKey          TokenType = "YAMLKey"
 	TokenYAMLValue        TokenType = "YAMLValue"
 	TokenHeader           TokenType = "Header"
+	TokenHeaderBreak      TokenType = "HeaderBreak"
 	TokenChord            TokenType = "Chord"
 	TokenSymbol           TokenType = "Symbol"
 	TokenBar              TokenType = "Bar"
@@ -101,6 +102,7 @@ func (l *Lexer) Lex() []Token {
 			continue
 		}
 
+		// Comment
 		if ch == '"' {
 			start := l.pos
 			l.advance() // skip opening `
@@ -129,7 +131,12 @@ func (l *Lexer) Lex() []Token {
 
 		// Headers
 		if ch == '#' {
+			tokenType := TokenHeader
 			for l.pos < len(l.input) && l.input[l.pos] == '#' {
+				l.advance()
+			}
+			if l.pos < len(l.input) && l.input[l.pos] == '-' {
+				tokenType = TokenHeaderBreak
 				l.advance()
 			}
 			for l.pos < len(l.input) && unicode.IsSpace(rune(l.input[l.pos])) {
@@ -139,7 +146,7 @@ func (l *Lexer) Lex() []Token {
 			for l.pos < len(l.input) && l.input[l.pos] != '\n' {
 				l.advance()
 			}
-			tokens = append(tokens, Token{Type: TokenHeader, Value: strings.TrimSpace(l.input[end:l.pos])})
+			tokens = append(tokens, Token{Type: tokenType, Value: strings.TrimSpace(l.input[end:l.pos])})
 			continue
 		}
 

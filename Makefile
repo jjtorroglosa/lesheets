@@ -5,8 +5,8 @@ livereload:
 
 .PHONY: tailwind
 tailwind:
-	yarn tailwindcss --input views/styles.css --output compiled.css --watch
+	yarn tailwindcss --input views/styles.css --output views/compiled.css --watch
 
 .PHONY: dev
 dev:
-	ls *.nns tmpl.html internal/*.go cmd/nasheets/*.go | entr go run cmd/nasheets/main.go
+	ls *.nns views/tmpl.html views/styles.css internal/*.go cmd/nasheets/*.go | entr go run cmd/nasheets/main.go

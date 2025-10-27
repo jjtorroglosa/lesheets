@@ -29,6 +29,11 @@ func ParseSong(tokens []Token) *Song {
 			currentSection = &Section{Header: tok.Value}
 			song.Sections = append(song.Sections, currentSection)
 			currentBar = nil
+		case TokenHeaderBreak:
+			// start a new section
+			currentSection = &Section{Header: tok.Value, Break: true}
+			song.Sections = append(song.Sections, currentSection)
+			currentBar = nil
 		case TokenChord, TokenAnnotation, TokenBacktick, TokenSymbol:
 			if currentBar == nil {
 				currentBar = &Bar{Tokens: []Token{}, Type: "Normal"}

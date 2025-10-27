@@ -8,8 +8,21 @@
 <body>
 
 <h1>{{- index .FrontMatter "title"}}</h1>
+{{- with (index .FrontMatter "tempo")}}
+<p>🎵 = {{.}}</p>
+{{end}}
+{{- with (index .FrontMatter "key")}}
+<p>🎼 = {{.}}</p>
+{{end}}
+
+<div class="flex">
+<div class="flex-1">
 
 {{- range .Sections}}
+{{- if .Break }}
+</div>
+<div class="flex-1">
+{{- end}}
 <div class="section">
   <div class="section-name">{{- .Header}}</div>
   {{- range .BarsLines}}
@@ -18,7 +31,7 @@
     </div>
     <div class="barlines">
     {{- range .}}
-      <div class="bar {{- if eq .Type "DoubleBar"}}repeat-end{{- end}}">
+      <div class="bar {{if eq .Type "Double"}}double{{end}}">
       {{- range .Tokens}}
         {{- if eq .Type "Chord"}}
           <div class="ch"> {{- .Value}} </div>
