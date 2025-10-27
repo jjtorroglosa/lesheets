@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="./compiled.css" rel="stylesheet">
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <style>
+    .abcjs-staff {
+      stroke: none !important;
+    }
+  </style>
+<script src="https://cdn.jsdelivr.net/npm/abcjs@6.1.0/dist/abcjs-basic-min.js"></script>
+</head>
+<body>
+        <h1 class="mb-8">Artist - Song</h1>
+
+        <div class="meta">
+            <p>Tempo: 90</p>
+            <p>Key: C#</p>
+        </div>
+        <div class="section-name">Intro</div>
+        <div class="barlines">
+            <div class="bar repeat-start">
+                <div class="ch">1</div>
+            </div>
+            <div class="bar">
+                <div class="ch">4</div>
+            </div>
+            <div class="bar repeat-end">
+                <div class="ch">1</div>
+            </div>
+        </div>
+        <div class="section-name">Ofa</div>
+        <div class="barlines">
+            <div class="bar">
+                <div class="annot flex flex-col">
+                    <div class="px-2 above ch"><span class="text-xs">1 ------------</span></div>
+                    <div class="ch">1</div>
+                    <div class="ch above"></div>
+                </div>
+
+                <div class="annot flex flex-col items-center">
+                    <div class="px-2 above"><span class="text-xs">-----</span></div>
+                    <div class="ch">1</div>
+                    <div class="ch above">.</div>
+                </div>
+
+            </div>
+            <div class="bar">
+                <div class="annot flex flex-col items-left">
+                    <div class="px-2 above"><span class="text-xs">2 ———————— </span>&#119056; </div>
+                <div class="ch">4</div>
+
+                    <div class="ch above "></div>
+                </div>
+            </div>
+            <div class="bar">
+                <div class="annot flex flex-col items-left">
+                    <div class="px-2 above">𝆒</div>
+                    <div class="ch">C</div>
+                    <div class="px-2 above">.</div>
+                </div>
+                <div class="annot flex flex-col items-left">
+                    <div class="px-2 above">𝆒</div>
+                <div class="ch">C</div>
+                    <div class="px-2 above">&nbsp;</div>
+                    </div>
+                <div class="ch">Cmaj7/6</div>
+                <div class="ch">C</div>
+            </div>
+            <div class="bar">
+                <div class="ch">
+                    <div class="diamond text-nowrap">C</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="barlines">
+            <div class="bar">
+                <div class="ch">CMaj</div>
+            </div>
+            <div class="bar">
+                <div class="ch">CMaj7</div>
+            </div>
+            <div class="bar">
+                <div class="ch">CMaj</div>
+            </div>
+            <div class="bar">
+                <div class="ch">CMaj</div>
+            </div>
+        </div>
+        <div class="barlines">
+            <div class="bar">
+                <div class="ch">CMaj</div>
+            </div>
+            <div class="bar">
+                <div class="ch">CMaj</div>
+            </div>
+        </div>
+        <div class="section-name">Billo</div>
+
+        <div class="barlines">
+            <div class="bar">
+                <div class="ch">CMaj</div>
+            </div>
+            <div class="bar">
+                <div class="ch">CMaj7</div>
+            </div>
+            <div class="bar">
+                <div class="ch">CMaj</div>
+            </div>
+            <div class="bar">
+                <div class="ch">CMaj</div>
+            </div>
+        </div>
+
+        <div class="barlines">
+            <div class="bar">
+                <div id="paper"></div>
+
+                </div>
+        </div>
+        <div class="section-name">Ofa</div>
+
+        <div class="barlines">
+        </div>
+        <div class="section-name">Billo</div>
+            <script>
+            ABCJS.renderAbc("paper", `
+                X:1
+                M:4/4
+                L:1/16
+                K:none cleff=none stafflines=0
+                P:A
+                L:1/16
+                "Ab"z8 z2AA AAzA | "Eb".A2 z12 ||
+                L:1/8
+                zA Az AA z2 | zA A3/2(A1/2 A) A ||
+            `)
+            </script>
+        <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+
+</body>
+</html>

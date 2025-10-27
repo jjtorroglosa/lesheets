@@ -1,7 +1,8 @@
 {
-  "devDependencies": {
-    "@tailwindcss/cli": "^4.1.16",
-    "live-server": "^1.2.2",
-    "tailwindcss": "^4.1.16"
-  }
+    "devDependencies": {
+        "@tailwindcss/cli": "^4.1.16",
+        "abc2svg": "^1.22.1",
+        "live-server": "^1.2.2",
+        "tailwindcss": "^4.1.16"
+    }
 }
