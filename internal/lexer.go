@@ -1,4 +1,4 @@
-package main
+package internal
 
 import (
 	"strings"
@@ -72,8 +72,6 @@ func (l *Lexer) Lex() []Token {
 			l.pos += 3
 			continue
 		}
-
-		// Double bar
 
 		// Single bar
 		if ch == '|' {

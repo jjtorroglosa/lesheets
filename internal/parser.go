@@ -1,4 +1,4 @@
-package main
+package internal
 
 func ParseSong(tokens []Token) *Song {
 	song := &Song{FrontMatter: make(map[string]string)}
@@ -45,13 +45,8 @@ func ParseSong(tokens []Token) *Song {
 					currentBar.Type = "Double"
 				}
 				currentLine = append(currentLine, currentBar)
-				currentSection.Bars = append(currentSection.Bars, currentBar)
 				currentBar = nil
 			}
-			// // add special double bar
-			// if currentSection != nil {
-			// 	currentSection.Bars = append(currentSection.Bars, &Bar{Tokens: nil, Type: "DoubleBar"})
-			// }
 		case TokenReturn:
 			// finish the current line of bars
 			if len(currentLine) > 0 && currentSection != nil {
@@ -65,7 +60,6 @@ func ParseSong(tokens []Token) *Song {
 	if currentBar != nil {
 		if currentSection != nil {
 			currentLine = append(currentLine, currentBar)
-			currentSection.Bars = append(currentSection.Bars, currentBar)
 		}
 	}
 

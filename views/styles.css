@@ -30,7 +30,7 @@ body {
 }
 
 .bar {
-    @apply min-w-30 h-8 mb-4;
+    @apply min-w-20 h-8 mb-4;
     @apply border-l border-solid;
     @apply flex justify-between items-center;
 }

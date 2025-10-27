@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>{{- index .FrontMatter "title"}}</title>
+    <link href="./compiled.css" rel="stylesheet">
+</head>
+<body>
+
+<h1>{{- index .FrontMatter "title"}}</h1>
+
+{{- range .Sections}}
+<div class="section">
+  <div class="section-name">{{- .Header}}</div>
+  {{- range .BarsLines}}
+    <div class="barlines">
+        {{-  if (index . 0).Comment }} {{- (index . 0).Comment }}{{- end}}
+    </div>
+    <div class="barlines">
+    {{- range .}}
+      <div class="bar {{- if eq .Type "DoubleBar"}}repeat-end{{- end}}">
+      {{- range .Tokens}}
+        {{- if eq .Type "Chord"}}
+          <div class="ch"> {{- .Value}} </div>
+        {{- end}}
+        {{- if eq .Type "Symbol"}}{{- .Value}}{{- end}}
+        {{- if eq .Type "Annotation"}}
+            <span class="annotation">
+            {{- if eq .Value "marcato"}} ^
+            {{- else}} {{- .Value}}
+            {{- end}}
+            </span>
+        {{- end}}
+        {{- if eq .Type "Backtick"}}<span class="backtick">{{- .Value}}</span>{{- end}}
+      {{- end}}
+      </div>
+    {{- end}}
+    </div>
+  {{- end}}
+</div>
+{{- end}}
+
+
+
+        <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+</body>
+</html>
