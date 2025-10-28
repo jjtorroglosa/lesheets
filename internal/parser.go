@@ -1,5 +1,10 @@
 package internal
 
+import (
+	"fmt"
+	"strings"
+)
+
 func ParseSong(tokens []Token) *Song {
 	song := &Song{FrontMatter: make(map[string]string)}
 	var currentSection *Section
@@ -23,24 +28,33 @@ func ParseSong(tokens []Token) *Song {
 			}
 		case TokenYAMLValue:
 			if inFrontMatter && pendingKey != "" {
-				song.FrontMatter[pendingKey] = tok.Value
+				if strings.ToLower(pendingKey) == "key" {
+					song.FrontMatter[pendingKey] = FormatChord(tok.Value)
+				} else {
+					song.FrontMatter[pendingKey] = tok.Value
+				}
 				pendingKey = ""
 			}
 		case TokenHeader:
 			// start a new section
-			currentSection = &Section{Header: tok.Value}
+			currentSection = &Section{Name: tok.Value}
 			song.Sections = append(song.Sections, currentSection)
 			currentBar = nil
 		case TokenHeaderBreak:
 			// start a new section
-			currentSection = &Section{Header: tok.Value, Break: true}
+			currentSection = &Section{Name: tok.Value, Break: true}
 			song.Sections = append(song.Sections, currentSection)
 			currentBar = nil
 		case TokenAnnotation:
 			currentAnnotation = &Annotation{Value: tok.Value}
 		case TokenBacktick:
 			if currentBar == nil {
-				currentBar = &Bar{Tokens: []Token{}, Type: "Normal", Chords: []Chord{}, Backtick: Backtick{Id: backtickId, Value: tok.Value}}
+				currentBar = &Bar{
+					Tokens:   []Token{},
+					Type:     "Normal",
+					Chords:   []Chord{},
+					Backtick: Backtick{Id: backtickId, Value: tok.Value},
+				}
 			}
 			currentBar.Backtick = Backtick{Id: backtickId, Value: tok.Value}
 			currentBar.Tokens = append(currentBar.Tokens, tok)
@@ -94,7 +108,8 @@ func ParseSong(tokens []Token) *Song {
 	}
 
 	// flush remaining bar
-	if currentBar != nil {
+	if currentBar != nil && !currentBar.IsEmpty() {
+		fmt.Printf("is empty %v\n", currentBar.Chords[0].Value)
 		if currentSection != nil {
 			currentLine = append(currentLine, currentBar)
 		}

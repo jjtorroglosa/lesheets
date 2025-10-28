@@ -8,7 +8,7 @@ type Song struct {
 }
 
 type Section struct {
-	Header    string
+	Name      string
 	BarsLines [][]*Bar
 	Break     bool
 }
@@ -33,6 +33,16 @@ type Bar struct {
 	Comment  string // comment
 }
 
+func (bar *Bar) IsEmpty() bool {
+	emptyChords := len(bar.Chords) == 0 ||
+		(len(bar.Chords) == 1 && bar.Chords[0].Value == "")
+	return emptyChords && bar.Backtick.Value == "" && bar.Comment == ""
+}
+
+func (chord *Chord) PrettyPrint() string {
+	return FormatChord(chord.Value)
+}
+
 func (song *Song) Backticks() []Backtick {
 	bts := []Backtick{}
 	for _, sec := range song.Sections {
@@ -54,7 +64,7 @@ func (song *Song) PrintSong() {
 	}
 	i := 1
 	for _, sec := range song.Sections {
-		fmt.Println("Section:", sec.Header)
+		fmt.Println("Section:", sec.Name)
 		for _, barline := range sec.BarsLines {
 			for _, bar := range barline {
 				fmt.Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.Comment)

@@ -6,17 +6,19 @@ import (
 	"os"
 )
 
-// Template data structures (reuse your Song/Section/Bar/Token structs)
-
 func RenderSongHTML(song *Song, filename string) {
-	t := template.Must(template.ParseFiles("views/tmpl.html"))
+	t := template.Must(template.ParseGlob("views/*.html"))
 	f, err := os.Create(filename)
 	if err != nil {
 		log.Fatalf("Failed to create HTML file: %v", err)
 	}
 	defer f.Close()
 
-	if err := t.Execute(f, song); err != nil {
+	params := map[string]any{
+		"Song": song,
+		"Dev":  true,
+	}
+	if err := t.ExecuteTemplate(f, "tmpl.html", params); err != nil {
 		log.Fatalf("Failed to render template: %v", err)
 	}
 }

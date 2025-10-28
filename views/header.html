@@ -1,0 +1,12 @@
+{{ define "header" }}
+<h1 class="md:text-center">{{- index .FrontMatter "title"}}</h1>
+<p class="md:text-center">{{- index .FrontMatter "subtitle"}}</p>
+<div class="flex flex-row gap-4 md:justify-center align-center mb-8">
+    {{- with (index .FrontMatter "tempo")}}
+        <p>🎵 {{.}}</p>
+    {{end}}
+    {{- with (index .FrontMatter "key")}}
+        <p>🎼 {{.}}</p>
+    {{end}}
+</div>
+{{ end }}

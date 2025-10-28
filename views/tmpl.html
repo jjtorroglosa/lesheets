@@ -4,92 +4,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>{{- index .FrontMatter "title"}}</title>
+<title>{{- index .Song.FrontMatter "title"}}</title>
     <link href="./compiled.css" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/abcjs@6.1.0/dist/abcjs-basic-min.js"></script>
 </head>
 <body>
-
-{{$backticks := .Backticks }}
-    <h1 class="md:text-center">{{- index .FrontMatter "title"}}</h1>
-    <p class="md:text-center">{{- index .FrontMatter "subtitle"}}</p>
-    <div class="flex flex-row gap-4 md:justify-center align-center mb-8">
-        {{- with (index .FrontMatter "tempo")}}
-            <p>🎵 {{.}}</p>
-        {{end}}
-        {{- with (index .FrontMatter "key")}}
-            <p>🎼 {{.}}</p>
-        {{end}}
-    </div>
-</div>
-
-<div class="flex flex-col md:flex-row justify-center align-center md:gap-32">
-    <div class="">
-    {{- range .Sections}}
-        {{- if .Break }}
-            </div>
-            <div class="">
-        {{- end}}
-        <div class="section">
-          <div class="section-name">{{- .Header}}</div>
-          {{- range .BarsLines}}
-            <div class="barlines text-xs">
-                {{-  if (index . 0).Comment }} {{- (index . 0).Comment }}{{- end}}
-            </div>
-            <div class="barlines">
-                {{- range .}}
-                <div class="bar {{if eq .Type "Double"}}double{{end}} {{if eq .Type "RepeatEnd"}}repeat-end{{end}} {{if eq .Type "RepeatStart"}}repeat-start{{end}} ">
-                        {{- if eq .Backtick.Value ""}}
-                            {{- range .Chords}}
-                                {{ $annotation := "" }}
-                                {{ if eq .Annotation.Value "" }}
-                                    {{ $annotation = "" }}
-                                    <div class="ch"> {{- .Value}} </div>
-                                {{ else }}
-                                    {{ $annotation = (printf "%s-%s" "annotation" .Annotation.Value) }}
-                                    <div class="ch">
-                                    <div class="{{ $annotation }}">
-                                        <span > {{- .Value}} </span>
-                                    </div>
-                                    </div>
-                                {{ end }}
-                            {{- end}}
-                        {{- else}}
-                            <span class="abcinline" style="" id="bt-{{- .Backtick.Id}}"></span>
-                        {{- end}}
-                    </div>
-                {{- end}}
-            </div>
-          {{- end}}</div>
-    {{- end}}
-    </div>
-</div>
+{{ template "header" .Song }}
+{{ template "body" .Song }}
 
 
-        <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+{{- if .Dev }}
+<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
+{{- end }}
 
-
-
-{{- range $backticks}}
+{{- range .Song.Backticks }}
     <script>
-    ABCJS.renderAbc(
-        "bt-{{- .Id}}", `
-    X:1
-    M:none
-    L:1/16
-    K:none cleff=none stafflines=0
-    {{ .Value}}
-    `,
-        {
-            //responsive: "resize", // allow SVG to size naturally
-            wrap: false,           // prevent wrapping to a new line
-            staffwidth: 180,
-            responsive: "resize",
-            jazzchords: true,
-            add_classes: true,
-        }
-    );
+        ABCJS.renderAbc("bt-{{- .Id}}", `
+            X:1
+            M:none
+            L:1/16
+            K:none cleff=none stafflines=0
+            {{ .Value}}
+        `, {
+                //responsive: "resize", // allow SVG to size naturally
+                wrap: false,           // prevent wrapping to a new line
+                staffwidth: 180,
+                responsive: "resize",
+                jazzchords: true,
+                add_classes: true,
+        });
     </script>
 {{- end}}
+
 </body>
 </html>
