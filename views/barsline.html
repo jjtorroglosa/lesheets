@@ -1,0 +1,29 @@
+{{ define "barsline" }}
+<div class="barlines text-xs">
+    {{-  if (index . 0).Comment }} {{- (index . 0).Comment }}{{- end}}
+</div>
+<div class="barlines">
+    {{- range .}}
+    <div class="bar {{if eq .Type "Double"}}double{{end}} {{if eq .Type "RepeatEnd"}}repeat-end{{end}} {{if eq .Type "RepeatStart"}}repeat-start{{end}} ">
+            {{- if eq .Backtick.Value ""}}
+                {{- range .Chords}}
+                    {{ $annotation := "" }}
+                    {{ if eq .Annotation.Value "" }}
+                        {{ $annotation = "" }}
+                        <div class="ch"> <span>{{- .PrettyPrint}}</span> </div>
+                    {{ else }}
+                        {{ $annotation = (printf "%s-%s" "annotation" .Annotation.Value) }}
+                        <div class="ch">
+                        <div class="annotation {{ $annotation }}">
+                            <span > {{- .PrettyPrint}} </span>
+                        </div>
+                        </div>
+                    {{ end }}
+                {{- end}}
+            {{- else}}
+                <span class="abcinline" style="" id="bt-{{- .Backtick.Id}}"></span>
+            {{- end}}
+        </div>
+    {{- end}}
+</div>
+{{end}}

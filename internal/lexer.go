@@ -51,16 +51,28 @@ func (l *Lexer) advance() {
 	l.pos++
 }
 
+func (l *Lexer) consumeWhitespaces() {
+	ch := l.nextChar()
+	for ch == ' ' || ch == '\t' || ch == '\r' {
+		l.advance()
+		ch = l.nextChar()
+	}
+}
+
+func (l *Lexer) consumeWhitespacesAndNewLines() {
+	ch := l.nextChar()
+	for ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' {
+		l.advance()
+		ch = l.nextChar()
+	}
+}
+
 // Scan all tokens in the input
 func (l *Lexer) Lex() []Token {
 	var tokens []Token
 	for l.pos < len(l.input) {
+		l.consumeWhitespacesAndNewLines()
 		ch := l.nextChar()
-
-		if ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' {
-			l.advance()
-			continue
-		}
 
 		// Frontmatter
 		if strings.HasPrefix(l.input[l.pos:], "---") {
@@ -99,6 +111,7 @@ func (l *Lexer) Lex() []Token {
 				tokens = append(tokens, Token{Type: TokenBar, Value: "|"})
 				l.advance()
 			}
+			l.consumeWhitespaces()
 			ch := l.nextChar()
 			if ch == '\n' {
 				tokens = append(tokens, Token{Type: TokenReturn, Value: "RETURN"})
