@@ -16,16 +16,35 @@ type Section struct {
 type Annotation struct {
 	Value string
 }
+type Backtick struct {
+	Id    int
+	Value string
+}
 type Chord struct {
 	Value      string
 	Annotation *Annotation
 }
 
 type Bar struct {
-	Tokens  []Token // chords, symbols, annotations, backticks
-	Chords  []Chord // chords, symbols, annotations, backticks
-	Type    string  // "Normal" or "DoubleBar"
-	Comment string  // comment
+	Tokens   []Token // chords, symbols, annotations, backticks
+	Chords   []Chord
+	Backtick Backtick
+	Type     string // "Normal" or "DoubleBar"
+	Comment  string // comment
+}
+
+func (song *Song) Backticks() []Backtick {
+	bts := []Backtick{}
+	for _, sec := range song.Sections {
+		for _, barline := range sec.BarsLines {
+			for _, bar := range barline {
+				if bar.Backtick.Value != "" {
+					bts = append(bts, bar.Backtick)
+				}
+			}
+		}
+	}
+	return bts
 }
 
 func (song *Song) PrintSong() {
@@ -33,9 +52,9 @@ func (song *Song) PrintSong() {
 	for k, v := range song.FrontMatter {
 		fmt.Printf("%s: %s\n", k, v)
 	}
+	i := 1
 	for _, sec := range song.Sections {
 		fmt.Println("Section:", sec.Header)
-		i := 1
 		for _, barline := range sec.BarsLines {
 			for _, bar := range barline {
 				fmt.Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.Comment)

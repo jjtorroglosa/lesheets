@@ -1,13 +1,12 @@
 package internal
 
-import "log"
-
 func ParseSong(tokens []Token) *Song {
 	song := &Song{FrontMatter: make(map[string]string)}
 	var currentSection *Section
 	var currentBar *Bar
 	var currentLine []*Bar
 	currentAnnotation := &Annotation{}
+	backtickId := 0
 	var currentComment string
 	inFrontMatter := false
 	var pendingKey string
@@ -38,13 +37,14 @@ func ParseSong(tokens []Token) *Song {
 			song.Sections = append(song.Sections, currentSection)
 			currentBar = nil
 		case TokenAnnotation:
-			log.Printf("annotation %s\n", tok.Value)
 			currentAnnotation = &Annotation{Value: tok.Value}
 		case TokenBacktick:
 			if currentBar == nil {
-				currentBar = &Bar{Tokens: []Token{}, Type: "Normal", Chords: []Chord{}}
+				currentBar = &Bar{Tokens: []Token{}, Type: "Normal", Chords: []Chord{}, Backtick: Backtick{Id: backtickId, Value: tok.Value}}
 			}
+			currentBar.Backtick = Backtick{Id: backtickId, Value: tok.Value}
 			currentBar.Tokens = append(currentBar.Tokens, tok)
+			backtickId++
 		case TokenChord:
 			if currentBar == nil {
 				currentBar = &Bar{Tokens: []Token{}, Type: "Normal", Chords: []Chord{}}
@@ -57,6 +57,22 @@ func ParseSong(tokens []Token) *Song {
 			currentBar.Tokens = append(currentBar.Tokens, tok)
 		case TokenComment:
 			currentComment = tok.Value
+		case TokenRepeatEnd:
+			if currentBar != nil && currentSection != nil {
+				currentBar.Comment = currentComment
+				currentComment = ""
+				currentBar.Type = "RepeatEnd"
+				currentLine = append(currentLine, currentBar)
+				currentBar = nil
+			}
+		case TokenRepeatStart:
+			if currentBar != nil && currentSection != nil {
+				currentBar.Comment = currentComment
+				currentBar.Type = "Normal"
+				currentComment = ""
+				currentLine = append(currentLine, currentBar)
+				currentBar = &Bar{Tokens: []Token{}, Type: "RepeatStart", Chords: []Chord{}, Backtick: Backtick{}}
+			}
 		case TokenBar:
 			// finish current bar if exists
 			if currentBar != nil && currentSection != nil {

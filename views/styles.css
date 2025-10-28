@@ -30,7 +30,7 @@ html{
 }
 
 body {
-    @apply min-w-250 px-10 mx-auto mt-4;
+    @apply mx-4 mt-4;
 }
 
 .bar {
@@ -38,15 +38,27 @@ body {
     @apply border-l border-solid;
     @apply flex justify-between items-center;
 }
+.bar:last-child {
+    @apply border-r border-solid;
+}
 
 
 .ch {
     @apply px-2 h-6 grow;
 }
 
+.abcjs-chord {
+    @apply text-2xl;
+}
+.abcjs-note {
+}
+
+.abcinline {
+    @apply min-w-30;
+}
 .repeat-start {
   position: relative;
-  @apply border-l-3 border-solid pl-8;
+  @apply border-l border-solid pl-8;
 }
 
 .repeat-start::before {
@@ -96,28 +108,84 @@ body {
 }
 
 
-.diamond {
-  position: relative;
-  height: 60px;
-  width: 60px;
-  line-height: 60px;
-  text-align: center;
-  /* margin: 00px 40px; */
-  top: -20px;
+/* .annotation-diamond { */
+/*   position: relative; */
+/*   height: 3rem; */
+/*   width: 3rem; */
+/*   line-height: 3rem; */
+/*   text-align: center; */
+/*   /* margin: 00px 40px; */
+/*   top: -1rem; */
+/* } */
+/* .annotation-diamond:after { */
+/*   position: absolute; */
+/*   top: 1rem; */
+/*   left: 1rem; */
+/*   content: '&#9671;'; */
+/*   height: calc(100% - 1rem);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
+/*   width: calc(100% - 1rem);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
+/*   @apply border border-solid; */
+/*   transform: rotateX(45deg) rotateZ(45deg); */
+/* } */
+
+.annotation-choke {
 }
-.diamond:after {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  content: '';
-  height: calc(100% - 22px);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
-  width: calc(100% - 22px);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
+
+.annotation-choke span::before{
+    content: "^";
+    font-size: 1.8rem;
+}
+
+.annotation-choke span {
+    position:relative;
+    top: -0.95rem;
+    line-height: 1.1rem;
+    @apply flex flex-col;
+}
+
+
+.annotation-push span {
+    position:relative;
+    top: -1.5rem;
+    @apply flex flex-col;
+}
+
+.annotation-push span::before{
+    content: "❮";
+}
+
+.annotation-pull span {
+    position:relative;
+    top: -1.5rem;
+    @apply flex flex-col;
+}
+
+.annotation-pull span::before{
+    content: "❯";
+}
+
+.annotation-diamond {
+  text-align: center;
+  position: relative;
+  color: white;
+  top: -0.25rem;
+  width: 2rem;
+  height: 2rem;
   @apply border border-solid;
-  transform: rotateX(45deg) rotateZ(45deg);
+  font-weight: bold;
+  transform: rotate(45deg);
+  line-height: 2rem;
+}
+
+/* rotate text back inside the diamond */
+.annotation-diamond span {
+  display: inline-block;
+  transform: rotate(-45deg);
 }
 
 .section-name {
     @apply border border-solid p-2 inline-block my-1;
+    @apply text-xs;
 }
 .barlines {
     @apply ml-4 flex flex-row my-1;

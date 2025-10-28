@@ -9,4 +9,5 @@ tailwind:
 
 .PHONY: dev
 dev:
-	ls *.nns views/tmpl.html views/styles.css internal/*.go cmd/nasheets/*.go | entr go run cmd/nasheets/main.go
+	ls *.nns views/tmpl.html views/styles.css internal/*.go cmd/nasheets/*.go | \
+		entr go run cmd/nasheets/main.go index.nns

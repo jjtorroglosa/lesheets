@@ -21,6 +21,8 @@ const (
 	TokenAnnotation       TokenType = "Annotation"
 	TokenBacktick         TokenType = "BacktickExpression"
 	TokenUnknown          TokenType = "Unknown"
+	TokenRepeatEnd        TokenType = "RepeatEnd"
+	TokenRepeatStart      TokenType = "RepeatStart"
 )
 
 type Token struct {
@@ -72,10 +74,25 @@ func (l *Lexer) Lex() []Token {
 			l.pos += 3
 			continue
 		}
-
+		if ch == ':' {
+			if !strings.HasPrefix(l.input[l.pos:], ":||") {
+				panic(": found but is not :||")
+			}
+			tokens = append(tokens, Token{Type: TokenRepeatEnd, Value: ":||"})
+			l.pos += 3
+			ch := l.nextChar()
+			if ch == '\n' {
+				tokens = append(tokens, Token{Type: TokenReturn, Value: "RETURN"})
+				l.advance()
+			}
+			continue
+		}
 		// Single bar
 		if ch == '|' {
-			if strings.HasPrefix(l.input[l.pos:], "||") {
+			if strings.HasPrefix(l.input[l.pos:], "||:") {
+				tokens = append(tokens, Token{Type: TokenRepeatStart, Value: "||:"})
+				l.pos += 3
+			} else if strings.HasPrefix(l.input[l.pos:], "||") {
 				tokens = append(tokens, Token{Type: TokenBar, Value: "||"})
 				l.pos += 2
 			} else {
@@ -104,28 +121,31 @@ func (l *Lexer) Lex() []Token {
 
 		// Comment
 		if ch == '"' {
+			l.advance() // skip opening "
 			start := l.pos
-			l.advance() // skip opening `
 			for l.pos < len(l.input) && l.input[l.pos] != '"' {
 				l.advance()
 			}
 			if l.pos < len(l.input) && l.input[l.pos] == '"' {
-				l.advance() // skip closing `
+				l.advance() // skip closing "
 			}
-			tokens = append(tokens, Token{Type: TokenComment, Value: l.input[start:l.pos]})
+			tokens = append(tokens, Token{Type: TokenComment, Value: l.input[start : l.pos-1]})
 			continue
 		}
+
 		// Backtick expression
 		if ch == '`' {
-			start := l.pos
 			l.advance() // skip opening `
+			start := l.pos
 			for l.pos < len(l.input) && l.input[l.pos] != '`' {
 				l.advance()
 			}
-			if l.pos < len(l.input) && l.input[l.pos] == '`' {
-				l.advance() // skip closing `
-			}
 			tokens = append(tokens, Token{Type: TokenBacktick, Value: l.input[start:l.pos]})
+
+			if l.pos < len(l.input) && l.input[l.pos] != '`' {
+				panic("unclosed backtick")
+			}
+			l.advance()
 			continue
 		}
 

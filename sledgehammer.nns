@@ -11,13 +11,13 @@ Eb | % | % | % |
 # Intro
 
 Eb | % | % | % |
-Eb | % | % | Eb. |
+Eb | % | % | `"Eb" .A2 z12` |
 
 # Verse
 
 Eb | % | % | % |
 Eb | % | % | % |
-Cm | % | Eb | Eb. |
+Cm | % | Eb | `"Eb" .A2 z12` |
 
 Eb | % | % | % |
 Eb | % | % | % ||
@@ -29,26 +29,29 @@ Db | F | Db | Ab ||
 
 # Postchorus
 
-Eb | % | % | !marcato!Eb |
+Eb | % | % | `"Eb" .A2 z12` ||
 
 #- Verse
 
 Eb | % | % | % |
-Eb | % | % | % |
+Cm | % | Eb | `"Eb" .A2 z12` |
 
-# Chorus
+
+# !! 2x Chorus
 
 Db | F | Db | Ab |
+Db | F | Db | Ab ||
+
 Db | F | Db | Ab |
-Db | F | Db | Ab |
-Db | F | Db | Ab |
+Db | F | Db | Ab ||
+
 
 # Solo (keys)
 
 Eb | % | % | % |
-Eb | % | % | Eb. |
+Eb | % | % | `"Eb" .A2` |
 
-#- Coda
+# Coda
 
 Eb | Ab | Eb | Ab |
 Eb | Ab | Eb | Ab |
@@ -58,6 +61,6 @@ Eb | Ab | Eb | Ab |
 
 "...More rhythmic"
 Eb | Ab | Eb | Ab |
-Eb | Ab | !marcato!Eb | `"Ab"A8 zzAA AAzA` |
-`!marcato!A2 z12` ||
+Eb | Ab | !diamond!Eb | 👇 |
+`"Ab" z8 z2AA AAzA` | `!choke!.A2` ||
 
