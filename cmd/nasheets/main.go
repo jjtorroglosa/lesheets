@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -11,42 +12,62 @@ import (
 )
 
 func main() {
-	outputDir := flag.String("d", "output", "Output dir (e.g., )")
+	outputDir := flag.String("d", "output", "Output dir")
+	outputFilename := flag.String("o", "", "Output filename")
+	printSong := flag.Bool("p", false, "Print song")
+	printTokens := flag.Bool("t", false, "Print tokens")
+	input := flag.String("i", "", "Input filedir")
 
 	// Parse CLI args
 	flag.Parse()
 
 	// Remaining non-flag arguments
 	args := flag.Args()
+	if len(args) != 1 {
+		flag.Usage()
+		internal.Fatalf("invalid args")
+	}
+	cmd := args[0]
 
 	// Read the song file
-	if len(args) != 1 {
-		log.Fatalf("usage: %s <input_file>", os.Args[0])
+	if *input == "" {
+		internal.Fatalf("usage: %s -i <input_file>", os.Args[0])
 	}
-	file := args[0]
-	output := ""
-	if len(os.Args) == 3 {
-		output = os.Args[2]
-	} else {
-		output = strings.TrimSuffix(file, ".nns") + ".html"
-		output = filepath.Base(output)
+	inputFile := *input
+	data, err := os.ReadFile(inputFile)
+
+	if *outputFilename == "" {
+		*outputFilename = strings.TrimSuffix(inputFile, ".nns") + ".html"
+		*outputFilename = filepath.Base(*outputFilename)
 	}
-	data, err := os.ReadFile(file)
 
 	if err != nil {
-		log.Fatalf("Failed to read file: %v", err)
+		internal.Fatalf("Failed to read file: %v", err)
 	}
 
-	fmt.Printf("Rendering %s\n", file)
-	lexer := internal.NewLexer(string(data))
-	tokens := lexer.Lex()
+	song := internal.ParseSong(string(data))
 
-	// for _, t := range tokens {
-	// 	fmt.Printf("%s: %s\n", t.Type, t.Value)
-	// }
+	switch cmd {
+	case "json":
+		j, err := json.Marshal(song)
+		if err != nil {
+			log.Fatalf("Error marshalling json: %v", err)
+		}
+		fmt.Println(string(j))
+	case "html":
+		fmt.Printf("Rendering %s to %s\n", inputFile, *outputDir+"/"+*outputFilename)
 
-	song := internal.ParseSong(tokens)
+		if *printTokens {
+			lexer := internal.NewLexer(string(data))
+			tokens := lexer.Lex()
+			for _, t := range tokens {
+				fmt.Printf("%s: %s\n", t.Type, t.Value)
+			}
+		}
 
-	internal.RenderSongHTML(song, *outputDir+"/"+output)
-	//song.PrintSong()
+		if *printSong {
+			song.PrintSong()
+		}
+		internal.RenderSongHTML(song, *outputDir+"/"+*outputFilename)
+	}
 }

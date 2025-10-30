@@ -1,11 +1,16 @@
 package internal
 
 import (
-	"fmt"
 	"strings"
 )
 
-func ParseSong(tokens []Token) *Song {
+func ParseSong(s string) *Song {
+	lexer := NewLexer(s)
+	tokens := lexer.Lex()
+	return ParseTokens(tokens)
+}
+
+func ParseTokens(tokens []Token) *Song {
 	song := &Song{FrontMatter: make(map[string]string)}
 	var currentSection *Section
 	var currentBar *Bar
@@ -15,6 +20,12 @@ func ParseSong(tokens []Token) *Song {
 	var currentComment string
 	inFrontMatter := false
 	var pendingKey string
+	currentSection = &Section{
+		Name:      "",
+		BarsLines: [][]*Bar{},
+		Break:     false,
+	}
+	song.Sections = append(song.Sections, currentSection)
 
 	for _, tok := range tokens {
 		switch tok.Type {
@@ -35,14 +46,12 @@ func ParseSong(tokens []Token) *Song {
 				}
 				pendingKey = ""
 			}
-		case TokenHeader:
+		case TokenHeader, TokenHeaderBreak:
 			// start a new section
 			currentSection = &Section{Name: tok.Value}
-			song.Sections = append(song.Sections, currentSection)
-			currentBar = nil
-		case TokenHeaderBreak:
-			// start a new section
-			currentSection = &Section{Name: tok.Value, Break: true}
+			if tok.Type == TokenHeaderBreak {
+				currentSection.Break = true
+			}
 			song.Sections = append(song.Sections, currentSection)
 			currentBar = nil
 		case TokenAnnotation:
@@ -61,7 +70,15 @@ func ParseSong(tokens []Token) *Song {
 			backtickId++
 		case TokenChord:
 			if currentBar == nil {
-				currentBar = &Bar{Tokens: []Token{}, Type: "Normal", Chords: []Chord{}}
+				currentBar = &Bar{
+					Tokens:      []Token{},
+					Type:        "Normal",
+					Chords:      []Chord{},
+					Backtick:    Backtick{},
+					RepeatEnd:   false,
+					RepeatStart: false,
+					Comment:     "",
+				}
 			}
 			currentBar.Chords = append(currentBar.Chords, Chord{
 				Value:      tok.Value,
@@ -71,32 +88,46 @@ func ParseSong(tokens []Token) *Song {
 			currentBar.Tokens = append(currentBar.Tokens, tok)
 		case TokenComment:
 			currentComment = tok.Value
-		case TokenRepeatEnd:
-			if currentBar != nil && currentSection != nil {
-				currentBar.Comment = currentComment
-				currentComment = ""
-				currentBar.Type = "RepeatEnd"
-				currentLine = append(currentLine, currentBar)
-				currentBar = nil
-			}
-		case TokenRepeatStart:
-			if currentBar != nil && currentSection != nil {
-				currentBar.Comment = currentComment
-				currentBar.Type = "Normal"
-				currentComment = ""
-				currentLine = append(currentLine, currentBar)
-				currentBar = &Bar{Tokens: []Token{}, Type: "RepeatStart", Chords: []Chord{}, Backtick: Backtick{}}
-			}
-		case TokenBar:
-			// finish current bar if exists
-			if currentBar != nil && currentSection != nil {
-				currentBar.Comment = currentComment
-				currentComment = ""
-				if tok.Value == "||" {
-					currentBar.Type = "Double"
+		case TokenRepeatEnd, TokenRepeatStart, TokenBar:
+			if tok.Type == TokenRepeatStart && currentBar == nil {
+				currentBar = &Bar{
+					Tokens:      []Token{},
+					Type:        "RepeatStart",
+					Chords:      []Chord{},
+					Backtick:    Backtick{},
+					RepeatEnd:   false,
+					RepeatStart: true,
+					Comment:     "",
 				}
-				currentLine = append(currentLine, currentBar)
+			} else if currentBar != nil && currentSection != nil {
+				currentBar.Comment = currentComment
+				currentComment = ""
+				switch tok.Type {
+				case TokenBar, TokenRepeatStart:
+					currentBar.Type = "Normal"
+					if tok.Value == "||" {
+						currentBar.Type = "Double"
+					}
+				case TokenRepeatEnd:
+					currentBar.RepeatEnd = true
+					currentBar.Type = "RepeatEnd"
+				}
+				if !currentBar.IsEmpty() {
+					currentLine = append(currentLine, currentBar)
+				}
 				currentBar = nil
+				if tok.Type == TokenRepeatStart {
+					// Initialize the next bar
+					currentBar = &Bar{
+						Tokens:      []Token{},
+						Type:        "RepeatStart",
+						Chords:      []Chord{},
+						Backtick:    Backtick{},
+						RepeatEnd:   false,
+						RepeatStart: true,
+						Comment:     "",
+					}
+				}
 			}
 		case TokenReturn:
 			// finish the current line of bars
@@ -109,10 +140,7 @@ func ParseSong(tokens []Token) *Song {
 
 	// flush remaining bar
 	if currentBar != nil && !currentBar.IsEmpty() {
-		fmt.Printf("is empty %v\n", currentBar.Chords[0].Value)
-		if currentSection != nil {
-			currentLine = append(currentLine, currentBar)
-		}
+		currentLine = append(currentLine, currentBar)
 	}
 
 	// flush remaining line

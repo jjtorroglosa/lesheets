@@ -31,6 +31,7 @@ func FormatChord(chord string) string {
 		replace string
 	}{
 		{regexp.MustCompile(`(?i)maj7`), "△7"},
+		{regexp.MustCompile(`(?i)sus`), "ˢᵘˢ"},
 		{regexp.MustCompile(`(?i)maj9`), "△9"},
 		{regexp.MustCompile(`(?i)maj`), "△"},
 		{regexp.MustCompile(`(?i)min`), "ₘ"},
@@ -45,44 +46,19 @@ func FormatChord(chord string) string {
 	}
 
 	// Superscript numbers (extensions)
-	chord = regexp.MustCompile(`[0-9]+`).ReplaceAllStringFunc(chord, func(match string) string {
+	numbers := regexp.MustCompile(`([♯♭]?[0-9A-G])(.*)?`).FindStringSubmatch(chord)
+	if len(numbers) == 3 {
 		var sb strings.Builder
-		for _, c := range match {
+		sb.WriteString(numbers[1])
+		for _, c := range numbers[2] {
 			if sup, ok := superscriptMap[c]; ok {
 				sb.WriteRune(sup)
 			} else {
 				sb.WriteRune(c)
 			}
 		}
-		return sb.String()
-	})
-
-	// Superscript altered extensions (♭9, ♯11)
-	chord = regexp.MustCompile(`♭[0-9]+`).ReplaceAllStringFunc(chord, func(match string) string {
-		var sb strings.Builder
-		sb.WriteRune('♭')
-		for _, c := range match[1:] {
-			if sup, ok := superscriptMap[c]; ok {
-				sb.WriteRune(sup)
-			} else {
-				sb.WriteRune(c)
-			}
-		}
-		return sb.String()
-	})
-
-	chord = regexp.MustCompile(`♯[0-9]+`).ReplaceAllStringFunc(chord, func(match string) string {
-		var sb strings.Builder
-		sb.WriteRune('♯')
-		for _, c := range match[1:] {
-			if sup, ok := superscriptMap[c]; ok {
-				sb.WriteRune(sup)
-			} else {
-				sb.WriteRune(c)
-			}
-		}
-		return sb.String()
-	})
+		chord = sb.String()
+	}
 
 	return chord
 }

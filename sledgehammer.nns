@@ -17,27 +17,30 @@ Eb | % | % | `"Eb" .A2 z12` |
 
 Eb | % | % | % |
 Eb | % | % | % |
+
+"inter verse"
 Cm | % | Eb | `"Eb" .A2 z12` |
 
+"verse2"
 Eb | % | % | % |
 Eb | % | % | % ||
 
 # Chorus
 
-Db | F | Db | Ab |
-Db | F | Db | Ab ||
+!pull!Db | F | !pull!Db | Ab |
+!pull!Db | F | !pull!Db | Ab ||
 
 # Postchorus
 
 Eb | % | % | `"Eb" .A2 z12` ||
 
-#- Verse
+# Verse
 
 Eb | % | % | % |
 Cm | % | Eb | `"Eb" .A2 z12` |
 
 
-# !! 2x Chorus
+#- !! 2x Chorus
 
 Db | F | Db | Ab |
 Db | F | Db | Ab ||
@@ -56,10 +59,14 @@ Eb | % | % | `"Eb" .A2` |
 Eb | Ab | Eb | Ab |
 Eb | Ab | Eb | Ab |
 
+"...winds"
 Eb | Ab | Eb | Ab |
 Eb | Ab | Eb | Ab |
 
-"...More rhythmic"
+"...more rythmic"
 Eb | Ab | Eb | Ab |
-Eb | Ab | !diamond!Eb | 👇 |
-`"Ab" z8 z2AA AAzA` | `!choke!.A2` ||
+Eb | Ab | Eb | Ab |
+
+Eb | Ab | Eb | Ab |
+Eb | Ab | Eb | `"Ab" A8 "3"z2AA "4"AAzA` |
+`"Eb"!choke!!marcato!.A4 z12` ||

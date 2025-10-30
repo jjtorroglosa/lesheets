@@ -1,36 +1,53 @@
 package internal
 
-import "fmt"
+import "encoding/json"
 
 type Song struct {
-	FrontMatter map[string]string
-	Sections    []*Section
+	FrontMatter map[string]string `json:"front_matter"`
+	Sections    []*Section        `json:"sections"`
 }
 
 type Section struct {
-	Name      string
-	BarsLines [][]*Bar
-	Break     bool
+	Name      string   `json:"name"`
+	BarsLines [][]*Bar `json:"bars_lines"`
+	Break     bool     `json:"break"`
 }
 
 type Annotation struct {
-	Value string
+	Value string `json:"value"`
 }
 type Backtick struct {
-	Id    int
-	Value string
+	Id    int    `json:"id"`
+	Value string `json:"value"`
 }
 type Chord struct {
-	Value      string
-	Annotation *Annotation
+	Value      string      `json:"value"`
+	Annotation *Annotation `json:"annotation"`
+}
+
+func (p Chord) MarshalJSON() ([]byte, error) {
+	type Alias Chord
+	return json.Marshal(&struct {
+		Alias
+		Pretty string `json:"pretty"`
+	}{
+		Alias:  (Alias)(p),
+		Pretty: p.PrettyPrint(),
+	})
 }
 
 type Bar struct {
-	Tokens   []Token // chords, symbols, annotations, backticks
-	Chords   []Chord
-	Backtick Backtick
-	Type     string // "Normal" or "DoubleBar"
-	Comment  string // comment
+	Tokens      []Token  `json:"-"` // chords, symbols, annotations, backticks
+	Chords      []Chord  `json:"chords"`
+	Backtick    Backtick `json:"backtick"`
+	Type        string   `json:"type"`
+	RepeatEnd   bool     `json:"repeat_end"`
+	RepeatStart bool     `json:"repeat_start"`
+	Comment     string   `json:"comment"`
+}
+
+func (section *Section) IsEmpty() bool {
+	return len(section.BarsLines) == 0 && section.Name == ""
 }
 
 func (bar *Bar) IsEmpty() bool {
@@ -58,25 +75,33 @@ func (song *Song) Backticks() []Backtick {
 }
 
 func (song *Song) PrintSong() {
-	fmt.Println("Frontmatter:")
+	Println("Frontmatter:")
 	for k, v := range song.FrontMatter {
-		fmt.Printf("%s: %s\n", k, v)
+		Printf("%s: %s\n", k, v)
 	}
 	i := 1
 	for _, sec := range song.Sections {
-		fmt.Println("Section:", sec.Name)
+		Printf("Section: %s\n", sec.Name)
 		for _, barline := range sec.BarsLines {
 			for _, bar := range barline {
-				fmt.Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.Comment)
+				Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.Comment)
 				for _, t := range bar.Chords {
-					fmt.Printf("Chord (%s): %s", t.Annotation.Value, t.Value)
+					Printf("Chord (%s): %s", t.Annotation.Value, t.Value)
 				}
 				// for _, t := range bar.Tokens {
-				// 	fmt.Printf("%s ", t.Value)
+				// 	Printf("%s ", t.Value)
 				// }
 				i++
 			}
-			fmt.Println()
+			Printf("\n")
 		}
 	}
+}
+
+func (song *Song) toJson() string {
+	j, err := json.Marshal(song)
+	if err != nil {
+		Fatalf("Error marshalling json: %v", err)
+	}
+	return string(j)
 }
