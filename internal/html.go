@@ -10,7 +10,7 @@ func RenderSongHTML(song *Song, filename string) {
 	t := template.Must(template.ParseGlob("views/*.html"))
 	f, err := os.Create(filename)
 	if err != nil {
-		log.Fatalf("Failed to create HTML file: %v", err)
+		Fatalf("Failed to create HTML file: %v")
 	}
 	defer f.Close()
 

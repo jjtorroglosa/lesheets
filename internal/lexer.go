@@ -200,11 +200,17 @@ func (l *Lexer) Lex() []Token {
 
 		// Chords or symbols like %
 		start := l.pos
-		for l.pos < len(l.input) && !unicode.IsSpace(rune(l.input[l.pos])) && l.input[l.pos] != '|' {
+		for l.pos < len(l.input) && !unicode.IsSpace(rune(l.input[l.pos])) && l.input[l.pos] != '|' && l.input[l.pos] != '\n' {
 			l.advance()
 		}
 		value := l.input[start:l.pos]
 		tokens = append(tokens, Token{Type: TokenChord, Value: value})
+		// If after a chord there is a \n, close the bar, and start new line
+		if l.nextChar() == '\n' {
+			l.advance()
+			tokens = append(tokens, Token{Type: TokenBar, Value: "|"})
+			tokens = append(tokens, Token{Type: TokenReturn, Value: "\n"})
+		}
 	}
 
 	return tokens

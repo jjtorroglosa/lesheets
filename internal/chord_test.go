@@ -19,6 +19,9 @@ func TestChord(t *testing.T) {
 		{in: "Ehalfdim7", out: "Eø⁷"},
 		{in: "G7b9", out: "G⁷♭⁹"},
 		{in: "G7(b9)", out: "G⁷(♭⁹)"},
+		{in: "1", out: "1"},
+		{in: "b1", out: "♭1"},
+		{in: "1sus4", out: "1ˢᵘˢ⁴"},
 	}
 
 	for _, tC := range testCases {

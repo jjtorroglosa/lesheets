@@ -1,10 +1,12 @@
-
 GO := GOAMD64=v2 GOARM64=v8.0 CGO_ENABLED=1 GOPROXY=https://athens.jjtorroglosa.com,direct go
 GO_FLAGS = -ldflags -w
 
 GO_FILES := $(shell find . -name "*.go")
 TMPL_FILES := $(shell find . -name "tmpl.html")
 NASHEETS := ./nasheets -d output
+MAIN := cmd/nasheets/main.go
+WASM_MAIN := cmd/wasm/main.go
+ENTR:= entr -n
 
 .PHONY: livereload
 livereload:
@@ -18,21 +20,49 @@ tailwind:
 
 .PHONY: dev
 dev:
-	yarn run concurrently "make tailwind" "make livereload" "make watch" "make watch-html"
+	yarn run concurrently \
+		"make tailwind" \
+		"make livereload" \
+		"make watch" \
+		"make watch-wasm" \
+		"make watch-nns" \
+		"make watch-js"
 
 .PHONY: watch
 watch:
 	@echo watch
 	ls views/*.html views/styles.css internal/*.go cmd/nasheets/*.go | \
-			entr -n -s "make nasheets ; ls -1 *.nns |xargs -I @ bin/update.sh @ "
+			$(ENTR) -s "make nasheets ; ls *.nns |xargs -I @ bin/update.sh @ "
 
-.PHONY: watch-html
-watch-html:
+watch-wasm:
+	@echo watch-wasm
+	ls views/*.html views/styles.css internal/*.go cmd/wasm/*.go | \
+			$(ENTR) -s "make wasm"
+
+.PHONY: watch-js
+watch-js:
+	ls views/*.js vendorjs/*.js | $(ENTR) -a cp views/*.ttf views/*.js vendorjs/*.js output/
+
+.PHONY: watch-nns
+watch-nns:
 	@echo watch-html
-	ls *.nns | entr -a -n $(NASHEETS) /_
+	ls *.nns | $(ENTR) $(NASHEETS) -i /_ html
 
 nasheets: $(GO_FILES) $(TMPL_FILES)
-	$(GO) build $(GO_FLAGS) -o nasheets cmd/nasheets/main.go
+	$(GO) build $(GO_FLAGS) -o $@ $(MAIN)
 
-%.html: %.nns
-	$(NASHEETS) $< $@
+output/%.html: %.nns
+	$(NASHEETS) -i $< html
+
+.PHONY: wasm
+wasm: output/wasm.wasm
+output/wasm.wasm: output/wasm_exec.js $(GO_FILES) $(TMPL_FILES)
+	GOOS=js GOARCH=wasm TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o $@ $(WASM_MAIN)
+	cp views/index.js output/index.js
+
+output/wasm_exec.js:
+	cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js $@
+
+.PHONY: clean
+clean:
+	rm output/*

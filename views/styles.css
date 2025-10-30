@@ -23,6 +23,9 @@
   p {
     @apply text-base;
   }
+  a {
+      @apply text-blue-500;
+  }
 }
 
 @font-face {
@@ -34,11 +37,11 @@
 
 html{
     font-size: 15px;
-    font-family: "Helvetica", sans-serif;
+    font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
 }
 
 body {
-    @apply mx-4 mt-4;
+    @apply m-8 print:m-0;
 }
 
 .bar {
@@ -46,10 +49,10 @@ body {
     @apply border-l border-solid;
     @apply flex justify-between items-center;
 }
-.bar:last-child {
+
+.flex:last-child .bar:not(.repeat-end) {
     @apply border-r border-solid;
 }
-
 
 .ch {
     @apply px-2 h-6 grow;
@@ -58,6 +61,11 @@ body {
 .abcjs-chord {
     @apply text-2xl;
 }
+.abcjs-container svg {
+  pointer-events: none;
+  user-select: none;
+}
+
 .abcjs-note {
 }
 
@@ -66,34 +74,35 @@ body {
 }
 .repeat-start {
   position: relative;
-  @apply border-l border-solid pl-8;
+  @apply border-l-4 border-solid pl-2;
 }
 
 .repeat-start::before {
   content: ":";
   padding-top: 0.2rem;
-  padding-left: 0.5rem;
+  padding-left: 0.11rem;
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 6px; /* distance between the two borders */
+  left: 3px; /* distance between the two borders */
+  @apply border-l;
   border-left: 1px solid currentColor; /* or a specific color */
   pointer-events: none;
 }
 
 .repeat-end {
   position: relative;
-  @apply border-r border-solid pr-4;
+  @apply border-r-4 pr-2;
 }
 
 .repeat-end::before {
   content: ":";
   padding-top: 0.2rem;
-  padding-right: 0.5rem;
+  padding-right: 0.1rem;
   position: absolute;
   top: 0;
   bottom: 0;
-  right: 6px; /* distance between the two borders */
+  right: 3px; /* distance between the two borders */
   border-right: 1px solid currentColor; /* or a specific color */
   pointer-events: none;
 }
@@ -101,6 +110,7 @@ body {
 .double {
   position: relative;
   @apply border-r border-solid pr-4;
+  border-right: 2px solid currentColor !important; /* or a specific color */
 }
 
 .double::before {
@@ -110,7 +120,7 @@ body {
   position: absolute;
   top: 0;
   bottom: 0;
-  right: 6px; /* distance between the two borders */
+  right: 3px; /* distance between the two borders */
   border-right: 1px solid currentColor; /* or a specific color */
   pointer-events: none;
 }
@@ -136,13 +146,22 @@ body {
 /*   transform: rotateX(45deg) rotateZ(45deg); */
 /* } */
 
+.comment {
+    @apply mb-2 text-xs;
+}
+
 .annotation span::before {
     font-size: 0.8rem;
 }
 .annotation span {
     position:relative;
-    top: -1.1rem;
+    top: -1.2rem;
     @apply flex flex-col;
+}
+
+.annotation-choke span::before{
+    content: "^";
+    font-size: 1.2rem;
 }
 
 .annotation-choke span::before{
@@ -157,9 +176,36 @@ body {
     @apply flex flex-col;
 }
 
+.annotation-marcato span::before{
+    content: "^";
+    font-size: 1.2rem;
+}
+
+.annotation-marcato span::before{
+    content: "^";
+    font-size: 1.2rem;
+}
+
+.annotation-marcato span {
+    position:relative;
+    top: -0.9rem;
+    line-height: 1.1rem;
+    @apply flex flex-col;
+}
+
 
 .annotation-push span::before{
     content: "❮";
+}
+
+.annotation-fermata span::before{
+    content: "𝄐";
+    font-size: 1.4rem;
+}
+.annotation-fermata span{
+    top: -1.2rem;
+    line-height: 1.3rem;
+    position: relative;
 }
 
 .annotation-pull span::before{
@@ -169,12 +215,10 @@ body {
 .annotation-diamond {
   text-align: center;
   position: relative;
-  color: white;
   top: -0.25rem;
   width: 2rem;
   height: 2rem;
   @apply border border-solid;
-  font-weight: bold;
   transform: rotate(45deg);
   line-height: 2rem;
 }
@@ -187,11 +231,10 @@ body {
 }
 
 .section-name {
-    @apply border border-solid p-1 inline-block my-1;
-    @apply text-xs;
+    @apply border border-solid p-1 inline-block my-1 text-xs min-w-8 text-center;
 }
 .barlines {
-    @apply ml-4 flex flex-row my-1;
+    @apply flex flex-row my-1 ml-4;
 }
 
 
