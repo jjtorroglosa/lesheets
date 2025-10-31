@@ -26,14 +26,12 @@ const (
 
 type Token struct {
 	Type  TokenType
-	Pos   int
 	Value string
 }
 
 type Lexer struct {
-	input         string
-	pos           int
-	inFrontMatter bool
+	input string
+	pos   int
 }
 
 func NewLexer(input string) *Lexer {
@@ -72,10 +70,10 @@ func (l *Lexer) consumeWhitespacesAndNewLines() {
 }
 
 func ErrGeneric(want string, got string) error {
-	return fmt.Errorf("Unexpected string. Want: %s Got: %s", want, got)
+	return fmt.Errorf("unexpected string. Want: %s Got: %s", want, got)
 }
 func ErrInvalidFrontmatter(want string, got string) error {
-	return fmt.Errorf("Invalid frontmatter. Want: %s Got: %s", want, got)
+	return fmt.Errorf("invalid frontmatter. Want: %s Got: %s", want, got)
 }
 
 func (l *Lexer) consumeFrontmatter() (*Token, error) {
@@ -94,7 +92,6 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 		l.advance()
 	}
 	value := l.input[start:l.pos]
-	pos := start
 
 	// closing ---
 	start = l.pos
@@ -108,7 +105,6 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 	return &Token{
 		Type:  TokenFrontMatter,
 		Value: value,
-		Pos:   pos,
 	}, nil
 }
 
@@ -128,7 +124,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		return &Token{
 			Type:  TokenEof,
 			Value: "",
-			Pos:   l.pos,
 		}, nil
 	}
 	ch := l.nextChar()
@@ -149,7 +144,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		tok := Token{
 			Type:  TokenRepeatEnd,
 			Value: ":||",
-			Pos:   l.pos,
 		}
 		l.pos += 3
 		return &tok, nil
@@ -160,7 +154,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 			tok := Token{
 				Type:  TokenRepeatStart,
 				Value: "||:",
-				Pos:   l.pos,
 			}
 			l.pos += 3
 			return &tok, nil
@@ -168,7 +161,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 			tok := Token{
 				Type:  TokenBar,
 				Value: "||",
-				Pos:   l.pos,
 			}
 			l.pos += 2
 			return &tok, nil
@@ -176,7 +168,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 			tok := Token{
 				Type:  TokenBar,
 				Value: "|",
-				Pos:   l.pos,
 			}
 			l.advance()
 			return &tok, nil
@@ -193,7 +184,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		tok := Token{
 			Type:  TokenAnnotation,
 			Value: l.input[start:l.pos],
-			Pos:   start,
 		}
 		l.advance()
 		return &tok, nil
@@ -209,7 +199,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		tok := Token{
 			Type:  TokenComment,
 			Value: l.input[start:l.pos],
-			Pos:   start,
 		}
 
 		if l.pos >= len(l.input) || l.input[l.pos] != '"' {
@@ -230,7 +219,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		tok := Token{
 			Type:  TokenBacktick,
 			Value: l.input[start:l.pos],
-			Pos:   start,
 		}
 
 		if l.pos >= len(l.input) || l.input[l.pos] != '`' {
@@ -258,7 +246,6 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		tok := Token{
 			Type:  tokenType,
 			Value: strings.TrimSpace(l.input[start:l.pos]),
-			Pos:   start,
 		}
 		l.advance()
 		return &tok, nil
