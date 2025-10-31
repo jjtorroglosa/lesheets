@@ -331,7 +331,7 @@ func (p *Parser) ParseBacktick() (*Backtick, error) {
 	}
 
 	if tok.Type != TokenBacktick {
-		return nil, fmt.Errorf("Expected backtick, got: %s", tok.Type)
+		return nil, fmt.Errorf("expected backtick, got: %s", tok.Type)
 	}
 
 	bt := Backtick{
