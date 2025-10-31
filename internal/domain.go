@@ -88,9 +88,6 @@ func (song *Song) PrintSong() {
 				for _, t := range bar.Chords {
 					Printf("Chord (%s): %s", t.Annotation.Value, t.Value)
 				}
-				// for _, t := range bar.Tokens {
-				// 	Printf("%s ", t.Value)
-				// }
 				i++
 			}
 			Printf("\n")
@@ -98,7 +95,7 @@ func (song *Song) PrintSong() {
 	}
 }
 
-func (song *Song) toJson() string {
+func (song *Song) ToJson() string {
 	j, err := json.MarshalIndent(song, "", "  ")
 	if err != nil {
 		Fatalf("Error marshalling json: %v", err)
