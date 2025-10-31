@@ -6,7 +6,21 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSection(t *testing.T) {
+func TestFrontmatter(t *testing.T) {
+	p := NewParser(NewLexer(`---
+title: something
+anotherthing: here
+---
+A|B|
+`))
+	song, err := p.ParseSong()
+	assert.NoError(t, err)
+	fm := song.FrontMatter
+	assert.Equal(t, "something", fm["title"])
+	assert.Equal(t, "here", fm["anotherthing"])
+}
+
+func TestSongSection(t *testing.T) {
 	song, err := ParseSongFromString("# a section\nA")
 	assert.NoError(t, err)
 	assert.False(t, song.Sections[0].IsEmpty())
@@ -14,14 +28,31 @@ func TestSection(t *testing.T) {
 	assert.Equal(t, "a section", song.Sections[0].Name)
 }
 
-func TestSection2(t *testing.T) {
+func TestSongWithUnnamedSection(t *testing.T) {
+	song, _ := ParseSongFromString("Amaj7 C | B")
+	assert.Equal(t, "", song.Sections[0].Name)
+	assert.Equal(t, "Amaj7", song.Sections[0].BarsLines[0][0].Chords[0].Value)
+	assert.Equal(t, "C", song.Sections[0].BarsLines[0][0].Chords[1].Value)
+	assert.Equal(t, "B", song.Sections[0].BarsLines[0][1].Chords[0].Value)
+}
+
+func TestSongWithUnnamedSectionAndNamedSection(t *testing.T) {
+	song, _ := ParseSongFromString("A | B \n# verse\nD")
+	assert.Equal(t, "", song.Sections[0].Name)
+	assert.Equal(t, "A", song.Sections[0].BarsLines[0][0].Chords[0].Value)
+	assert.Equal(t, "B", song.Sections[0].BarsLines[0][1].Chords[0].Value)
+	assert.Equal(t, "verse", song.Sections[1].Name)
+	assert.Equal(t, "D", song.Sections[1].BarsLines[0][0].Chords[0].Value)
+}
+
+func TestSectionWithEmptyBody(t *testing.T) {
 	p := NewParser(NewLexer("# a section\n"))
 	section, _ := p.ParseSection()
 	assert.False(t, section.IsEmpty())
 	assert.Equal(t, "a section", section.Name)
 }
 
-func TestEmptySection(t *testing.T) {
+func TestSongEmptySection(t *testing.T) {
 	song, _ := ParseSongFromString("\n#verse\nAmaj7 C | B")
 	assert.Equal(t, "verse", song.Sections[0].Name)
 	assert.False(t, song.Sections[0].IsEmpty())
@@ -30,30 +61,56 @@ func TestEmptySection(t *testing.T) {
 	assert.Equal(t, "B", song.Sections[0].BarsLines[0][1].Chords[0].Value)
 }
 
-func TestNotEmptySectionIfItHasAName(t *testing.T) {
+func TestSongNotEmptySectionIfItHasAName(t *testing.T) {
 	song, _ := ParseSongFromString("\n#verse\n")
 	assert.Equal(t, 1, len(song.Sections))
 	assert.Equal(t, "verse", song.Sections[0].Name)
 	assert.False(t, song.Sections[0].IsEmpty())
 }
 
-func TestRepeatStart(t *testing.T) {
-	song, _ := ParseSongFromString("||: A :|| B |")
-	assert.True(t, song.Sections[0].BarsLines[0][0].RepeatStart)
-	assert.True(t, song.Sections[0].BarsLines[0][0].RepeatEnd)
-	assert.Equal(t, "A", song.Sections[0].BarsLines[0][0].Chords[0].Value)
-
-	assert.False(t, song.Sections[0].BarsLines[0][1].RepeatStart)
-	assert.False(t, song.Sections[0].BarsLines[0][1].RepeatEnd)
-}
-
-func TestParseChord(t *testing.T) {
-	p := NewParser(NewLexer("!annotation!D"))
-	chord, err := p.ParseChord()
+func TestSections(t *testing.T) {
+	p := NewParser(NewLexer(`
+A|B
+Bmin
+# section1
+C
+# section2
+D|E
+`))
+	sections, err := p.ParseBody()
 	assert.NoError(t, err)
-	assert.Equal(t, "D", chord.Value)
-	assert.Equal(t, "annotation", chord.Annotation.Value)
+
+	assert.Equal(t, 3, len(sections))
+	assert.Equal(t, "", sections[0].Name)
+	assert.Equal(t, "A", sections[0].BarsLines[0][0].Chords[0].Value)
+	assert.Equal(t, "B", sections[0].BarsLines[0][1].Chords[0].Value)
+	assert.Equal(t, "Bmin", sections[0].BarsLines[1][0].Chords[0].Value)
+	assert.Equal(t, "section1", sections[1].Name)
+	assert.Equal(t, "C", sections[1].BarsLines[0][0].Chords[0].Value)
+	assert.Equal(t, "section2", sections[2].Name)
+	assert.Equal(t, "D", sections[2].BarsLines[0][0].Chords[0].Value)
+	assert.Equal(t, "E", sections[2].BarsLines[0][1].Chords[0].Value)
 }
+func TestSectionBreak(t *testing.T) {
+	p := NewParser(NewLexer(`
+A|B
+Bmin
+# section1
+C
+#- section2
+D|E
+`))
+	sections, err := p.ParseBody()
+	assert.NoError(t, err)
+
+	assert.Equal(t, "", sections[0].Name)
+	assert.False(t, sections[0].Break)
+	assert.Equal(t, "section1", sections[1].Name)
+	assert.False(t, sections[1].Break)
+	assert.Equal(t, "section2", sections[2].Name)
+	assert.True(t, sections[2].Break)
+}
+
 func TestParseBar(t *testing.T) {
 	p := NewParser(NewLexer("!first!Cmaj7 !annotation!D !third!E\n!fourth!F"))
 	bar, err := p.ParseBar()
@@ -75,14 +132,36 @@ func TestParseBarWithNoChords(t *testing.T) {
 	assert.Error(t, err, "expected chord or backtick expression at pos 9")
 }
 
-func TestParseBarRepeatEnd(t *testing.T) {
+func TestSongRepeatStart(t *testing.T) {
+	song, _ := ParseSongFromString("||: A :|| B |")
+	assert.Equal(t, "A", song.Sections[0].BarsLines[0][0].Chords[0].Value)
+	assert.True(t, song.Sections[0].BarsLines[0][0].RepeatStart)
+	assert.True(t, song.Sections[0].BarsLines[0][0].RepeatEnd)
 
+	assert.Equal(t, "B", song.Sections[0].BarsLines[0][1].Chords[0].Value)
+	assert.False(t, song.Sections[0].BarsLines[0][1].RepeatStart)
+	assert.False(t, song.Sections[0].BarsLines[0][1].RepeatEnd)
+}
+
+func TestSongTwoConsecutiveRepeats(t *testing.T) {
+	song, err := ParseSongFromString("||: A :|| ||: B |")
+	assert.NoError(t, err)
+	assert.Equal(t, "A", song.Sections[0].BarsLines[0][0].Chords[0].Value)
+	assert.True(t, song.Sections[0].BarsLines[0][0].RepeatStart)
+	assert.True(t, song.Sections[0].BarsLines[0][0].RepeatEnd)
+
+	assert.Equal(t, "B", song.Sections[0].BarsLines[0][1].Chords[0].Value)
+	assert.True(t, song.Sections[0].BarsLines[0][1].RepeatStart)
+	assert.False(t, song.Sections[0].BarsLines[0][1].RepeatEnd)
+}
+
+func TestParseBarRepeatEnd(t *testing.T) {
 	p := NewParser(NewLexer("C :||"))
 	bar, err := p.ParseBar()
 	assert.NoError(t, err)
-	assert.True(t, bar.RepeatEnd)
-	assert.False(t, bar.RepeatStart)
 	assert.Equal(t, "C", bar.Chords[0].Value)
+	assert.False(t, bar.RepeatStart)
+	assert.True(t, bar.RepeatEnd)
 }
 
 func TestParseBarRepeatStart(t *testing.T) {
@@ -131,6 +210,8 @@ func TestParseBarReturn(t *testing.T) {
 	}{
 		{input: "C\nF"},
 		{input: "C|\nF"},
+		{input: "C\nF|\n"},
+		{input: "C\n|F|\n"},
 	}
 	for _, tC := range testCases {
 		t.Run(tC.input, func(t *testing.T) {
@@ -145,17 +226,26 @@ func TestParseBarReturn(t *testing.T) {
 }
 
 func TestParseLines(t *testing.T) {
-
-	p := NewParser(NewLexer("C\nF|\n"))
-	lines, err := p.ParseLines()
-	assert.NoError(t, err)
-	assert.Equal(t, "C", lines[0][0].Chords[0].Value)
-	assert.Equal(t, "F", lines[1][0].Chords[0].Value)
-	//assert.Equal(t, "G", lines[2][0].Chords[0].Value)
+	testCases := []struct {
+		input string
+	}{
+		{input: "C\nF"},
+		{input: "C|\nF"},
+		{input: "C\nF|\n"},
+		{input: "C\n|F|\n"},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.input, func(t *testing.T) {
+			p := NewParser(NewLexer("C\nF|\n"))
+			lines, err := p.ParseLines()
+			assert.NoError(t, err)
+			assert.Equal(t, "C", lines[0][0].Chords[0].Value)
+			assert.Equal(t, "F", lines[1][0].Chords[0].Value)
+		})
+	}
 }
 
 func TestParseBarWithComment(t *testing.T) {
-
 	p := NewParser(NewLexer("\"any comment\"Cmaj7 | \"another comment\"D\nC"))
 	barsP, err := p.ParseBarsLine()
 	assert.NoError(t, err)
@@ -164,10 +254,10 @@ func TestParseBarWithComment(t *testing.T) {
 	assert.Equal(t, 2, len(bars))
 	assert.Equal(t, "Cmaj7", bars[0].Chords[0].Value)
 	assert.Equal(t, "D", bars[1].Chords[0].Value)
+	assert.Equal(t, "another comment", bars[1].Comment)
 }
 
 func TestParseBarWithCommentInASeparateLine(t *testing.T) {
-
 	p := NewParser(NewLexer("\"any comment\"\nCmaj7"))
 	barsP, err := p.ParseBarsLine()
 	assert.NoError(t, err)
@@ -176,96 +266,15 @@ func TestParseBarWithCommentInASeparateLine(t *testing.T) {
 	assert.Equal(t, 1, len(bars))
 }
 
-func TestSongWithUnnamedSection(t *testing.T) {
-	song, _ := ParseSongFromString("Amaj7 C | B")
-	assert.Equal(t, "", song.Sections[0].Name)
-	assert.Equal(t, "Amaj7", song.Sections[0].BarsLines[0][0].Chords[0].Value)
-	assert.Equal(t, "C", song.Sections[0].BarsLines[0][0].Chords[1].Value)
-	assert.Equal(t, "B", song.Sections[0].BarsLines[0][1].Chords[0].Value)
-}
-
-func TestSongWithUnnamedSectionAndNamedSection(t *testing.T) {
-	song, _ := ParseSongFromString("A | B \n# verse\nD")
-	assert.Equal(t, "", song.Sections[0].Name)
-	assert.Equal(t, "A", song.Sections[0].BarsLines[0][0].Chords[0].Value)
-	assert.Equal(t, "B", song.Sections[0].BarsLines[0][1].Chords[0].Value)
-	assert.Equal(t, "verse", song.Sections[1].Name)
-	assert.Equal(t, "D", song.Sections[1].BarsLines[0][0].Chords[0].Value)
-}
-
-func TestSections(t *testing.T) {
-	p := NewParser(NewLexer(`
-A|B
-Bmin
-# section1
-C
-# section2
-D|E
-`))
-	sections, err := p.ParseBody()
+func TestParseChord(t *testing.T) {
+	p := NewParser(NewLexer("!annotation!D"))
+	chord, err := p.ParseChord()
 	assert.NoError(t, err)
-
-	assert.Equal(t, 3, len(sections))
-	assert.Equal(t, "", sections[0].Name)
-	assert.Equal(t, "A", sections[0].BarsLines[0][0].Chords[0].Value)
-	assert.Equal(t, "B", sections[0].BarsLines[0][1].Chords[0].Value)
-	assert.Equal(t, "Bmin", sections[0].BarsLines[1][0].Chords[0].Value)
-	assert.Equal(t, "section1", sections[1].Name)
-	assert.Equal(t, "C", sections[1].BarsLines[0][0].Chords[0].Value)
-	assert.Equal(t, "section2", sections[2].Name)
-	assert.Equal(t, "D", sections[2].BarsLines[0][0].Chords[0].Value)
-	assert.Equal(t, "E", sections[2].BarsLines[0][1].Chords[0].Value)
-}
-func TestSectionBreak(t *testing.T) {
-	p := NewParser(NewLexer(`
-A|B
-Bmin
-# section1
-C
-#- section2
-D|E
-`))
-	sections, err := p.ParseBody()
-	assert.NoError(t, err)
-
-	assert.Equal(t, "", sections[0].Name)
-	assert.False(t, sections[0].Break)
-	assert.Equal(t, "section1", sections[1].Name)
-	assert.False(t, sections[1].Break)
-	assert.Equal(t, "section2", sections[2].Name)
-	assert.True(t, sections[2].Break)
-}
-
-func TestFrontmatter(t *testing.T) {
-	p := NewParser(NewLexer(`---
-title: something
-anotherthing: here
----
-A|B|
-`))
-	song, err := p.ParseSong()
-	assert.NoError(t, err)
-	fm := song.FrontMatter
-	assert.Equal(t, "something", fm["title"])
-	assert.Equal(t, "here", fm["anotherthing"])
+	assert.Equal(t, "D", chord.Value)
+	assert.Equal(t, "annotation", chord.Annotation.Value)
 }
 
 func TestPrettyPrint(t *testing.T) {
 	song, _ := ParseSongFromString("Amaj7(#11)|B|")
 	assert.Equal(t, "A△⁷(♯¹¹)", song.Sections[0].BarsLines[0][0].Chords[0].PrettyPrint())
-}
-
-func TestFinishBarAndLineWhenNewLine(t *testing.T) {
-	song, _ := ParseSongFromString("A\nB|\n")
-	assert.Equal(t, "B", song.Sections[0].BarsLines[1][0].Chords[0].Value)
-}
-
-func TestComment(t *testing.T) {
-	song, _ := ParseSongFromString("\"some comment\" A|B|")
-	assert.Equal(t, "some comment", song.Sections[0].BarsLines[0][0].Comment)
-}
-
-func TestCommentSecondBar(t *testing.T) {
-	song, _ := ParseSongFromString("A|\"second bar\" B|")
-	assert.Equal(t, "second bar", song.Sections[0].BarsLines[0][1].Comment)
 }
