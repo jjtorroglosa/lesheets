@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"log"
 
 	yaml "github.com/oasdiff/yaml3"
 )
@@ -22,7 +23,7 @@ func ParseSongFromString(s string) (*Song, error) {
 	return NewParser(NewLexer(s)).ParseSong()
 }
 
-var SURROUNDING_COUNTEXT = 10
+var SURROUNDING_COUNTEXT = 15
 
 // Song =
 //
@@ -231,9 +232,11 @@ func (p *Parser) ParseBarsLine() (*[]Bar, error) {
 }
 
 // Bar
-// :TokenComment BarBody
+// :TokenComment TokenBar BarBody
+// |TokenBar TokenComment BarBody
 // |BarBody
 // ;
+//
 // BarBody
 // :TokenBacktick
 // |Chords
@@ -263,8 +266,9 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			return nil, err
 		}
 	}
+	// BarBody
 	if tok.Type != TokenChord && tok.Type != TokenAnnotation && tok.Type != TokenComment && tok.Type != TokenBacktick {
-		return nil, fmt.Errorf("parsing bar: unexpected token %s", tok.Type)
+		return nil, fmt.Errorf("parsing bar: unexpected token %s near %s", tok.Type, p.lex.SurroundingString(SURROUNDING_COUNTEXT))
 	}
 	if tok.Type == TokenComment {
 		bar.Comment = tok.Value
@@ -284,6 +288,15 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			return nil, err
 		}
 		bar.Backtick = *backtick
+		tok, err = p.lex.Lookahead()
+		if err != nil {
+			return nil, err
+		}
+		log.Printf("%+v\nttype %s\n", bar.Backtick, tok.Type)
+		if tok.Type == TokenRepeatEnd {
+			bar.RepeatEnd = true
+			_, _ = p.lex.ConsumeNextToken()
+		}
 		return &bar, nil
 	case TokenAnnotation, TokenChord:
 		chords := []Chord{}

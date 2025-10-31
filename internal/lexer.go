@@ -83,7 +83,8 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 		l.advance()
 	}
 	if l.input[start:l.pos] != "---" {
-		return nil, ErrInvalidFrontmatter("Opening ---", l.input[start:l.pos])
+		return nil, fmt.Errorf("%s\n", l.SurroundingString(SURROUNDING_COUNTEXT))
+		//return nil, ErrInvalidFrontmatter("Opening ---", l.input[start:l.pos])
 	}
 
 	// body
@@ -129,7 +130,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	ch := l.nextChar()
 
 	// Frontmatter
-	if ch == '-' {
+	if l.pos+3 < len(l.input) && l.input[l.pos:l.pos+3] == "---" {
 		tok, err := l.consumeFrontmatter()
 		if err != nil {
 			return nil, err

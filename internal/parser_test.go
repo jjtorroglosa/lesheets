@@ -132,6 +132,21 @@ func TestParseBarWithNoChords(t *testing.T) {
 	assert.Error(t, err, "expected chord or backtick expression at pos 9")
 }
 
+func TestParseBarWithBacktick(t *testing.T) {
+	p := NewParser(NewLexer("| `[1\"Bb\"A2A2A2A2 \"Cm\"!marcato!.A4!marcato!.A4  ]` :||"))
+	bar, err := p.ParseSong()
+	assert.NoError(t, err)
+	assert.Equal(t, "[1\"Bb\"A2A2A2A2 \"Cm\"!marcato!.A4!marcato!.A4  ]", bar.Sections[0].BarsLines[0][0].Backtick.Value)
+}
+
+func TestParseBarWithCommentPreviousLineWithBacktick(t *testing.T) {
+	p := NewParser(NewLexer("\"VACIADO\" ||:`a` | `z16` |"))
+	bar, err := p.ParseSong()
+	assert.NoError(t, err)
+	assert.Equal(t, "VACIADO", bar.Sections[0].BarsLines[0][0].Comment)
+	assert.Equal(t, "\"Cm\" A2\"Bb\"A2z2\"Ab\"A2 z8", bar.Sections[0].BarsLines[0][0].Backtick.Value)
+}
+
 func TestSongRepeatStart(t *testing.T) {
 	song, _ := ParseSongFromString("||: A :|| B |")
 	assert.Equal(t, "A", song.Sections[0].BarsLines[0][0].Chords[0].Value)

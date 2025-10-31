@@ -1,0 +1,38 @@
+Song:
+  Frontmatter Body
+  |Body
+  ;
+FrontMatter: TokenFrontmatter
+Body:
+  Lines Sections
+  |Sections
+  ;
+Sections
+  :Section
+  |Section Sections
+Section:
+  Header Lines
+Lines:
+  Line
+  |Line Lines
+  ;
+Line:
+  Bar TokenReturn
+  |Bar Bars
+Bar:
+  TokenComment TokenBar BarBody
+  |TokenBar TokenComment BarBody
+  |BarBody
+  ;
+BarBody:
+  TokenBacktick
+  |Chords
+  ;
+Chords:
+  Chord
+  |Chord Chords
+  ;
+Chord:
+  TokenChord
+  |TokenAnnotation TokenChord
+  ;
