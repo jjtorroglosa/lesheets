@@ -19,11 +19,7 @@ func NewParser(lex *Lexer) *Parser {
 }
 
 func ParseSongFromString(s string) (*Song, error) {
-	parser := Parser{
-		lex:        NewLexer(s),
-		backtickId: 0,
-	}
-	return parser.ParseSong()
+	return NewParser(NewLexer(s)).ParseSong()
 }
 
 var SURROUNDING_COUNTEXT = 10
@@ -335,10 +331,10 @@ func (p *Parser) ParseBacktick() (*Backtick, error) {
 	}
 
 	bt := Backtick{
-		Id:    backtickId,
+		Id:    p.backtickId,
 		Value: "",
 	}
-	backtickId++
+	p.backtickId++
 	bt.Value = tok.Value
 	_, _ = p.lex.ConsumeNextToken()
 	return &bt, nil
@@ -381,5 +377,3 @@ func (p *Parser) ParseChord() (*Chord, error) {
 	_, _ = p.lex.ConsumeNextToken()
 	return &chord, nil
 }
-
-var backtickId = 0
