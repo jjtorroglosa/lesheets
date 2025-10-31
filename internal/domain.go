@@ -4,13 +4,13 @@ import "encoding/json"
 
 type Song struct {
 	FrontMatter map[string]string `json:"front_matter"`
-	Sections    []*Section        `json:"sections"`
+	Sections    []Section         `json:"sections"`
 }
 
 type Section struct {
-	Name      string   `json:"name"`
-	BarsLines [][]*Bar `json:"bars_lines"`
-	Break     bool     `json:"break"`
+	Name      string  `json:"name"`
+	BarsLines [][]Bar `json:"bars_lines"`
+	Break     bool    `json:"break"`
 }
 
 type Annotation struct {
@@ -99,7 +99,7 @@ func (song *Song) PrintSong() {
 }
 
 func (song *Song) toJson() string {
-	j, err := json.Marshal(song)
+	j, err := json.MarshalIndent(song, "", "  ")
 	if err != nil {
 		Fatalf("Error marshalling json: %v", err)
 	}

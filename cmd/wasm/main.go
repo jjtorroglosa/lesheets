@@ -9,8 +9,12 @@ import (
 func nasheetToJson(this js.Value, args []js.Value) interface{} {
 	s := args[0].String() // Convert JS string to Go string
 
-	println("Hi 5 from go: " + s)
-	song := internal.ParseSong(s)
+	println("Hi from go: " + s)
+	song, err := internal.ParseSongFromString(s)
+	if err != nil {
+		return err
+	}
+
 	//song.PrintSong()
 	j, err := json.Marshal(song)
 	if err != nil {
