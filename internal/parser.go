@@ -2,7 +2,6 @@ package internal
 
 import (
 	"fmt"
-	"log"
 
 	yaml "github.com/oasdiff/yaml3"
 )
@@ -23,7 +22,7 @@ func ParseSongFromString(s string) (*Song, error) {
 	return NewParser(NewLexer(s)).ParseSong()
 }
 
-var SURROUNDING_COUNTEXT = 15
+var SURROUNDING_CONTEXT = 15
 
 // Song =
 //
@@ -251,34 +250,36 @@ func (p *Parser) ParseBar() (*Bar, error) {
 	if err != nil {
 		return nil, err
 	}
-	switch tok.Type {
-	case TokenBar:
-		_, _ = p.lex.ConsumeNextToken()
-		tok, err = p.lex.Lookahead()
-		if err != nil {
-			return nil, err
-		}
-	case TokenRepeatStart:
-		bar.RepeatStart = true
-		_, _ = p.lex.ConsumeNextToken()
-		tok, err = p.lex.Lookahead()
-		if err != nil {
-			return nil, err
+
+	for tok.Type == TokenBar || tok.Type == TokenRepeatStart || tok.Type == TokenComment {
+		switch tok.Type {
+		case TokenBar:
+			_, _ = p.lex.ConsumeNextToken()
+			tok, err = p.lex.Lookahead()
+			if err != nil {
+				return nil, err
+			}
+		case TokenRepeatStart:
+			bar.RepeatStart = true
+			_, _ = p.lex.ConsumeNextToken()
+			tok, err = p.lex.Lookahead()
+			if err != nil {
+				return nil, err
+			}
+		case TokenComment:
+			bar.Comment = tok.Value
+			// consume it
+			_, _ = p.lex.ConsumeNextToken()
+			p.lex.consumeWhitespacesAndNewLines()
+			tok, err = p.lex.Lookahead()
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	// BarBody
-	if tok.Type != TokenChord && tok.Type != TokenAnnotation && tok.Type != TokenComment && tok.Type != TokenBacktick {
-		return nil, fmt.Errorf("parsing bar: unexpected token %s near %s", tok.Type, p.lex.SurroundingString(SURROUNDING_COUNTEXT))
-	}
-	if tok.Type == TokenComment {
-		bar.Comment = tok.Value
-		// consume it
-		_, _ = p.lex.ConsumeNextToken()
-		p.lex.consumeWhitespacesAndNewLines()
-		tok, err = p.lex.Lookahead()
-		if err != nil {
-			return nil, err
-		}
+	if tok.Type != TokenChord && tok.Type != TokenAnnotation && tok.Type != TokenBacktick {
+		return nil, fmt.Errorf("parsing bar: unexpected token %s %s", tok.Type, p.lex.SurroundingString())
 	}
 
 	switch tok.Type {
@@ -292,7 +293,6 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		if err != nil {
 			return nil, err
 		}
-		log.Printf("%+v\nttype %s\n", bar.Backtick, tok.Type)
 		if tok.Type == TokenRepeatEnd {
 			bar.RepeatEnd = true
 			_, _ = p.lex.ConsumeNextToken()
@@ -312,7 +312,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			}
 		}
 		if len(chords) == 0 {
-			return nil, fmt.Errorf("found no chords in bar at pos %d", p.lex.pos)
+			return nil, fmt.Errorf("found no chords in bar %s", p.lex.SurroundingString())
 		}
 		if tok.Type == TokenRepeatEnd {
 			bar.RepeatEnd = true
@@ -325,10 +325,9 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		return &bar, nil
 	default:
 		return nil, fmt.Errorf(
-			"expected chord or backtick expression but found %s at pos %d, near %s",
+			"expected chord or backtick expression but found %s %s",
 			tok.Type,
-			p.lex.pos,
-			p.lex.SurroundingString(SURROUNDING_COUNTEXT),
+			p.lex.SurroundingString(),
 		)
 	}
 }
@@ -376,15 +375,15 @@ func (p *Parser) ParseChord() (*Chord, error) {
 
 	if tok.Type != TokenChord {
 		return nil, fmt.Errorf(
-			"expected chord but found %s, near %s",
+			"expected chord but found %s, %s",
 			tok.Type,
-			p.lex.SurroundingString(SURROUNDING_COUNTEXT),
+			p.lex.SurroundingString(),
 		)
 	}
 	chord.Value = tok.Value
 
 	if chord.Value == "" {
-		return nil, fmt.Errorf("empty chord found at %s", p.lex.SurroundingString(SURROUNDING_COUNTEXT))
+		return nil, fmt.Errorf("empty chord found at %s", p.lex.SurroundingString())
 	}
 
 	_, _ = p.lex.ConsumeNextToken()
