@@ -32,6 +32,7 @@ type Token struct {
 type Lexer struct {
 	input string
 	pos   int
+	line  int
 }
 
 func NewLexer(input string) *Lexer {
@@ -56,6 +57,9 @@ func (l *Lexer) advance() {
 func (l *Lexer) consumeWhitespaces() {
 	ch := l.nextChar()
 	for ch == ' ' || ch == '\t' || ch == '\r' {
+		if ch == '\n' || ch == '\r' {
+			l.line++
+		}
 		l.advance()
 		ch = l.nextChar()
 	}
@@ -64,6 +68,9 @@ func (l *Lexer) consumeWhitespaces() {
 func (l *Lexer) consumeWhitespacesAndNewLines() {
 	ch := l.nextChar()
 	for ch == ' ' || ch == '\t' || ch == '\r' || ch == '\n' {
+		if ch == '\n' || ch == '\r' {
+			l.line++
+		}
 		l.advance()
 		ch = l.nextChar()
 	}
@@ -72,8 +79,8 @@ func (l *Lexer) consumeWhitespacesAndNewLines() {
 func ErrGeneric(want string, got string) error {
 	return fmt.Errorf("unexpected string. Want: %s Got: %s", want, got)
 }
-func ErrInvalidFrontmatter(want string, got string) error {
-	return fmt.Errorf("invalid frontmatter. Want: %s Got: %s", want, got)
+func ErrInvalidFrontmatter(context string, want string, got string) error {
+	return fmt.Errorf("invalid frontmatter %s Want: %s Got: %s ", context, want, got)
 }
 
 func (l *Lexer) consumeFrontmatter() (*Token, error) {
@@ -83,13 +90,15 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 		l.advance()
 	}
 	if l.input[start:l.pos] != "---" {
-		return nil, fmt.Errorf("%s\n", l.SurroundingString(SURROUNDING_COUNTEXT))
-		//return nil, ErrInvalidFrontmatter("Opening ---", l.input[start:l.pos])
+		return nil, ErrInvalidFrontmatter(l.SurroundingString(), "Opening ---", l.input[start:l.pos])
 	}
 
 	// body
 	start = l.pos
 	for !l.eof() && l.nextChar() != '-' {
+		if l.nextChar() == '\n' || l.nextChar() == '\r' {
+			l.line++
+		}
 		l.advance()
 	}
 	value := l.input[start:l.pos]
@@ -100,7 +109,7 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 		l.advance()
 	}
 	if l.input[start:l.pos] != "---" {
-		return nil, ErrInvalidFrontmatter("Closing ---", l.input[start:l.pos])
+		return nil, ErrInvalidFrontmatter(l.SurroundingString(), "Closing ---", l.input[start:l.pos])
 	}
 
 	return &Token{
@@ -111,8 +120,10 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 
 func (l *Lexer) Lookahead() (*Token, error) {
 	prev := l.pos
+	line := l.line
 	tok, err := l.ConsumeNextToken()
 	l.pos = prev
+	l.line = line
 	if err != nil {
 		return nil, err
 	}
@@ -244,6 +255,9 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		for l.pos < len(l.input) && l.input[l.pos] != '\n' {
 			l.advance()
 		}
+		if l.nextChar() == '\n' {
+			l.line++
+		}
 		tok := Token{
 			Type:  tokenType,
 			Value: strings.TrimSpace(l.input[start:l.pos]),
@@ -285,11 +299,39 @@ func (l *Lexer) Lex() ([]Token, error) {
 	return tokens, nil
 }
 
-func (l *Lexer) SurroundingString(context int) string {
+func (l *Lexer) replaceNewLine(r rune) string {
+	if r == '\n' {
+		return "\\n"
+	} else {
+		return string(r)
+	}
+}
+
+func (l *Lexer) SurroundingString() string {
+	context := SURROUNDING_CONTEXT
 	start := max(0, l.pos-context)
 	end := min(len(l.input), l.pos+context)
-	return l.input[start:end]
+	sb := strings.Builder{}
+	sb.WriteString(fmt.Sprintf("at pos %d ", l.pos))
+	sb.WriteString(fmt.Sprintf("line %d ", l.line))
+	sb.WriteString("near:\n")
+	pos := start
+	for i := start; i < end; i++ {
+		str := l.replaceNewLine(rune(l.input[i]))
+		sb.WriteString(str)
+		if i < l.pos {
+			pos += len(str)
+		}
+	}
+	sb.WriteString("\n")
+	for i := start; i < pos; i++ {
+		sb.WriteString(" ")
+	}
+	sb.WriteString("^")
+	sb.WriteString("\n")
+	return sb.String()
 }
+
 func (l *Lexer) PrintTokens() {
 	for l.pos < len(l.input) {
 		tok, err := l.ConsumeNextToken()
