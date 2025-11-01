@@ -1,6 +1,6 @@
 {{ define "barsline" }}
 <div class="barlines">
-    {{- range .}}
+    {{- range .Bars}}
 
     <div class="flex flex-col-reverse ">
         <div class="bar {{if eq .Type "Double"}}double{{end}} {{if .RepeatEnd }}repeat-end{{end}} {{if .RepeatStart}}repeat-start{{end}} ">
