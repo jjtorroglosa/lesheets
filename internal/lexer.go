@@ -9,19 +9,20 @@ import (
 type TokenType string
 
 const (
-	TokenFrontMatter TokenType = "FrontMatter"
-	TokenHeader      TokenType = "Header"
-	TokenHeaderBreak TokenType = "HeaderBreak"
-	TokenChord       TokenType = "Chord"
-	TokenBar         TokenType = "Bar"
-	TokenReturn      TokenType = "Return"
-	TokenComment     TokenType = "Comment"
-	TokenAnnotation  TokenType = "Annotation"
-	TokenBacktick    TokenType = "BacktickExpression"
-	TokenUnknown     TokenType = "Unknown"
-	TokenRepeatEnd   TokenType = "RepeatEnd"
-	TokenRepeatStart TokenType = "RepeatStart"
-	TokenEof         TokenType = "EOF"
+	TokenFrontMatter       TokenType = "FrontMatter"
+	TokenHeader            TokenType = "Header"
+	TokenHeaderBreak       TokenType = "HeaderBreak"
+	TokenChord             TokenType = "Chord"
+	TokenBar               TokenType = "Bar"
+	TokenReturn            TokenType = "Return"
+	TokenComment           TokenType = "Comment"
+	TokenAnnotation        TokenType = "Annotation"
+	TokenBacktick          TokenType = "BacktickExpression"
+	TokenBacktickMultiline TokenType = "BacktickMultilineExpression"
+	TokenUnknown           TokenType = "Unknown"
+	TokenRepeatEnd         TokenType = "RepeatEnd"
+	TokenRepeatStart       TokenType = "RepeatStart"
+	TokenEof               TokenType = "EOF"
 )
 
 type Token struct {
@@ -76,8 +77,8 @@ func (l *Lexer) consumeWhitespacesAndNewLines() {
 	}
 }
 
-func ErrGeneric(want string, got string) error {
-	return fmt.Errorf("unexpected string. Want: %s Got: %s", want, got)
+func ErrGeneric(context string, want string, got string) error {
+	return fmt.Errorf("unexpected string %s Want: %s Got: %s", context, want, got)
 }
 func ErrInvalidFrontmatter(context string, want string, got string) error {
 	return fmt.Errorf("invalid frontmatter %s Want: %s Got: %s ", context, want, got)
@@ -151,7 +152,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	}
 	if ch == ':' {
 		if !strings.HasPrefix(l.input[l.pos:], ":||") {
-			return nil, ErrGeneric(":||", l.input[l.pos:3])
+			return nil, ErrGeneric(l.SurroundingString(), ":||", l.input[l.pos:3])
 		}
 		tok := Token{
 			Type:  TokenRepeatEnd,
@@ -214,7 +215,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		}
 
 		if l.pos >= len(l.input) || l.input[l.pos] != '"' {
-			return nil, ErrGeneric("\"", string(l.nextChar()))
+			return nil, ErrGeneric(l.SurroundingString(), "\"", string(l.nextChar()))
 		}
 		// consume closing "
 		l.advance() // skip closing "
@@ -223,21 +224,41 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 
 	// Backtick expression
 	if ch == '`' {
-		l.advance() // skip opening `
-		start := l.pos
-		for l.pos < len(l.input) && l.input[l.pos] != '`' {
-			l.advance()
-		}
-		tok := Token{
-			Type:  TokenBacktick,
-			Value: l.input[start:l.pos],
-		}
+		// Backtick multiline
+		if l.pos+3 < len(l.input) && strings.HasPrefix(l.input[l.pos:l.pos+3], "```") {
+			l.pos += 3
+			l.consumeWhitespacesAndNewLines()
+			start := l.pos
+			for l.pos < len(l.input) && l.input[l.pos] != '`' {
+				l.advance()
+			}
+			if l.pos+3 > len(l.input) || !strings.HasPrefix(l.input[l.pos:l.pos+3], "```") {
+				return nil, ErrGeneric(l.SurroundingString(), "Closing ```", string(l.input[l.pos]))
+			}
+			tok := Token{
+				Type:  TokenBacktickMultiline,
+				Value: l.input[start:l.pos],
+			}
+			l.pos += 3
+			return &tok, nil
+		} else {
+			// Backtick inline
+			l.advance() // skip opening `
+			start := l.pos
+			for l.pos < len(l.input) && l.input[l.pos] != '`' {
+				l.advance()
+			}
+			tok := Token{
+				Type:  TokenBacktick,
+				Value: l.input[start:l.pos],
+			}
 
-		if l.pos >= len(l.input) || l.input[l.pos] != '`' {
-			return nil, ErrGeneric("`", string(l.nextChar()))
+			if l.pos >= len(l.input) || l.input[l.pos] != '`' {
+				return nil, ErrGeneric(l.SurroundingString(), "`", string(l.nextChar()))
+			}
+			l.advance()
+			return &tok, nil
 		}
-		l.advance()
-		return &tok, nil
 	}
 
 	// Headers
