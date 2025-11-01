@@ -111,6 +111,23 @@ D|E
 	assert.True(t, sections[2].Break)
 }
 
+func TestErrorPrintsContext(t *testing.T) {
+	p := NewParser(NewLexer(`
+---
+some: value
+another: value
+---
+# section1
+
+!a!!The second exclamation should be an error
+`))
+	_, err := p.ParseSong()
+	assert.Equal(t, err.Error(), `expected chord but found Annotation, at pos 51 line 7 near:
+# section1\n\n!a!!The second exc
+                 ^
+`)
+}
+
 func TestParseBar(t *testing.T) {
 	p := NewParser(NewLexer("!first!Cmaj7 !annotation!D !third!E\n!fourth!F"))
 	bar, err := p.ParseBar()
@@ -133,18 +150,26 @@ func TestParseBarWithNoChords(t *testing.T) {
 }
 
 func TestParseBarWithBacktick(t *testing.T) {
-	p := NewParser(NewLexer("| `[1\"Bb\"A2A2A2A2 \"Cm\"!marcato!.A4!marcato!.A4  ]` :||"))
+	p := NewParser(NewLexer("| `!marcato!A2` :||"))
 	bar, err := p.ParseSong()
 	assert.NoError(t, err)
-	assert.Equal(t, "[1\"Bb\"A2A2A2A2 \"Cm\"!marcato!.A4!marcato!.A4  ]", bar.Sections[0].BarsLines[0][0].Backtick.Value)
+	assert.Equal(t, "!marcato!A2", bar.Sections[0].BarsLines[0][0].Backtick.Value)
+}
+
+func TestParseBarWithTwoBackticksIsError(t *testing.T) {
+	p := NewParser(NewLexer("| `!marcato!A2` `second` :||"))
+	bar, err := p.ParseSong()
+	assert.NoError(t, err)
+	assert.Equal(t, "!marcato!A2", bar.Sections[0].BarsLines[0][0].Backtick.Value)
 }
 
 func TestParseBarWithCommentPreviousLineWithBacktick(t *testing.T) {
-	p := NewParser(NewLexer("\"VACIADO\" ||:`a` | `z16` |"))
+	p := NewParser(NewLexer("\n\n\"comment\" ||:`a` | `z16` |"))
 	bar, err := p.ParseSong()
 	assert.NoError(t, err)
-	assert.Equal(t, "VACIADO", bar.Sections[0].BarsLines[0][0].Comment)
-	assert.Equal(t, "\"Cm\" A2\"Bb\"A2z2\"Ab\"A2 z8", bar.Sections[0].BarsLines[0][0].Backtick.Value)
+	assert.Equal(t, "comment", bar.Sections[0].BarsLines[0][0].Comment)
+	assert.True(t, bar.Sections[0].BarsLines[0][0].RepeatStart)
+	assert.Equal(t, "a", bar.Sections[0].BarsLines[0][0].Backtick.Value)
 }
 
 func TestSongRepeatStart(t *testing.T) {

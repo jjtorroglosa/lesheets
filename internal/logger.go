@@ -2,26 +2,25 @@ package internal
 
 import "log"
 
-func debugf(format string, args ...any) (n int) {
+func debugf(format string, args ...any) {
 	log.Printf(format, args...)
-	return 0
 }
 
 func Println(args ...any) (n int) {
-	println(args)
+	log.Println(args...)
 	return 0
 }
 
-func Printf(format string, a ...any) (n int) {
-	for _, a := range a {
-		println(a)
-	}
-	println(format)
-	return 0
-}
-
-func Fatalf(format string, a ...any) (n int) {
+func Printf(format string, a ...any) {
 	log.Printf(format, a...)
-	println(a)
-	panic(format)
+	// for _, a := range a {
+	// 	println(a)
+	// }
+	// println(format)
+}
+
+func Fatalf(format string, a ...any) {
+	log.Fatalf(format, a...)
+	// println(a)
+	// panic(format)
 }
