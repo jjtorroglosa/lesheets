@@ -72,6 +72,16 @@ body {
 .abcinline {
     @apply min-w-30;
 }
+
+.abcmultiline svg{
+    position: relative !important;
+}
+.abcmultiline {
+    @apply min-w-140;
+    padding-bottom: 0% !important;
+    /* width: 100%; */
+}
+
 .repeat-start {
   position: relative;
   @apply border-l-4 border-solid pl-2;

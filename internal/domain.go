@@ -15,7 +15,12 @@ type Section struct {
 
 type Line struct {
 	Bars              []Bar
-	MultilineBacktick string
+	MultilineBacktick MultilineBacktick
+}
+
+type MultilineBacktick struct {
+	Value string
+	Id    int
 }
 
 type Annotation struct {
@@ -88,8 +93,8 @@ func (song *Song) PrintSong() {
 	for _, sec := range song.Sections {
 		Printf("Section: %s\n", sec.Name)
 		for _, line := range sec.Lines {
-			if line.MultilineBacktick != "" {
-				Printf("MultilineBacktick: %s", line.MultilineBacktick)
+			if line.MultilineBacktick.Value != "" {
+				Printf("MultilineBacktick: %s", line.MultilineBacktick.Value)
 			} else {
 				for _, bar := range line.Bars {
 					Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.Comment)
