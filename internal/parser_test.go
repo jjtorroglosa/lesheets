@@ -68,17 +68,6 @@ func TestSongNotEmptySectionIfItHasAName(t *testing.T) {
 	assert.False(t, song.Sections[0].IsEmpty())
 }
 
-func TestSongWithBacktickMultiline(t *testing.T) {
-	song, err := ParseSongFromString("\n#verse\n```mybacktick```\nA|B\n")
-	assert.NoError(t, err)
-	assert.Equal(t, 1, len(song.Sections))
-	assert.Equal(t, "verse", song.Sections[0].Name)
-	assert.Equal(t, "mybacktick", song.Sections[0].Lines[0].MultilineBacktick)
-	assert.Equal(t, 0, len(song.Sections[0].Lines[0].Bars))
-	assert.Equal(t, "A", song.Sections[0].Lines[1].Bars[0].Chords[0].Value)
-	assert.Equal(t, "B", song.Sections[0].Lines[1].Bars[1].Chords[0].Value)
-}
-
 func TestSections(t *testing.T) {
 	p := NewParser(NewLexer(`
 A|B
@@ -233,6 +222,29 @@ func TestParseBarsLineEmpty(t *testing.T) {
 	assert.Equal(t, 0, len(lineP.Bars))
 }
 
+func TestSongWithBacktickMultiline(t *testing.T) {
+	song, err := ParseSongFromString("\n#verse\n```mybacktick```\nA|B\n")
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(song.Sections))
+	assert.Equal(t, "verse", song.Sections[0].Name)
+	assert.Equal(t, "mybacktick", song.Sections[0].Lines[0].MultilineBacktick.Value)
+	assert.Equal(t, 0, len(song.Sections[0].Lines[0].Bars))
+	assert.Equal(t, "A", song.Sections[0].Lines[1].Bars[0].Chords[0].Value)
+	assert.Equal(t, "B", song.Sections[0].Lines[1].Bars[1].Chords[0].Value)
+}
+
+func TestSongWith2BacktickMultilinesIncrementsTheirId(t *testing.T) {
+	song, err := ParseSongFromString("\n#verse\n```mybacktick```\n```\nsecond```")
+
+	assert.NoError(t, err)
+	assert.Equal(t, 1, len(song.Sections))
+	assert.Equal(t, "verse", song.Sections[0].Name)
+	assert.Equal(t, "mybacktick", song.Sections[0].Lines[0].MultilineBacktick.Value)
+	assert.Equal(t, 0, song.Sections[0].Lines[0].MultilineBacktick.Id)
+	assert.Equal(t, "second", song.Sections[0].Lines[1].MultilineBacktick.Value)
+	assert.Equal(t, 1, song.Sections[0].Lines[1].MultilineBacktick.Id)
+}
+
 func TestParseBarsLine(t *testing.T) {
 	testCases := []struct {
 		input string
@@ -259,7 +271,7 @@ func TestLineWithBacktickMultiline(t *testing.T) {
 	parser := NewParser(NewLexer("```mybacktick```\nA|B\n"))
 	lines, err := parser.ParseLines()
 	assert.NoError(t, err)
-	assert.Equal(t, "mybacktick", lines[0].MultilineBacktick)
+	assert.Equal(t, "mybacktick", lines[0].MultilineBacktick.Value)
 	assert.Equal(t, 0, len(lines[0].Bars))
 	assert.Equal(t, "A", lines[1].Bars[0].Chords[0].Value)
 	assert.Equal(t, "B", lines[1].Bars[1].Chords[0].Value)

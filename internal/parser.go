@@ -2,14 +2,14 @@ package internal
 
 import (
 	"fmt"
-	"log"
 
 	yaml "github.com/oasdiff/yaml3"
 )
 
 type Parser struct {
-	lex        *Lexer
-	backtickId int
+	lex                *Lexer
+	backtickId         int
+	mutilineBacktickId int
 }
 
 func NewParser(lex *Lexer) *Parser {
@@ -187,7 +187,7 @@ func (p *Parser) ParseLines() ([]Line, error) {
 			if err != nil {
 				return nil, err
 			}
-			if len(line.Bars) > 0 || line.MultilineBacktick != "" {
+			if len(line.Bars) > 0 || line.MultilineBacktick.Value != "" {
 				lines = append(lines, *line)
 			}
 			tok, err = p.lex.Lookahead()
@@ -209,14 +209,17 @@ func (p *Parser) ParseLine() (*Line, error) {
 		return nil, err
 	}
 
-	log.Printf("%s: %s", tok.Type, tok.Value)
 	if tok.Type == TokenBacktickMultiline {
 		_, _ = p.lex.ConsumeNextToken()
-		log.Println(tok.Value)
-		return &Line{
-			Bars:              []Bar{},
-			MultilineBacktick: tok.Value,
-		}, nil
+		line := &Line{
+			Bars: []Bar{},
+			MultilineBacktick: MultilineBacktick{
+				Id:    p.mutilineBacktickId,
+				Value: tok.Value,
+			},
+		}
+		p.mutilineBacktickId++
+		return line, nil
 	}
 
 	for tok.Type != TokenReturn && tok.Type != TokenEof {

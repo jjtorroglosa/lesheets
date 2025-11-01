@@ -65,14 +65,14 @@ func main() {
 
 		if *printTokens {
 			lexer := internal.NewLexer(string(data))
-			tokens, err := lexer.Lex()
+			_, err := lexer.Lex()
 			if err != nil {
 				log.Fatalf("lexer error: %v", err)
 			}
 
-			for _, t := range tokens {
-				fmt.Printf("%s: %s\n", t.Type, t.Value)
-			}
+			// for _, t := range tokens {
+			// 	fmt.Printf("%s: %s\n", t.Type, t.Value)
+			// }
 		}
 
 		if *printSong {
