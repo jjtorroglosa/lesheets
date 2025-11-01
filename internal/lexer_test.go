@@ -42,6 +42,34 @@ func TestLexEmptySection(t *testing.T) {
 	assert.Equal(t, "C", tok.Value)
 }
 
+func TestLexBacktick(t *testing.T) {
+	lex := NewLexer("`backtick`")
+	toks, err := lex.ConsumeNextToken()
+	assert.NoError(t, err)
+	assert.Equal(t, TokenBacktick, toks.Type)
+	assert.Equal(t, "backtick", toks.Value)
+}
+
+func TestLexBacktickUnclosed(t *testing.T) {
+	lex := NewLexer("`backtick")
+	_, err := lex.ConsumeNextToken()
+	assert.Equal(t, ErrGeneric(lex.SurroundingString(), "`", string(lex.nextChar())), err)
+}
+
+func TestLexMultilineBacktick(t *testing.T) {
+	lex := NewLexer("```\nmy\nbacktick\n```")
+	toks, err := lex.ConsumeNextToken()
+	assert.NoError(t, err)
+	assert.Equal(t, TokenBacktickMultiline, toks.Type)
+	assert.Equal(t, "my\nbacktick\n", toks.Value)
+}
+
+func TestLexBacktickMultilineUnclosed(t *testing.T) {
+	lex := NewLexer("```backtick``")
+	_, err := lex.ConsumeNextToken()
+	assert.Equal(t, ErrGeneric(lex.SurroundingString(), "Closing ```", string(lex.nextChar())), err)
+}
+
 func TestLexChord(t *testing.T) {
 	lex := NewLexer("!annotation!Cmaj7 !second!D")
 

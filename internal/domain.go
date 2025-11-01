@@ -8,9 +8,14 @@ type Song struct {
 }
 
 type Section struct {
-	Name      string  `json:"name"`
-	BarsLines [][]Bar `json:"bars_lines"`
-	Break     bool    `json:"break"`
+	Name  string `json:"name"`
+	Lines []Line `json:"lines"`
+	Break bool   `json:"break"`
+}
+
+type Line struct {
+	Bars              []Bar
+	MultilineBacktick string
 }
 
 type Annotation struct {
@@ -47,7 +52,7 @@ type Bar struct {
 }
 
 func (section *Section) IsEmpty() bool {
-	return len(section.BarsLines) == 0 && section.Name == ""
+	return len(section.Lines) == 0 && section.Name == ""
 }
 
 func (bar *Bar) IsEmpty() bool {
@@ -63,8 +68,8 @@ func (chord *Chord) PrettyPrint() string {
 func (song *Song) Backticks() []Backtick {
 	bts := []Backtick{}
 	for _, sec := range song.Sections {
-		for _, barline := range sec.BarsLines {
-			for _, bar := range barline {
+		for _, line := range sec.Lines {
+			for _, bar := range line.Bars {
 				if bar.Backtick.Value != "" {
 					bts = append(bts, bar.Backtick)
 				}
@@ -82,13 +87,17 @@ func (song *Song) PrintSong() {
 	i := 1
 	for _, sec := range song.Sections {
 		Printf("Section: %s\n", sec.Name)
-		for _, barline := range sec.BarsLines {
-			for _, bar := range barline {
-				Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.Comment)
-				for _, t := range bar.Chords {
-					Printf("Chord (%s): %s", t.Annotation.Value, t.Value)
+		for _, line := range sec.Lines {
+			if line.MultilineBacktick != "" {
+				Printf("MultilineBacktick: %s", line.MultilineBacktick)
+			} else {
+				for _, bar := range line.Bars {
+					Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.Comment)
+					for _, t := range bar.Chords {
+						Printf("Chord (%s): %s", t.Annotation.Value, t.Value)
+					}
+					i++
 				}
-				i++
 			}
 			Printf("\n")
 		}

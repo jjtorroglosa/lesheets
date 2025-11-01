@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"log"
 
 	yaml "github.com/oasdiff/yaml3"
 )
@@ -93,15 +94,15 @@ func (p *Parser) ParseBody() ([]Section, error) {
 		return sections, nil
 	default:
 		emptySection := Section{
-			Name:      "",
-			BarsLines: [][]Bar{},
-			Break:     false,
+			Name:  "",
+			Lines: []Line{},
+			Break: false,
 		}
 		lines, err := p.ParseLines()
 		if err != nil {
 			return nil, err
 		}
-		emptySection.BarsLines = lines
+		emptySection.Lines = lines
 
 		rest, err := p.ParseSections()
 		if err != nil {
@@ -149,9 +150,9 @@ func (p *Parser) ParseSection() (*Section, error) {
 	switch tok.Type {
 	case TokenHeader, TokenHeaderBreak:
 		section := Section{
-			Name:      tok.Value,
-			BarsLines: nil,
-			Break:     tok.Type == TokenHeaderBreak,
+			Name:  tok.Value,
+			Lines: nil,
+			Break: tok.Type == TokenHeaderBreak,
 		}
 		_, _ = p.lex.ConsumeNextToken()
 
@@ -159,7 +160,7 @@ func (p *Parser) ParseSection() (*Section, error) {
 		if err != nil {
 			return nil, err
 		}
-		section.BarsLines = lines
+		section.Lines = lines
 		return &section, nil
 	default:
 		return nil, fmt.Errorf("unexpected token while parsing section: %s at pos %d", tok.Type, p.lex.pos)
@@ -170,23 +171,23 @@ func (p *Parser) ParseSection() (*Section, error) {
 // Line
 // |Line Lines
 // ;
-func (p *Parser) ParseLines() ([][]Bar, error) {
+func (p *Parser) ParseLines() ([]Line, error) {
 	tok, err := p.lex.Lookahead()
 	if err != nil {
 		return nil, err
 	}
-	lines := [][]Bar{}
+	lines := []Line{}
 
 	for {
 		switch tok.Type {
 		case TokenHeaderBreak, TokenHeader, TokenEof:
 			return lines, nil
 		default:
-			line, err := p.ParseBarsLine()
+			line, err := p.ParseLine()
 			if err != nil {
 				return nil, err
 			}
-			if len(*line) > 0 {
+			if len(line.Bars) > 0 || line.MultilineBacktick != "" {
 				lines = append(lines, *line)
 			}
 			tok, err = p.lex.Lookahead()
@@ -200,12 +201,22 @@ func (p *Parser) ParseLines() ([][]Bar, error) {
 // Line:
 // Bar TokenReturn
 // |Bar Bars
-func (p *Parser) ParseBarsLine() (*[]Bar, error) {
+func (p *Parser) ParseLine() (*Line, error) {
 	bars := []Bar{}
 
 	tok, err := p.lex.Lookahead()
 	if err != nil {
 		return nil, err
+	}
+
+	log.Printf("%s: %s", tok.Type, tok.Value)
+	if tok.Type == TokenBacktickMultiline {
+		_, _ = p.lex.ConsumeNextToken()
+		log.Println(tok.Value)
+		return &Line{
+			Bars:              []Bar{},
+			MultilineBacktick: tok.Value,
+		}, nil
 	}
 
 	for tok.Type != TokenReturn && tok.Type != TokenEof {
@@ -227,7 +238,7 @@ func (p *Parser) ParseBarsLine() (*[]Bar, error) {
 		}
 	}
 	_, _ = p.lex.ConsumeNextToken()
-	return &bars, nil
+	return &Line{Bars: bars}, nil
 }
 
 // Bar

@@ -12,7 +12,7 @@
               {{- if .Name }}
               <div class="section-name">{{- .Name}}</div>
               {{ end }}
-              {{- range .BarsLines}}
+              {{- range .Lines}}
                 {{ template "barsline" . }}
               {{- end}}
             </div>
