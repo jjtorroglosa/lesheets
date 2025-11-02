@@ -10,6 +10,15 @@ type Parser struct {
 	lex                *Lexer
 	backtickId         int
 	mutilineBacktickId int
+	song               *Song
+}
+
+func (s *Song) Measure() string {
+	measure := s.FrontMatter["measure"]
+	if measure == "" {
+		measure = "1/16"
+	}
+	return measure
 }
 
 func NewParser(lex *Lexer) *Parser {
@@ -32,6 +41,7 @@ var SURROUNDING_CONTEXT = 15
 //	;
 func (p *Parser) ParseSong() (*Song, error) {
 	song := Song{}
+	p.song = &song
 	p.lex.consumeWhitespacesAndNewLines()
 
 	tok, err := p.lex.Lookahead()
@@ -214,8 +224,9 @@ func (p *Parser) ParseLine() (*Line, error) {
 		line := &Line{
 			Bars: []Bar{},
 			MultilineBacktick: MultilineBacktick{
-				Id:    p.mutilineBacktickId,
-				Value: tok.Value,
+				Id:      p.mutilineBacktickId,
+				Value:   tok.Value,
+				Measure: p.song.Measure(),
 			},
 		}
 		p.mutilineBacktickId++
@@ -357,8 +368,9 @@ func (p *Parser) ParseBacktick() (*Backtick, error) {
 	}
 
 	bt := Backtick{
-		Id:    p.backtickId,
-		Value: "",
+		Id:      p.backtickId,
+		Value:   "",
+		Measure: p.song.Measure(),
 	}
 	p.backtickId++
 	bt.Value = tok.Value
