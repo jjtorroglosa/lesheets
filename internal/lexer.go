@@ -360,6 +360,6 @@ func (l *Lexer) PrintTokens() {
 			return
 		}
 
-		fmt.Println(tok.Type)
+		fmt.Printf("Token%s: %s\n", tok.Type, tok.Value)
 	}
 }
