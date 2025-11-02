@@ -1,6 +1,10 @@
 package internal
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"html/template"
+	"nasheets/internal/svg"
+)
 
 type Song struct {
 	FrontMatter map[string]string `json:"front_matter"`
@@ -19,16 +23,18 @@ type Line struct {
 }
 
 type MultilineBacktick struct {
-	Value string
-	Id    int
+	Value   string
+	Id      int
+	Measure string
 }
 
 type Annotation struct {
 	Value string `json:"value"`
 }
 type Backtick struct {
-	Id    int    `json:"id"`
-	Value string `json:"value"`
+	Id      int    `json:"id"`
+	Value   string `json:"value"`
+	Measure string `json:"measure"`
 }
 type Chord struct {
 	Value      string      `json:"value"`
@@ -115,4 +121,12 @@ func (song *Song) ToJson() string {
 		Fatalf("Error marshalling json: %v", err)
 	}
 	return string(j)
+}
+
+func (mb *MultilineBacktick) Svg() template.HTML {
+	return svg.AbcToHtml(mb.Measure, mb.Value)
+}
+
+func (backtick *Backtick) Svg() template.HTML {
+	return svg.InlineAbcToHtml(backtick.Measure, backtick.Value)
 }

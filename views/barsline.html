@@ -1,18 +1,9 @@
 {{ define "barsline" }}
 <div class="barlines">
     {{- if not (eq "" .MultilineBacktick.Value) }}
-    <div class="abcmultiline" id="mlbt-{{- .MultilineBacktick.Id}}"></div>
-    <script>
-        ABCJS.renderAbc("mlbt-{{- .MultilineBacktick.Id}}", `
-            {{ .MultilineBacktick.Value}}
-        `, {
-                responsive: "resize", // allow SVG to size naturally
-                jazzchords: true,
-                add_classes: true,
-                expandToWidest: true,
-                staffwidth: 600,
-        });
-    </script>
+    <div class="multiline-backtick w-130">
+        {{.MultilineBacktick.Svg}}
+    </div>
     {{- else}}
         {{- range .Bars}}
         <div class="flex flex-col-reverse ">
@@ -33,7 +24,9 @@
                         {{ end }}
                     {{- end}}
                 {{- else}}
-                    <span class="abcinline" style="" id="bt-{{- .Backtick.Id}}"></span>
+                    <div class="bt-svg" style="width:150px">
+                    {{.Backtick.Svg }}
+                    </div>
                 {{- end}}
             </div>
 

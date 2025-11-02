@@ -11,7 +11,7 @@ Eb | % | % | % |
 # Intro
 
 Eb | % | % | % |
-Eb | % | % | `"Eb" .A2 z12` |
+Eb | % | % | `"Eb" .C2 z12` |
 
 # Verse
 
@@ -19,7 +19,7 @@ Eb | % | % | % |
 Eb | % | % | % |
 
 "inter verse"
-Cm | % | Eb | `"Eb" .A2 z12` |
+Cm | % | Eb | `"Eb" .C2 z12` |
 
 "verse2"
 Eb | % | % | % |
@@ -32,12 +32,12 @@ Eb | % | % | % ||
 
 # Postchorus
 
-Eb | % | % | `"Eb" .A2 z12` ||
+Eb | % | % | `"Eb" .C2 z12` ||
 
 # Verse
 
 Eb | % | % | % |
-Cm | % | Eb | `"Eb" .A2 z12` |
+Cm | % | Eb | `"Eb" .C2 z12` |
 
 
 #- !! 2x Chorus
@@ -52,7 +52,7 @@ Db | F | Db | Ab ||
 # Solo (keys)
 
 Eb | % | % | % |
-Eb | % | % | `"Eb" .A2` |
+Eb | % | % | `"Eb" .C2` |
 
 # Coda
 
@@ -68,5 +68,5 @@ Eb | Ab | Eb | Ab |
 Eb | Ab | Eb | Ab |
 
 Eb | Ab | Eb | Ab |
-Eb | Ab | Eb | `"Ab" A8 "3"z2AA "4"AAzA` |
-`"Eb"!choke!!marcato!.A4 z12` ||
+Eb | Ab | Eb | `"Ab" C8 "3"z2CC "4"CCzC` |
+`"Eb".C4 z12` ||
