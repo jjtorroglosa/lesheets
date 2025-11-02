@@ -28,6 +28,12 @@ dev:
 		"make watch-nns" \
 		"make watch-js"
 
+
+.PHONY: test
+test:
+	$(GO) test ./...
+
+
 .PHONY: watch
 watch:
 	@echo watch
