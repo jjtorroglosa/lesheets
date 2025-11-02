@@ -32,7 +32,7 @@ dev:
 watch:
 	@echo watch
 	ls views/*.html views/styles.css internal/*.go cmd/nasheets/*.go | \
-				$(ENTR) -s "make nasheets ; ls *.nns |xargs -I @ bin/update.sh  multilinebacktick.nns @ "
+				$(ENTR) -s "make nasheets ; ls *.nns |xargs -I @ bin/update.sh @ "
 
 watch-wasm:
 	@echo watch-wasm
