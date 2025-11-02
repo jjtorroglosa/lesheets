@@ -37,7 +37,7 @@ test:
 .PHONY: watch
 watch:
 	@echo watch
-	ls views/*.html views/styles.css internal/*.go cmd/nasheets/*.go | \
+	ls views/*.html views/styles.css $(GO_FILES) | \
 				$(ENTR) -s "make nasheets ; ls *.nns |xargs -I @ bin/update.sh @ "
 
 watch-wasm:

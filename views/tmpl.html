@@ -5,12 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>{{- index .Song.FrontMatter "title"}}</title>
     <link href="./compiled.css" rel="stylesheet">
-<script src="./abcjs-basic-min.js"></script>
+{{/*<script src="./abcjs-basic-min.js"></script>*/}}
 <script src="./wasm_exec.js"></script>
 <script src="./index.js"></script>
 </head>
 <body>
-{{ $measure := or (index .Song.FrontMatter "measure") ("1/16") }}
 {{ template "header" .Song }}
 {{ template "body" .Song }}
 
@@ -18,25 +17,6 @@
 {{- if .Dev }}
 <script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
 {{- end }}
-
-{{- range .Song.Backticks }}
-    <script>
-        ABCJS.renderAbc("bt-{{- .Id}}", `
-            X:1
-            M:none
-            L:{{$measure}}
-            K:none cleff=none stafflines=0
-            {{ .Value}}
-        `, {
-                //responsive: "resize", // allow SVG to size naturally
-                wrap: false,           // prevent wrapping to a new line
-                staffwidth: 180,
-                responsive: "resize",
-                jazzchords: true,
-                add_classes: true,
-        });
-    </script>
-{{- end}}
 
 </body>
 </html>
