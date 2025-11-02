@@ -7,8 +7,8 @@ Body:
   Lines Sections
   |Sections
   ;
-Sections
-  :Section
+Sections:
+  Section
   |Section Sections
 Section:
   Header Lines
@@ -26,7 +26,7 @@ Bar:
   ;
 BarBody:
   TokenBacktick
-  |Chords
+  |Chords TokenBar
   ;
 Chords:
   Chord
