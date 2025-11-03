@@ -20,8 +20,6 @@ const (
 	TokenBacktick          TokenType = "BacktickExpression"
 	TokenBacktickMultiline TokenType = "BacktickMultilineExpression"
 	TokenUnknown           TokenType = "Unknown"
-	TokenRepeatEnd         TokenType = "RepeatEnd"
-	TokenRepeatStart       TokenType = "RepeatStart"
 	TokenEof               TokenType = "EOF"
 )
 
@@ -155,7 +153,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 			return nil, ErrGeneric(l.SurroundingString(), ":||", l.input[l.pos:3])
 		}
 		tok := Token{
-			Type:  TokenRepeatEnd,
+			Type:  TokenBar,
 			Value: ":||",
 		}
 		l.pos += 3
@@ -165,7 +163,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	if ch == '|' {
 		if strings.HasPrefix(l.input[l.pos:], "||:") {
 			tok := Token{
-				Type:  TokenRepeatStart,
+				Type:  TokenBar,
 				Value: "||:",
 			}
 			l.pos += 3

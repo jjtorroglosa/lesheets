@@ -2,9 +2,9 @@ GO := GOAMD64=v2 GOARM64=v8.0 CGO_ENABLED=1 GOPROXY=https://athens.jjtorroglosa.
 GO_FLAGS = -ldflags -w
 
 GO_FILES := $(shell find . -name "*.go")
-TMPL_FILES := $(shell find . -name "tmpl.html")
+TMPL_FILES := $(shell find internal/views -name "*.html")
 NASHEETS := ./nasheets -d output
-MAIN := cmd/nasheets/main.go
+MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
 ENTR:= entr -n
 
@@ -16,7 +16,11 @@ livereload:
 .PHONY: tailwind
 tailwind:
 	@echo tailwind
-	yarn tailwindcss --input views/styles.css --output output/compiled.css --watch
+	mkdir -p build
+	yarn tailwindcss --input css/styles.css --output build/compiled.css --watch
+
+build/compiled.css: css/styles.css
+	yarn tailwindcss --input css/styles.css --output build/compiled.css
 
 .PHONY: dev
 dev:
@@ -37,34 +41,35 @@ test:
 .PHONY: watch
 watch:
 	@echo watch
-	ls views/*.html views/styles.css $(GO_FILES) | \
+	ls internal/views/*.html css/styles.css $(GO_FILES) | \
 				$(ENTR) -s "make nasheets ; ls *.nns |xargs -I @ bin/update.sh @ "
 
 watch-wasm:
 	@echo watch-wasm
-	ls views/*.html views/styles.css internal/*.go cmd/wasm/*.go | \
+	ls $(TMPL_FILES) css/styles.css internal/*.go cmd/wasm/*.go | \
 			$(ENTR) -s "make wasm"
 
 .PHONY: watch-js
 watch-js:
-	ls views/*.js vendorjs/*.js | $(ENTR) -a cp views/*.ttf views/*.js vendorjs/*.js output/
+	mkdir -p build
+	ls js/*.js vendorjs/*.js | $(ENTR) -a cp fonts/*.ttf js/*.js vendorjs/*.js build/
 
 .PHONY: watch-nns
 watch-nns:
 	@echo watch-html
-	ls *.nns | $(ENTR) $(NASHEETS) -i /_ html
+	ls *.nns | $(ENTR) $(NASHEETS) html /_
 
-nasheets: $(GO_FILES) $(TMPL_FILES)
-	$(GO) build $(GO_FLAGS) -o $@ $(MAIN)
+nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css
+	$(GO) build $(GO_FLAGS) -o $@ .
 
 output/%.html: %.nns
-	$(NASHEETS) -i $< html
+	$(NASHEETS) html $<
 
 .PHONY: wasm
 wasm: output/wasm.wasm
 output/wasm.wasm: output/wasm_exec.js $(GO_FILES) $(TMPL_FILES)
 	GOOS=js GOARCH=wasm TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o $@ $(WASM_MAIN)
-	cp views/index.js output/index.js
+	cp js/index.js output/index.js
 
 output/wasm_exec.js:
 	cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js $@

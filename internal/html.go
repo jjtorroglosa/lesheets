@@ -1,10 +1,14 @@
 package internal
 
 import (
+	"embed"
 	"html/template"
 	"log"
 	"os"
 )
+
+//go:embed views/*.html
+var templateFS embed.FS
 
 func dict(values ...interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
@@ -18,7 +22,7 @@ func dict(values ...interface{}) map[string]interface{} {
 func RenderSongHTML(song *Song, filename string) {
 	t := template.Must(template.New("").Funcs(template.FuncMap{
 		"dict": dict,
-	}).ParseGlob("views/*.html"))
+	}).ParseFS(templateFS, "views/*.html"))
 	f, err := os.Create(filename)
 	if err != nil {
 		Fatalf("Failed to create HTML file: %v", filename)
