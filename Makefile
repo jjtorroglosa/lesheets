@@ -52,7 +52,7 @@ watch-wasm:
 .PHONY: watch-js
 watch-js:
 	mkdir -p build
-	ls js/*.js vendorjs/*.js | $(ENTR) -a cp fonts/*.ttf js/*.js vendorjs/*.js build/
+	ls js/*.js vendorjs/*.js | $(ENTR) -a cp fonts/*.woff2 fonts/*.ttf js/*.js vendorjs/*.js build/
 
 .PHONY: watch-nns
 watch-nns:

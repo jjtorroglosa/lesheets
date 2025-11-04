@@ -42,6 +42,39 @@ func TestLexEmptySection(t *testing.T) {
 	assert.Equal(t, "C", tok.Value)
 }
 
+func TestLexSection(t *testing.T) {
+	testCases := []struct {
+		input        string
+		pos          int
+		posNotHeader int
+	}{
+		{
+			input:        "# section",
+			pos:          0,
+			posNotHeader: -1,
+		},
+		{
+			input:        "\n# section",
+			pos:          1,
+			posNotHeader: -1,
+		},
+		{
+			input:        " #thisshouldnotbeaheadertoken\n# section",
+			pos:          2,
+			posNotHeader: 1,
+		},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.input, func(t *testing.T) {
+			lex := NewLexer(tC.input)
+			toks, err := lex.Lex()
+			assert.NoError(t, err)
+			assert.Equal(t, "section", toks[tC.pos].Value)
+			assert.True(t, tC.posNotHeader == -1 || toks[tC.posNotHeader].Type != TokenHeader)
+		})
+	}
+}
+
 func TestLexBacktick(t *testing.T) {
 	lex := NewLexer("`backtick`")
 	toks, err := lex.ConsumeNextToken()
@@ -86,6 +119,30 @@ E`)
 		assert.Equalf(t, expected[i], tok.Type, "want %s got %s with val %s; tok: %d", expected[i], tok.Type, tok.Value, i)
 		i++
 		tok, err = lex.ConsumeNextToken()
+	}
+}
+
+func TestChordStartingWithSharpShouldNotBeTreatedAsHeaderIfInTheMiddleOfLine(t *testing.T) {
+	testCases := []struct {
+		line string
+	}{
+		{line: "|#1"},
+		{line: "A #1"},
+		{line: " #1"},
+	}
+	for _, tC := range testCases {
+		t.Run(tC.line, func(t *testing.T) {
+			lex := NewLexer(tC.line)
+			found := false
+			tokens, err := lex.Lex()
+			assert.NoError(t, err)
+			for _, tok := range tokens {
+				if tok.Type == TokenChord && tok.Value == "#1" {
+					found = true
+				}
+			}
+			assert.True(t, found)
+		})
 	}
 }
 

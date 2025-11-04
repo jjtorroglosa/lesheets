@@ -2,3 +2,7 @@ node_modules
 compiled.css
 index.html
 output
+build
+*.bak
+nasheets
+*.nns

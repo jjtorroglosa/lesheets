@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 )
 
 func AbcToHtml(measure string, abcInput string) template.HTML {
@@ -33,15 +34,22 @@ func InlineAbcToHtml(measure string, abcInput string) template.HTML {
 %%leftmargin     20px
 %%rightmargin    0px
 %%titlespace     0px
+%%map all2A * print=A
 X:1
 M:none
 L:` + measure + `
 K:none clef=none stafflines=0 stem=up
+%%voicemap all2A
 ` + abcInput
 	return template.HTML(AbcToSvg(abc))
 }
 
 func AbcToSvg(abcInput string) string {
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start)
+		log.Printf("SVG rendering took: %dms", duration.Milliseconds())
+	}()
 	// Example ABC notation
 
 	// Create a temporary file

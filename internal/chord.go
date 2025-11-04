@@ -64,8 +64,8 @@ func FormatChord(chord string) string {
 		pattern *regexp.Regexp
 		replace string
 	}{
-		{regexp.MustCompile(`(?i)min|m`), "<sub>m</sub>"},
-		{regexp.MustCompile(`(?i)min7|m7`), "<sub>m7</sub>"},
+		{regexp.MustCompile(`(?i)min|m`), "<small>m</small>"},
+		{regexp.MustCompile(`(?i)min7|m7`), "<small>m7</small>"},
 		{regexp.MustCompile(`(?i)/([A-G1-7].*)`), "<span class=\"over\">/$1</span>"},
 	}
 
