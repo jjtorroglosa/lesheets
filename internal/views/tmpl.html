@@ -6,6 +6,8 @@
 <title>{{- index .Song.FrontMatter "title"}}</title>
     <link href="./compiled.css" rel="stylesheet">
 {{/*<script src="./abcjs-basic-min.js"></script>*/}}
+
+
 <!-- <script src="./wasm_exec.js"></script> -->
 <!-- <script src="./index.js"></script> -->
 </head>
@@ -14,52 +16,9 @@
 {{ template "body" .Song }}
 
 
+
 {{- if .Dev }}
-        <script>
-(function(){
-    const overlay = document.createElement("div");
-  overlay.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,255,0.3);color:white;display:flex;align-items:center;justify-content:center;font-size:2rem;z-index:9999;pointer-events:none;opacity:0;transition:opacity 0.2s;";
-  overlay.innerText = "Reloading…";
-  document.body.appendChild(overlay);
-
-  var maxRetries = 5;
-  var retries= 0;
-
-  // Connect to SSE endpoint and reload on message
-  var es = new EventSource("/events");
-  window.addEventListener("beforeunload", () => {
-    es.close();
-  });
-
-
-  es.onmessage = function(evt) {
-    try {
-      const data = evt.data;
-      if (data === "start") {
-        overlay.style.opacity="1";
-        console.log("[live-reload] server is rendering");
-      } else if (data === "reload") {
-        console.log("[live-reload] reload message received — reloading");
-        overlay.style.opacity="0";
-
-        // Delay reload slightly to let border show
-        location.reload(true);
-      }
-    } catch (e) {
-      console.error("live-reload error", e);
-    }
-  };
-  es.onerror = function(err) {
-    // keep trying; the browser will reconnect automatically
-        retries++;
-        if (retries > maxRetries) {
-            console.warn("[live-reload] connection error", err);
-        }
-  };
-})();
-</script>
-
+<script src="./livereload.js"></script>
 {{- end }}
-
 </body>
 </html>

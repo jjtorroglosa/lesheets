@@ -23,18 +23,18 @@ type Line struct {
 }
 
 type MultilineBacktick struct {
-	Value   string
-	Id      int
-	Measure string
+	Value         string
+	Id            int
+	DefaultLength string
 }
 
 type Annotation struct {
 	Value string `json:"value"`
 }
 type Backtick struct {
-	Id      int    `json:"id"`
-	Value   string `json:"value"`
-	Measure string `json:"measure"`
+	Id            int    `json:"id"`
+	Value         string `json:"value"`
+	DefaultLength string `json:"default_length"`
 }
 type Chord struct {
 	Value      string      `json:"value"`
@@ -128,9 +128,9 @@ func (song *Song) ToJson() string {
 }
 
 func (mb *MultilineBacktick) Svg() template.HTML {
-	return svg.AbcToHtml(mb.Measure, mb.Value)
+	return svg.AbcToHtml(mb.DefaultLength, mb.Value)
 }
 
 func (backtick *Backtick) Svg() template.HTML {
-	return svg.InlineAbcToHtml(backtick.Measure, backtick.Value)
+	return svg.InlineAbcToHtml(backtick.DefaultLength, backtick.Value)
 }
