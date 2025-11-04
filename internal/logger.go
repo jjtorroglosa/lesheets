@@ -1,6 +1,8 @@
 package internal
 
-import "log"
+import (
+	"log"
+)
 
 func debugf(format string, args ...any) {
 	log.Printf(format, args...)

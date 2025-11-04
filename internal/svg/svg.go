@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"html/template"
 	"log"
-	"os"
+	"nasheets/internal/timer"
 	"os/exec"
-	"time"
+	"strings"
 )
 
 func AbcToHtml(defaultLength string, abcInput string) template.HTML {
 	abc := `
 %%topspace 0
+%%musicfont
 %%pagewidth 700px
 %%scale 1.1
 %%topmargin      0px
@@ -26,6 +27,7 @@ func AbcToHtml(defaultLength string, abcInput string) template.HTML {
 func InlineAbcToHtml(defaultLength string, abcInput string) template.HTML {
 	abc := `
 %%topspace 0
+%%musicfont
 %%pagewidth 300px
 %%scale 1.1
 %%topmargin      0px
@@ -44,40 +46,34 @@ K:none clef=none stafflines=0 stem=up
 }
 
 func AbcToSvg(abcInput string) string {
-	start := time.Now()
-	defer func() {
-		duration := time.Since(start)
-		log.Printf("SVG rendering took: %dms", duration.Milliseconds())
-	}()
-	// Example ABC notation
+	defer timer.LogElapsedTime("RenderSvg")()
+	if true {
+		res, err := RenderAbcToSvg("somefilename", abcInput)
+		if err != nil {
+			log.Fatalf("error rendering abc to svg: %v", err)
+		}
+		return res
 
-	// Create a temporary file
-	tmpFile, err := os.CreateTemp("", "input-*.abc")
-	if err != nil {
-		log.Fatalf("Failed to create temp file: %v", err)
+	} else {
+		// Example ABC notation
+
+		// Run the abc script with the temp file as argument
+		cmd := exec.Command("dash", "/Users/jtorr/Downloads/abc2svg-trystdin/abcqjs", "tosvg.js", "-")
+
+		cmd.Stdin = strings.NewReader(abcInput)
+
+		// Capture stdout and stderr
+		var out bytes.Buffer
+		var stderr bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = &stderr
+
+		// Execute the command
+		if err := cmd.Run(); err != nil {
+			log.Fatalf("Error running abc script: %v\nStderr: %s", err, stderr.String())
+		}
+
+		// Get SVG output
+		return out.String()
 	}
-	defer os.Remove(tmpFile.Name()) // Clean up
-
-	// Write ABC input to the temp file
-	if _, err := tmpFile.WriteString(abcInput); err != nil {
-		log.Fatalf("Failed to write to temp file: %v", err)
-	}
-	tmpFile.Close() // Close so the script can read it
-
-	// Run the abc script with the temp file as argument
-	cmd := exec.Command("abc", tmpFile.Name())
-
-	// Capture stdout and stderr
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-
-	// Execute the command
-	if err := cmd.Run(); err != nil {
-		log.Fatalf("Error running abc script: %v\nStderr: %s", err, stderr.String())
-	}
-
-	// Get SVG output
-	return out.String()
 }

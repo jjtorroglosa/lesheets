@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"log"
 	"nasheets/internal"
+	"nasheets/internal/timer"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -117,6 +118,12 @@ func waitForFile(file string) {
 
 func render(dev bool, inputFile string, outputDir string) {
 	waitForFile(inputFile)
+	defer timer.LogElapsedTime("WholeRender:" + inputFile)()
+	start := time.Now()
+	defer func() {
+		elapsed := time.Since(start)
+		log.Printf("Whole render took: %dms", elapsed.Milliseconds())
+	}()
 
 	data, err := os.ReadFile(inputFile)
 
@@ -133,10 +140,7 @@ func render(dev bool, inputFile string, outputDir string) {
 	}
 
 	fmt.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
-	start := time.Now()
 	internal.RenderSongHTML(dev, song, outputDir+"/"+outputFilename)
-	took := time.Since(start)
-	log.Printf("Render html took: %dms\n", took.Milliseconds())
 }
 
 func ExtractStatics(outputDir string) error {
