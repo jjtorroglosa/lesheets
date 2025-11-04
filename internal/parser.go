@@ -13,15 +13,15 @@ type Parser struct {
 	song               *Song
 }
 
-func (s *Song) Measure() string {
+func (s *Song) DefaultLength() string {
 	if s == nil {
 		return "1/16"
 	}
-	measure, ok := s.FrontMatter["measure"]
-	if !ok || measure == "" {
+	defaultLength, ok := s.FrontMatter["L"]
+	if !ok || defaultLength == "" {
 		return "1/16"
 	}
-	return measure
+	return defaultLength
 }
 
 func NewParser(lex *Lexer) *Parser {
@@ -227,9 +227,9 @@ func (p *Parser) ParseLine() (*Line, error) {
 		line := &Line{
 			Bars: []Bar{},
 			MultilineBacktick: MultilineBacktick{
-				Id:      p.mutilineBacktickId,
-				Value:   tok.Value,
-				Measure: p.song.Measure(),
+				Id:            p.mutilineBacktickId,
+				Value:         tok.Value,
+				DefaultLength: p.song.DefaultLength(),
 			},
 		}
 		p.mutilineBacktickId++
@@ -375,9 +375,9 @@ func (p *Parser) ParseBacktick() (*Backtick, error) {
 	}
 
 	bt := Backtick{
-		Id:      p.backtickId,
-		Value:   "",
-		Measure: p.song.Measure(),
+		Id:            p.backtickId,
+		Value:         "",
+		DefaultLength: p.song.DefaultLength(),
 	}
 	p.backtickId++
 	bt.Value = tok.Value

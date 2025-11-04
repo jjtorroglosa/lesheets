@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func AbcToHtml(measure string, abcInput string) template.HTML {
+func AbcToHtml(defaultLength string, abcInput string) template.HTML {
 	abc := `
 %%topspace 0
 %%pagewidth 700px
@@ -19,12 +19,11 @@ func AbcToHtml(measure string, abcInput string) template.HTML {
 %%leftmargin     0px
 %%rightmargin    0px
 %%titlespace     0px
-%%measurebox 1
 ` + abcInput
 	return template.HTML(AbcToSvg(abc))
 }
 
-func InlineAbcToHtml(measure string, abcInput string) template.HTML {
+func InlineAbcToHtml(defaultLength string, abcInput string) template.HTML {
 	abc := `
 %%topspace 0
 %%pagewidth 300px
@@ -37,7 +36,7 @@ func InlineAbcToHtml(measure string, abcInput string) template.HTML {
 %%map all2A * print=A
 X:1
 M:none
-L:` + measure + `
+L:` + defaultLength + `
 K:none clef=none stafflines=0 stem=up
 %%voicemap all2A
 ` + abcInput

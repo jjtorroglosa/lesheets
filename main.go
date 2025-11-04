@@ -133,7 +133,10 @@ func render(dev bool, inputFile string, outputDir string) {
 	}
 
 	fmt.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
+	start := time.Now()
 	internal.RenderSongHTML(dev, song, outputDir+"/"+outputFilename)
+	took := time.Since(start)
+	log.Printf("Render html took: %dms\n", took.Milliseconds())
 }
 
 func ExtractStatics(outputDir string) error {
