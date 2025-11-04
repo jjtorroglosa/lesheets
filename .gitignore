@@ -6,3 +6,4 @@ build
 *.bak
 nasheets
 *.nns
+!examples/*.nns
