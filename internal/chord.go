@@ -34,11 +34,10 @@ func FormatChord(chord string) string {
 		{regexp.MustCompile(`(?i)sus`), "ˢᵘˢ"},
 		{regexp.MustCompile(`(?i)maj9`), "△9"},
 		{regexp.MustCompile(`(?i)maj`), "△"},
-		{regexp.MustCompile(`(?i)min`), "ₘ"},
 		{regexp.MustCompile(`(?i)aug`), "+"},
 		{regexp.MustCompile(`(?i)halfdim`), "ø"},
 		{regexp.MustCompile(`(?i)dim`), "°"},
-		{regexp.MustCompile(`(?i)m`), "ₘ"},
+		//{regexp.MustCompile(`(?i)m`), "ₘ"},// This char request the font "Hiragino Kaku Gothic ProN"
 	}
 
 	for _, r := range replacements {
@@ -46,8 +45,8 @@ func FormatChord(chord string) string {
 	}
 
 	// Superscript numbers (extensions)
-	numbers := regexp.MustCompile(`([♯♭]?[0-9A-G])(.*)?`).FindStringSubmatch(chord)
-	if len(numbers) == 3 {
+	numbers := regexp.MustCompile(`([♯♭]?[0-9A-G])([^/]*)(/[A-G0-7].*)?`).FindStringSubmatch(chord)
+	if len(numbers) == 4 {
 		var sb strings.Builder
 		sb.WriteString(numbers[1])
 		for _, c := range numbers[2] {
@@ -57,7 +56,21 @@ func FormatChord(chord string) string {
 				sb.WriteRune(c)
 			}
 		}
+		sb.WriteString(numbers[3])
 		chord = sb.String()
+	}
+
+	replacements = []struct {
+		pattern *regexp.Regexp
+		replace string
+	}{
+		{regexp.MustCompile(`(?i)min|m`), "<sub>m</sub>"},
+		{regexp.MustCompile(`(?i)min7|m7`), "<sub>m7</sub>"},
+		{regexp.MustCompile(`(?i)/([A-G1-7].*)`), "<span class=\"over\">/$1</span>"},
+	}
+
+	for _, r := range replacements {
+		chord = r.pattern.ReplaceAllString(chord, r.replace)
 	}
 
 	return chord

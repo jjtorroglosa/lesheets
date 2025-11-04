@@ -42,7 +42,7 @@ test:
 watch:
 	@echo watch
 	ls internal/views/*.html css/styles.css $(GO_FILES) | \
-				$(ENTR) -s "make nasheets ; ls *.nns |xargs -I @ bin/update.sh @ "
+				$(ENTR) -s "make nasheets ; ls examples/*.nns |xargs -I @ bin/update.sh @ "
 
 watch-wasm:
 	@echo watch-wasm
@@ -57,12 +57,12 @@ watch-js:
 .PHONY: watch-nns
 watch-nns:
 	@echo watch-html
-	ls *.nns | $(ENTR) $(NASHEETS) html /_
+	ls examples/*.nns | $(ENTR) $(NASHEETS) html /_
 
 nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css
 	$(GO) build $(GO_FLAGS) -o $@ .
 
-output/%.html: %.nns
+output/%.html: examples/%.nns
 	$(NASHEETS) html $<
 
 .PHONY: wasm
@@ -70,10 +70,11 @@ wasm: output/wasm.wasm
 output/wasm.wasm: output/wasm_exec.js $(GO_FILES) $(TMPL_FILES)
 	GOOS=js GOARCH=wasm TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o $@ $(WASM_MAIN)
 	cp js/index.js output/index.js
+	cp $@ build/wasm.wasm
 
 output/wasm_exec.js:
 	cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js $@
 
 .PHONY: clean
 clean:
-	rm output/*
+	rm output/* build/*

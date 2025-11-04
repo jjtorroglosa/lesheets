@@ -14,9 +14,12 @@ type Parser struct {
 }
 
 func (s *Song) Measure() string {
-	measure := s.FrontMatter["measure"]
-	if measure == "" {
-		measure = "1/16"
+	if s == nil {
+		return "1/16"
+	}
+	measure, ok := s.FrontMatter["measure"]
+	if !ok || measure == "" {
+		return "1/16"
 	}
 	return measure
 }
@@ -243,21 +246,21 @@ func (p *Parser) ParseLine() (*Line, error) {
 		if err != nil {
 			return nil, err
 		}
-		if tok.Type == TokenBar {
-			_, _ = p.lex.ConsumeNextToken()
-			tok, err = p.lex.Lookahead()
-			if err != nil {
-				return nil, err
-			}
-		}
+		// if tok.Type == TokenBar {
+		// 	_, _ = p.lex.ConsumeNextToken()
+		// 	tok, err = p.lex.Lookahead()
+		// 	if err != nil {
+		// 		return nil, err
+		// 	}
+		// }
 	}
 	_, _ = p.lex.ConsumeNextToken()
 	return &Line{Bars: bars}, nil
 }
 
 // Bar
-// :TokenComment TokenBar BarBody
-// |TokenBar TokenComment BarBody
+// :TokenBarNote TokenBar BarBody
+// |TokenBar TokenBarNote BarBody
 // |BarBody
 // ;
 //
@@ -276,7 +279,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		return nil, err
 	}
 
-	for tok.Type == TokenBar || tok.Type == TokenComment {
+	for tok.Type == TokenBar || tok.Type == TokenBarNote {
 		switch tok.Type {
 		case TokenBar:
 			if tok.Value == "||:" {
@@ -287,8 +290,8 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			if err != nil {
 				return nil, err
 			}
-		case TokenComment:
-			bar.Comment = tok.Value
+		case TokenBarNote:
+			bar.BarNote = tok.Value
 			// consume it
 			_, _ = p.lex.ConsumeNextToken()
 			p.lex.consumeWhitespacesAndNewLines()
@@ -300,7 +303,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 	}
 	// BarBody
 	if tok.Type != TokenChord && tok.Type != TokenAnnotation && tok.Type != TokenBacktick {
-		return nil, fmt.Errorf("parsing bar: unexpected token %s %s", tok.Type, p.lex.SurroundingString())
+		return nil, fmt.Errorf("parsing bar: unexpected token. Want Chord, Annotation or Backtick, got %s %s", tok.Type, p.lex.SurroundingString())
 	}
 
 	switch tok.Type {
@@ -314,8 +317,10 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		if err != nil {
 			return nil, err
 		}
-		if tok.Type == TokenBar && tok.Value == ":||" {
-			bar.RepeatEnd = true
+		if tok.Type == TokenBar && tok.Value != "||:" {
+			if tok.Value == ":||" {
+				bar.RepeatEnd = true
+			}
 			_, _ = p.lex.ConsumeNextToken()
 		}
 		return &bar, nil
@@ -335,14 +340,20 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		if len(chords) == 0 {
 			return nil, fmt.Errorf("found no chords in bar %s", p.lex.SurroundingString())
 		}
-		if tok.Type == TokenBar && tok.Value == ":||" {
-			bar.RepeatEnd = true
-			_, err = p.lex.ConsumeNextToken()
-			if err != nil {
-				return nil, err
+		bar.Chords = chords
+
+		if tok.Type == TokenBar {
+			if tok.Value == ":||" {
+				bar.RepeatEnd = true
+			}
+			// Don't consume repeat start, let the next bar to consume it at the beginning
+			if tok.Value != "||:" {
+				_, err = p.lex.ConsumeNextToken()
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
-		bar.Chords = chords
 		return &bar, nil
 	default:
 		return nil, fmt.Errorf(
@@ -371,6 +382,7 @@ func (p *Parser) ParseBacktick() (*Backtick, error) {
 	p.backtickId++
 	bt.Value = tok.Value
 	_, _ = p.lex.ConsumeNextToken()
+
 	return &bt, nil
 }
 

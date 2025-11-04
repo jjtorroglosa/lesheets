@@ -19,7 +19,7 @@ func dict(values ...interface{}) map[string]interface{} {
 	return m
 }
 
-func RenderSongHTML(song *Song, filename string) {
+func RenderSongHTML(dev bool, song *Song, filename string) {
 	t := template.Must(template.New("").Funcs(template.FuncMap{
 		"dict": dict,
 	}).ParseFS(templateFS, "views/*.html"))
@@ -31,7 +31,7 @@ func RenderSongHTML(song *Song, filename string) {
 
 	params := map[string]any{
 		"Song": song,
-		"Dev":  true,
+		"Dev":  dev,
 	}
 	if err := t.ExecuteTemplate(f, "tmpl.html", params); err != nil {
 		log.Fatalf("Failed to render template: %v", err)

@@ -59,7 +59,7 @@ type Bar struct {
 	Type        string   `json:"type"`
 	RepeatEnd   bool     `json:"repeat_end"`
 	RepeatStart bool     `json:"repeat_start"`
-	Comment     string   `json:"comment"`
+	BarNote     string   `json:"bar_note"`
 }
 
 func (section *Section) IsEmpty() bool {
@@ -69,11 +69,15 @@ func (section *Section) IsEmpty() bool {
 func (bar *Bar) IsEmpty() bool {
 	emptyChords := len(bar.Chords) == 0 ||
 		(len(bar.Chords) == 1 && bar.Chords[0].Value == "")
-	return emptyChords && bar.Backtick.Value == "" && bar.Comment == ""
+	return emptyChords && bar.Backtick.Value == "" && bar.BarNote == ""
 }
 
 func (chord *Chord) PrettyPrint() string {
 	return FormatChord(chord.Value)
+}
+
+func (chord *Chord) PrettyPrintHTML() template.HTML {
+	return template.HTML(chord.PrettyPrint())
 }
 
 func (song *Song) Backticks() []Backtick {
@@ -103,7 +107,7 @@ func (song *Song) PrintSong() {
 				Printf("MultilineBacktick: %s", line.MultilineBacktick.Value)
 			} else {
 				for _, bar := range line.Bars {
-					Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.Comment)
+					Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.BarNote)
 					for _, t := range bar.Chords {
 						Printf("Chord (%s): %s", t.Annotation.Value, t.Value)
 					}

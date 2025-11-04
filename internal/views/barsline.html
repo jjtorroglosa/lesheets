@@ -13,12 +13,12 @@
                         {{ $annotation := "" }}
                         {{ if eq .Annotation.Value "" }}
                             {{ $annotation = "" }}
-                            <div class="ch"> <span>{{- .PrettyPrint}}</span> </div>
+                            <div class="ch"> <span>{{- .PrettyPrintHTML}}</span> </div>
                         {{ else }}
                             {{ $annotation = (printf "%s-%s" "annotation" .Annotation.Value) }}
                             <div class="ch">
                             <div class="annotation {{ $annotation }}">
-                                <span > {{- .PrettyPrint}} </span>
+                                <span class="annotation-container"><span class="annotated-chord">{{- .PrettyPrintHTML}}</span></span>
                             </div>
                             </div>
                         {{ end }}
@@ -30,8 +30,8 @@
                 {{- end}}
             </div>
 
-            <div class="comment">
-                {{-  if .Comment }} {{- .Comment }}{{- end}}
+            <div class="bar-note">
+                {{-  if .BarNote }} {{- .BarNote }}{{- end}}
             </div>
         </div>
         {{- end}}
