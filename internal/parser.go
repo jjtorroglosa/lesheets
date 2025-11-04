@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"nasheets/internal/timer"
 
 	yaml "github.com/oasdiff/yaml3"
 )
@@ -32,6 +33,7 @@ func NewParser(lex *Lexer) *Parser {
 }
 
 func ParseSongFromString(s string) (*Song, error) {
+	defer timer.LogElapsedTime("parsing")()
 	return NewParser(NewLexer(s)).ParseSong()
 }
 
