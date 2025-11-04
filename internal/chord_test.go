@@ -11,9 +11,9 @@ func TestChord(t *testing.T) {
 		in  string
 		out string
 	}{
-		{in: "Cm", out: "C<sub>m</sub>"},
-		{in: "Cm7", out: "C<sub>m</sub>⁷"},
-		{in: "F#min11", out: "F♯<sub>m</sub>¹¹"},
+		{in: "Cm", out: "C<small>m</small>"},
+		{in: "Cm7", out: "C<small>m</small>⁷"},
+		{in: "F#min11", out: "F♯<small>m</small>¹¹"},
 		{in: "Bbmaj7", out: "B♭△⁷"},
 		{in: "Cdim7", out: "C°⁷"},
 		{in: "Ehalfdim7", out: "Eø⁷"},
@@ -30,7 +30,7 @@ func TestChord(t *testing.T) {
 		{in: "6/7", out: "6<span class=\"over\">/7</span>"},
 		{in: "7/1", out: "7<span class=\"over\">/1</span>"},
 		{in: "1/2maj7", out: "1<span class=\"over\">/2△7</span>"},
-		{in: "1/2min7", out: "1<span class=\"over\">/2<sub>m</sub>7</span>"},
+		{in: "1/2min7", out: "1<span class=\"over\">/2<small>m</small>7</span>"},
 	}
 
 	for _, tC := range testCases {

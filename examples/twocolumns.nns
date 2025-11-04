@@ -1,0 +1,18 @@
+---
+title: two columns
+columns: 2
+---
+
+# Intro
+
+    Cm | !push!Eb | !push!F | !push!Cm |
+    . !pull!Cm . . | !push!Eb | !push!Ab G | Cm . !choke!Cm . |
+
+#- Verse
+
+    ||: (Cm Bb(13) . !push!Ab . |
+    ||: `"Cm" F2"Bb"F2z2"Ab"F2 z8` | `z16` |
+    `"Cm" F2"Bb"F2z2"Ab"F2 z8` | `z8 z2"G"F6` |
+    `"Cm" F2"Bb"F2z2"Ab"F2 z8` | `z8 "G"F2"Ab"F2"A"F2("Bb"F2` |
+    !push!Bb | `[1"Bb"F2F2 F2F2 "Cm".F4.F4  ]` :||
+    `[2"Bb"F2)F2 F2F2 "Cm"F2 z6` |

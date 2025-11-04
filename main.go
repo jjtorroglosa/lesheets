@@ -20,14 +20,8 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-//go:embed build/*.css
-var cssFS embed.FS
-
-//go:embed build/*.js
-var jsFS embed.FS
-
-//go:embed build/wasm.wasm
-var wasmFS embed.FS
+//go:embed build/*.css build/*.js build/abc2svg.woff2 build/wasm.wasm
+var staticsFS embed.FS
 
 func main() {
 	outputDir := flag.String("d", "output", "Output dir")
@@ -55,12 +49,12 @@ func main() {
 
 	switch cmd {
 	case "html":
-		err := ExtractCSS(*outputDir)
+		err := ExtractStatics(*outputDir)
 		if err != nil {
-			log.Fatalf("error extracting css: %v", err)
+			log.Fatalf("error extracting statics: %v", err)
 		}
 	case "serve":
-		runServe(*outputDir, 8008)
+		serve(*outputDir, 8008)
 		return
 
 	case "watch":
@@ -71,9 +65,6 @@ func main() {
 	}
 	for _, inputFile := range files {
 		data, err := os.ReadFile(inputFile)
-
-		outputFilename := strings.TrimSuffix(inputFile, ".nns") + ".html"
-		outputFilename = filepath.Base(outputFilename)
 
 		if err != nil {
 			internal.Fatalf("Failed to read file: %v", err)
@@ -145,49 +136,45 @@ func render(dev bool, inputFile string, outputDir string) {
 	internal.RenderSongHTML(dev, song, outputDir+"/"+outputFilename)
 }
 
-func ExtractCSS(outputDir string) error {
-	extractExtension := func(_fs embed.FS, path string, d fs.DirEntry, extension string, err error) error {
+func ExtractStatics(outputDir string) error {
+	extensions := []string{".js", ".css", ".wasm", ".woff2"}
+	// Walk through embedded FS and write any .js files to disk
+	err := fs.WalkDir(staticsFS, "build", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() && filepath.Ext(path) == extension {
-			data, err := _fs.ReadFile(path)
-			if err != nil {
-				return fmt.Errorf("failed to read embedded file %s: %w", path, err)
+		found := false
+		for _, i := range extensions {
+			if !d.IsDir() && filepath.Ext(path) == i {
+				found = true
+				break
 			}
-			destPath := filepath.Join(outputDir, filepath.Base(path))
-			if err := os.WriteFile(destPath, data, 0644); err != nil {
-				return fmt.Errorf("failed to write file %s: %w", destPath, err)
-			}
-			log.Printf("Extracted %s -> %s", path, destPath)
 		}
+		if !found {
+			return nil
+		}
+		data, err := staticsFS.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read embedded file %s: %w", path, err)
+		}
+		destPath := filepath.Join(outputDir, filepath.Base(path))
+		if err := os.WriteFile(destPath, data, 0644); err != nil {
+			return fmt.Errorf("failed to write file %s: %w", destPath, err)
+		}
+		log.Printf("Extracted %s -> %s", path, destPath)
 		return nil
-	}
-	// Walk through embedded FS and write any .js files to disk
-	err := fs.WalkDir(jsFS, "build", func(path string, d fs.DirEntry, err error) error {
-		return extractExtension(jsFS, path, d, ".js", err)
 	})
 	if err != nil {
 		return err
 	}
 
-	err = fs.WalkDir(wasmFS, "build", func(path string, d fs.DirEntry, err error) error {
-		return extractExtension(wasmFS, path, d, ".wasm", err)
-	})
-	if err != nil {
-		return err
-	}
-
-	// And css
-	return fs.WalkDir(cssFS, "build", func(path string, d fs.DirEntry, err error) error {
-		return extractExtension(cssFS, path, d, ".css", err)
-	})
+	return nil
 }
 
-func runServe(outputDir string, port int) {
-	err := ExtractCSS(outputDir)
+func serve(outputDir string, port int) {
+	err := ExtractStatics(outputDir)
 	if err != nil {
-		log.Fatalf("error extracting css: %v", err)
+		log.Fatalf("error extracting statics: %v", err)
 	}
 
 	// Serve static files (HTML/CSS) from outputDir
@@ -204,9 +191,9 @@ func runServe(outputDir string, port int) {
 
 func watch(outputDir string, port int, render func(f string), files ...string) {
 
-	err := ExtractCSS(outputDir)
+	err := ExtractStatics(outputDir)
 	if err != nil {
-		log.Fatalf("error extracting css: %v", err)
+		log.Fatalf("error extracting statics: %v", err)
 	}
 	for _, inputFile := range files {
 		render(inputFile)
@@ -225,7 +212,7 @@ func watch(outputDir string, port int, render func(f string), files ...string) {
 	defer w.Close()
 
 	// Start listening for events.
-	go fileLoop(w, files, func(f string) {
+	go watcherFileLoop(w, files, func(f string) {
 		hub.Broadcast("start")
 		render(f)
 		hub.Broadcast("reload")
@@ -266,7 +253,7 @@ func watch(outputDir string, port int, render func(f string), files ...string) {
 	<-make(chan struct{}) // Block forever
 }
 
-func fileLoop(w *fsnotify.Watcher, files []string, render func(f string)) {
+func watcherFileLoop(w *fsnotify.Watcher, files []string, render func(f string)) {
 	i := 0
 	const debounceDelay = 200 * time.Millisecond
 

@@ -1,0 +1,53 @@
+---
+title: Chords rendering
+subtitle: All the features
+tempo: 128
+key: C#m
+measure: 1/8
+---
+
+# section
+
+Am7 |Bm11 C7(b13#9) Dm7/D Em7 Fm7 Gm7
+Amaj7 |A/D Bmaj11 Cmaj6/Dm7 D7/Cmaj7(#11) Em7/D Fm7 Gm7
+Am7 | Amaj7/A 1/2 2/3 3/4 4/5 5/6 6/7 7/1 |
+|b2 #7dim 1 b7 #4dim 57(b9b13)|
+|#7
+
+"bar note" C#7
+"diamond"
+!diamond!Am7
+
+A A A|"push"!push!Am7| "pull"!pull!Bmaj7/Cmin7 | "fermata"!fermata!D | "choke"!choke!E E E| "marcato"!marcato!E
+
+
+ 1 | 4 | 5 | !diamond!1
+ 1/2 | 4m/5 | 5/6 | !diamond!1
+
+#- new column
+
+"inline backtick"
+`"Cm"!marcato!AA AA A/A/A/A/ AA`| `"Cm"!marcato!AA AA A/A/A/A/ AA`
+
+"this is an inline backtick with different notes"
+`"Cm"!marcato!AB CC E/F/G/A/ AA`| `"Cm"!marcato!AA AA A/A/A/A/ AA`
+
+# Multiline backtick
+
+```
+X:1
+M:4/4
+K:Bb
+Q:1/4=120
+L:1/16
+"Cmaj7"z8 CDEF GABc | "Dm"CDEF GABc CDEF GABc |
+A8 A8 |A16| "G7"C2D2 E2F2 |"Cmaj7" G2A2 B2c2 |[1 A16] :|| [2 A16] ||
+```
+# Repeats
+
+"Repeats"
+ ||: 1 | 4 | 6 ||: "this sould have repeat start and end"!diamond!1 :||
+
+ |1 ||: 2| 3 :||
+
+ |1 ||
