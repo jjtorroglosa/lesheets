@@ -60,7 +60,7 @@ watch-nns:
 	ls examples/*.nns | $(ENTR) $(NASHEETS) html /_
 
 nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css
-	$(GO) build $(GO_FLAGS) -o $@ .
+	$(GO) build $(GO_FLAGS) -o $@ $(MAIN)
 
 output/%.html: examples/%.nns
 	$(NASHEETS) html $<
