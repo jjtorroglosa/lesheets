@@ -6,7 +6,7 @@ TokenHeader: "#".*\n
 TokenHeaderBreak: "#-".*\n
 TokenBar: "|" | "||:" | ":||"
 TokenReturn: \n
-TokenComment: "\"" .* "\""
+TokenBarNote: "\"" .* "\""
 TokenAnnotation: "!" .* "!"
 TokenBacktick: "`" .* "`
 TokenBacktickMultiline: "```" .* "```"
@@ -43,8 +43,8 @@ Bars:
   Bar
   |Bar TokenBar Bars
 Bar:
-  TokenComment TokenBar BarBody
-  |TokenBar TokenComment BarBody
+  TokenBarNote TokenBar BarBody
+  |TokenBar TokenBarNote BarBody
   |BarBody
   ;
 BarBody:

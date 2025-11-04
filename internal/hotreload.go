@@ -59,7 +59,7 @@ func (h *sseHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.AddClient(msgCh)
 	defer h.RemoveClient(msgCh)
 
-	// Send a comment (keeps connection alive in some proxies)
+	// Send a message(keeps connection alive in some proxies)
 	fmt.Fprintf(w, ": connected\n\n")
 	fl.Flush()
 

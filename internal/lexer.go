@@ -12,15 +12,15 @@ const (
 	TokenFrontMatter       TokenType = "FrontMatter"
 	TokenHeader            TokenType = "Header"
 	TokenHeaderBreak       TokenType = "HeaderBreak"
-	TokenChord             TokenType = "Chord"
 	TokenBar               TokenType = "Bar"
 	TokenReturn            TokenType = "Return"
-	TokenComment           TokenType = "Comment"
+	TokenBarNote           TokenType = "BarNote"
 	TokenAnnotation        TokenType = "Annotation"
 	TokenBacktick          TokenType = "BacktickExpression"
 	TokenBacktickMultiline TokenType = "BacktickMultilineExpression"
 	TokenUnknown           TokenType = "Unknown"
 	TokenEof               TokenType = "EOF"
+	TokenChord             TokenType = "Chord"
 )
 
 type Token struct {
@@ -43,6 +43,13 @@ func (l *Lexer) nextChar() rune {
 		return 0
 	}
 	return rune(l.input[l.pos])
+}
+
+func (l *Lexer) getPos(pos int, length int) string {
+	if pos < 0 || pos+length > len(l.input) {
+		return ""
+	}
+	return l.input[pos : pos+length]
 }
 
 func (l *Lexer) eof() bool {
@@ -132,6 +139,7 @@ func (l *Lexer) Lookahead() (*Token, error) {
 func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	l.consumeWhitespaces()
 	if l.eof() {
+		l.pos++
 		return &Token{
 			Type:  TokenEof,
 			Value: "",
@@ -185,6 +193,17 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		}
 	}
 
+	// Comment
+	if strings.HasPrefix(l.getPos(l.pos, 2), "//") {
+		start := l.pos
+		for l.pos < len(l.input) && l.input[l.pos] != '\n' {
+			l.advance()
+		}
+		// consume newline (only if the comment started in a new line
+		if l.getPos(start-1, 1) == "\n" {
+			l.advance()
+		}
+	}
 	// Annotation
 	if ch == '!' {
 		l.advance()
@@ -200,7 +219,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		return &tok, nil
 	}
 
-	// Comment
+	// BarNote
 	if ch == '"' {
 		l.advance() // skip opening "
 		start := l.pos
@@ -208,7 +227,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 			l.advance()
 		}
 		tok := Token{
-			Type:  TokenComment,
+			Type:  TokenBarNote,
 			Value: l.input[start:l.pos],
 		}
 

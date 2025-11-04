@@ -21,7 +21,13 @@ import (
 )
 
 //go:embed build/*.css
-var templateFS embed.FS
+var cssFS embed.FS
+
+//go:embed build/*.js
+var jsFS embed.FS
+
+//go:embed build/wasm.wasm
+var wasmFS embed.FS
 
 func main() {
 	outputDir := flag.String("d", "output", "Output dir")
@@ -58,12 +64,8 @@ func main() {
 		return
 
 	case "watch":
-		for _, inputFile := range files {
-			render(inputFile, *outputDir)
-		}
-
 		watch(*outputDir, 8008, func(f string) {
-			render(f, *outputDir)
+			render(true, f, *outputDir)
 		}, files...)
 		return
 	}
@@ -99,12 +101,12 @@ func main() {
 				song.PrintSong()
 			}
 
-			render(inputFile, *outputDir)
+			render(false, inputFile, *outputDir)
 		}
 	}
 }
 
-func render(inputFile string, outputDir string) {
+func waitForFile(file string) {
 	// Wait until file exists (up to 10 seconds)
 	timeout := time.After(3 * time.Second)
 	tick := time.Tick(200 * time.Millisecond)
@@ -112,17 +114,19 @@ func render(inputFile string, outputDir string) {
 	for {
 		select {
 		case <-timeout:
-			fmt.Printf("❌ Timed out waiting for file: %s\n", inputFile)
+			fmt.Printf("timed out waiting for file: %s\n", file)
 			return
 		case <-tick:
-			if _, err := os.Stat(inputFile); err == nil {
-				// File exists — continue
-				goto READ
+			if _, err := os.Stat(file); err == nil {
+				return
 			}
 		}
 	}
+}
 
-READ:
+func render(dev bool, inputFile string, outputDir string) {
+	waitForFile(inputFile)
+
 	data, err := os.ReadFile(inputFile)
 
 	outputFilename := strings.TrimSuffix(inputFile, ".nns") + ".html"
@@ -138,17 +142,16 @@ READ:
 	}
 
 	fmt.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
-	internal.RenderSongHTML(song, outputDir+"/"+outputFilename)
+	internal.RenderSongHTML(dev, song, outputDir+"/"+outputFilename)
 }
 
 func ExtractCSS(outputDir string) error {
-	// Walk through embedded FS and write any .css files to disk
-	return fs.WalkDir(templateFS, "build", func(path string, d fs.DirEntry, err error) error {
+	extractExtension := func(_fs embed.FS, path string, d fs.DirEntry, extension string, err error) error {
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() && filepath.Ext(path) == ".css" {
-			data, err := templateFS.ReadFile(path)
+		if !d.IsDir() && filepath.Ext(path) == extension {
+			data, err := _fs.ReadFile(path)
 			if err != nil {
 				return fmt.Errorf("failed to read embedded file %s: %w", path, err)
 			}
@@ -159,10 +162,34 @@ func ExtractCSS(outputDir string) error {
 			log.Printf("Extracted %s -> %s", path, destPath)
 		}
 		return nil
+	}
+	// Walk through embedded FS and write any .js files to disk
+	err := fs.WalkDir(jsFS, "build", func(path string, d fs.DirEntry, err error) error {
+		return extractExtension(jsFS, path, d, ".js", err)
+	})
+	if err != nil {
+		return err
+	}
+
+	err = fs.WalkDir(wasmFS, "build", func(path string, d fs.DirEntry, err error) error {
+		return extractExtension(wasmFS, path, d, ".wasm", err)
+	})
+	if err != nil {
+		return err
+	}
+
+	// And css
+	return fs.WalkDir(cssFS, "build", func(path string, d fs.DirEntry, err error) error {
+		return extractExtension(cssFS, path, d, ".css", err)
 	})
 }
 
 func runServe(outputDir string, port int) {
+	err := ExtractCSS(outputDir)
+	if err != nil {
+		log.Fatalf("error extracting css: %v", err)
+	}
+
 	// Serve static files (HTML/CSS) from outputDir
 	fs := http.FileServer(http.Dir(outputDir))
 
@@ -176,6 +203,14 @@ func runServe(outputDir string, port int) {
 }
 
 func watch(outputDir string, port int, render func(f string), files ...string) {
+
+	err := ExtractCSS(outputDir)
+	if err != nil {
+		log.Fatalf("error extracting css: %v", err)
+	}
+	for _, inputFile := range files {
+		render(inputFile)
+	}
 	hub := internal.NewSSEHub()
 
 	if len(files) < 1 {
@@ -233,6 +268,9 @@ func watch(outputDir string, port int, render func(f string), files ...string) {
 
 func fileLoop(w *fsnotify.Watcher, files []string, render func(f string)) {
 	i := 0
+	const debounceDelay = 200 * time.Millisecond
+
+	debounceTimers := make(map[string]*time.Timer)
 	for {
 		select {
 		// Read from Errors.
@@ -254,7 +292,6 @@ func fileLoop(w *fsnotify.Watcher, files []string, render func(f string)) {
 			for _, f := range files {
 				if event.Op != fsnotify.Chmod && f == event.Name {
 					found = true
-					render(f)
 				}
 			}
 			if !found {
@@ -265,6 +302,13 @@ func fileLoop(w *fsnotify.Watcher, files []string, render func(f string)) {
 			// events we've seen.
 			i++
 			log.Printf("%3d %s\n", i, event.Op.String())
+			if timer, exists := debounceTimers[event.Name]; exists {
+				timer.Stop()
+			}
+
+			debounceTimers[event.Name] = time.AfterFunc(debounceDelay, func() {
+				render(event.Name)
+			})
 		}
 	}
 }

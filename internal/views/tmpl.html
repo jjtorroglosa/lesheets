@@ -6,8 +6,8 @@
 <title>{{- index .Song.FrontMatter "title"}}</title>
     <link href="./compiled.css" rel="stylesheet">
 {{/*<script src="./abcjs-basic-min.js"></script>*/}}
-<script src="./wasm_exec.js"></script>
-<script src="./index.js"></script>
+<!-- <script src="./wasm_exec.js"></script> -->
+<!-- <script src="./index.js"></script> -->
 </head>
 <body>
 {{ template "header" .Song }}
@@ -15,7 +15,6 @@
 
 
 {{- if .Dev }}
-<script>document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] + ':35729/livereload.js?snipver=1"></' + 'script>')</script>
         <script>
 (function(){
     const overlay = document.createElement("div");
@@ -28,6 +27,11 @@
 
   // Connect to SSE endpoint and reload on message
   var es = new EventSource("/events");
+  window.addEventListener("beforeunload", () => {
+    es.close();
+  });
+
+
   es.onmessage = function(evt) {
     try {
       const data = evt.data;

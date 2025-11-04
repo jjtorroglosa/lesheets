@@ -28,16 +28,16 @@
   }
 }
 
-@font-face {
-  font-family: 'Noto Music';
-  src: url('./NotoMusic-regular.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
+/* @font-face { */
+/*   font-family: 'Noto Music'; */
+/*   src: url('./NotoMusic-regular.ttf') format('truetype'); */
+/*   font-weight: normal; */
+/*   font-style: normal; */
+/* } */
 
 html{
     font-size: 15px;
-    font-family: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+    font-family: "Helvetica Neue", "Helvetica", "Arial";
 }
 
 body {
@@ -56,6 +56,14 @@ body {
 
 .ch {
     @apply px-2 h-6 grow;
+}
+.ch sub {
+    @apply text-xs;
+}
+.ch .over{
+    position:relative;
+    top:3px;
+    @apply text-xs;
 }
 
 .abcjs-chord {
@@ -156,47 +164,47 @@ body {
 /*   transform: rotateX(45deg) rotateZ(45deg); */
 /* } */
 
-.comment {
+.bar-note {
     @apply mb-2 text-xs;
 }
 
-.annotation span::before {
+.annotation span.annotation-container::before {
     font-size: 0.8rem;
 }
-.annotation span {
+.annotation span.annotation-container {
     position:relative;
     top: -1.2rem;
     @apply flex flex-col;
 }
 
-.annotation-choke span::before{
+.annotation-choke span.annotation-container::before{
     content: "^";
     font-size: 1.2rem;
 }
 
-.annotation-choke span::before{
+.annotation-choke span.annotation-container::before{
     content: "^";
     font-size: 1.2rem;
 }
 
-.annotation-choke span {
+.annotation-choke span.annotation-container {
     position:relative;
     top: -0.9rem;
     line-height: 1.1rem;
     @apply flex flex-col;
 }
 
-.annotation-marcato span::before{
+.annotation-marcato span.annotation-container::before{
     content: "^";
     font-size: 1.2rem;
 }
 
-.annotation-marcato span::before{
+.annotation-marcato span.annotation-container::before{
     content: "^";
     font-size: 1.2rem;
 }
 
-.annotation-marcato span {
+.annotation-marcato span.annotation-container {
     position:relative;
     top: -0.9rem;
     line-height: 1.1rem;
@@ -204,21 +212,21 @@ body {
 }
 
 
-.annotation-push span::before{
+.annotation-push span.annotation-container::before{
     content: "❮";
 }
 
-.annotation-fermata span::before{
+.annotation-fermata span.annotation-container::before{
     content: "𝄐";
     font-size: 1.4rem;
 }
-.annotation-fermata span{
+.annotation-fermata span.annotation-container{
     top: -1.2rem;
     line-height: 1.3rem;
     position: relative;
 }
 
-.annotation-pull span::before{
+.annotation-pull span.annotation-container::before{
     content: "❯";
 }
 
@@ -234,7 +242,12 @@ body {
 }
 
 /* rotate text back inside the diamond */
-.annotation-diamond span {
+.annotation-diamond span.annotation-container {
+  top:auto;
+  display: inline-block;
+}
+
+.annotation-diamond span.annotated-chord {
   top:auto;
   display: inline-block;
   transform: rotate(-45deg);
@@ -248,8 +261,8 @@ body {
 }
 
 
-.music{
-  font-family: 'Noto Music', sans-serif;
-  font-size: 2rem;
-}
-
+/* .music{ */
+/*   font-family: 'Noto Music', sans-serif; */
+/*   font-size: 2rem; */
+/* } */
+/**/

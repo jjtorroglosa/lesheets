@@ -70,6 +70,47 @@ func TestLexBacktickMultilineUnclosed(t *testing.T) {
 	assert.Equal(t, ErrGeneric(lex.SurroundingString(), "Closing ```", string(lex.nextChar())), err)
 }
 
+func TestLexIgnoresComments(t *testing.T) {
+	lex := NewLexer(`D
+// this is a comment
+E`)
+	lex.PrintTokens()
+	lex.pos = 0
+	expected := []TokenType{
+		TokenChord, TokenReturn, TokenChord, TokenReturn,
+	}
+	i := 0
+	tok, err := lex.ConsumeNextToken()
+	for tok.Type != TokenEof {
+		assert.NoError(t, err)
+		assert.Equalf(t, expected[i], tok.Type, "want %s got %s with val %s; tok: %d", expected[i], tok.Type, tok.Value, i)
+		i++
+		tok, err = lex.ConsumeNextToken()
+	}
+}
+
+func TestLexSongTwoConsecutiveRepeats(t *testing.T) {
+	lex := NewLexer("||: A :|| ||: B |")
+	lex.PrintTokens()
+}
+
+func TestLexCommentDoesNotConsumeTokenReturnIfInline(t *testing.T) {
+	lex := NewLexer(`D // this is a comment, it shouldn't consume the TokenReturn
+E
+`)
+	lex.pos = 0
+	expected := []TokenType{
+		TokenChord, TokenReturn, TokenChord, TokenReturn,
+	}
+	i := 0
+	tok, err := lex.ConsumeNextToken()
+	for tok.Type != TokenEof {
+		assert.NoError(t, err)
+		assert.Equalf(t, expected[i], tok.Type, "want %s got %s with val %s; tok: %d", expected[i], tok.Type, tok.Value, i)
+		i++
+		tok, err = lex.ConsumeNextToken()
+	}
+}
 func TestLexChord(t *testing.T) {
 	lex := NewLexer("!annotation!Cmaj7 !second!D")
 

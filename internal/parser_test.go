@@ -20,6 +20,22 @@ A|B|
 	assert.Equal(t, "here", fm["anotherthing"])
 }
 
+func TestFrontmatterMultilineString(t *testing.T) {
+	p := NewParser(NewLexer(`---
+multiline: |
+  something
+  A | B
+  C | D
+other: value
+---
+`))
+	song, err := p.ParseSong()
+	assert.NoError(t, err)
+	fm := song.FrontMatter
+	assert.Equal(t, "something\nA | B\nC | D\n", fm["multiline"])
+	assert.Equal(t, "value", fm["other"])
+
+}
 func TestSongSection(t *testing.T) {
 	song, err := ParseSongFromString("# a section\nA")
 	assert.NoError(t, err)
@@ -143,7 +159,7 @@ func TestParseBar(t *testing.T) {
 
 func TestParseBarWithNoChords(t *testing.T) {
 
-	p := NewParser(NewLexer("\"comment\""))
+	p := NewParser(NewLexer("\"bar note\""))
 	bar, err := p.ParseBar()
 	assert.Nil(t, bar)
 	assert.Error(t, err, "expected chord or backtick expression at pos 9")
@@ -163,11 +179,11 @@ func TestParseBarWithTwoBackticksIsError(t *testing.T) {
 	assert.Equal(t, "!marcato!A2", bar.Sections[0].Lines[0].Bars[0].Backtick.Value)
 }
 
-func TestParseBarWithCommentPreviousLineWithBacktick(t *testing.T) {
-	p := NewParser(NewLexer("\n\n\"comment\" ||:`a` | `z16` |"))
+func TestParseBarWithBarNotePreviousLineWithBacktick(t *testing.T) {
+	p := NewParser(NewLexer("\n\n\"bar note\" ||:`a` | `z16` |"))
 	bar, err := p.ParseSong()
 	assert.NoError(t, err)
-	assert.Equal(t, "comment", bar.Sections[0].Lines[0].Bars[0].Comment)
+	assert.Equal(t, "bar note", bar.Sections[0].Lines[0].Bars[0].BarNote)
 	assert.True(t, bar.Sections[0].Lines[0].Bars[0].RepeatStart)
 	assert.Equal(t, "a", bar.Sections[0].Lines[0].Bars[0].Backtick.Value)
 }
@@ -318,24 +334,24 @@ func TestParseLines(t *testing.T) {
 	}
 }
 
-func TestParseBarWithComment(t *testing.T) {
-	p := NewParser(NewLexer("\"any comment\"Cmaj7 | \"another comment\"D\nC"))
+func TestParseBarWithNote(t *testing.T) {
+	p := NewParser(NewLexer("\"any bar note\"Cmaj7 | \"another note\"D\nC"))
 	barsP, err := p.ParseLine()
 	assert.NoError(t, err)
 	line := *barsP
-	assert.Equal(t, "any comment", line.Bars[0].Comment)
+	assert.Equal(t, "any bar note", line.Bars[0].BarNote)
 	assert.Equal(t, 2, len(line.Bars))
 	assert.Equal(t, "Cmaj7", line.Bars[0].Chords[0].Value)
 	assert.Equal(t, "D", line.Bars[1].Chords[0].Value)
-	assert.Equal(t, "another comment", line.Bars[1].Comment)
+	assert.Equal(t, "another note", line.Bars[1].BarNote)
 }
 
-func TestParseBarWithCommentInASeparateLine(t *testing.T) {
-	p := NewParser(NewLexer("\"any comment\"\nCmaj7"))
+func TestParseBarWithNoteInASeparateLine(t *testing.T) {
+	p := NewParser(NewLexer("\"any note\"\nCmaj7"))
 	barsP, err := p.ParseLine()
 	assert.NoError(t, err)
 	line := *barsP
-	assert.Equal(t, "any comment", line.Bars[0].Comment)
+	assert.Equal(t, "any note", line.Bars[0].BarNote)
 	assert.Equal(t, 1, len(line.Bars))
 }
 
