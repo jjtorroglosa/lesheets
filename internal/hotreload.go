@@ -60,7 +60,9 @@ func (h *sseHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer h.RemoveClient(msgCh)
 
 	// Send a message(keeps connection alive in some proxies)
-	fmt.Fprintf(w, ": connected\n\n")
+	_, _ = fmt.Fprintf(w, ": connected\n\n")
+
+	_, _ = fmt.Fprintf(w, "retry: 200\n\n")
 	fl.Flush()
 
 	notify := r.Context().Done()
@@ -73,7 +75,7 @@ func (h *sseHub) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// SSE format: "data: <payload>\n\n"
-			fmt.Fprintf(w, "data: %s\n\n", msg)
+			_, _ = fmt.Fprintf(w, "data: %s\n\n", msg)
 			fl.Flush()
 		}
 	}

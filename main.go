@@ -45,9 +45,9 @@ func main() {
 	for ; i < len(args); i++ {
 		files = append(files, args[i])
 	}
+	internal.RenderListHTML(files)
 
 	// Read the song file
-
 	switch cmd {
 	case "html":
 		err := ExtractStatics(*outputDir)
@@ -65,13 +65,7 @@ func main() {
 		return
 	}
 	for _, inputFile := range files {
-		data, err := os.ReadFile(inputFile)
-
-		if err != nil {
-			internal.Fatalf("Failed to read file: %v", err)
-		}
-
-		song, err := internal.ParseSongFromString(string(data))
+		song, err := internal.ParseSongFromFile(inputFile)
 		if err != nil {
 			internal.Fatalf("error parsing song: %v", err)
 		}
@@ -85,7 +79,7 @@ func main() {
 			fmt.Println(string(j))
 		case "html":
 			if *printTokens {
-				lexer := internal.NewLexer(string(data))
+				lexer := song.Parser.Lexer
 				lexer.PrintTokens()
 			}
 
@@ -125,16 +119,13 @@ func render(dev bool, inputFile string, outputDir string) {
 		log.Printf("Whole render took: %dms", elapsed.Milliseconds())
 	}()
 
-	data, err := os.ReadFile(inputFile)
-
 	outputFilename := strings.TrimSuffix(inputFile, ".nns") + ".html"
-	outputFilename = filepath.Base(outputFilename)
-
+	err := os.MkdirAll("output/"+filepath.Dir(outputFilename), 0755)
 	if err != nil {
-		internal.Fatalf("Failed to read file: %v", err)
+		internal.Fatalf("Failed to create outupt dir: %v", err)
 	}
 
-	song, err := internal.ParseSongFromString(string(data))
+	song, err := internal.ParseSongFromFile(inputFile)
 	if err != nil {
 		internal.Fatalf("error parsing song: %v", err)
 	}

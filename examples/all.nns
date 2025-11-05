@@ -6,7 +6,7 @@ key: C#m
 L: 1/8
 ---
 
-# section
+# Section
 
 Am7 |Bm11 C7(b13#9) Dm7/D Em7 Fm7 Gm7
 Amaj7 |A/D Bmaj11 Cmaj6/Dm7 D7/Cmaj7(#11) Em7/D Fm7 Gm7
@@ -24,7 +24,7 @@ A A A|"push"!push!Am7| "pull"!pull!Bmaj7/Cmin7 | "fermata"!fermata!D | "choke"!c
  1 | 4 | 5 | !diamond!1
  1/2 | 4m/5 | 5/6 | !diamond!1
 
-#- new column
+#- New column
 
 "inline backtick"
 `"Cm"!marcato!AA AA A/A/A/A/ AA`| `"Cm"!marcato!AA AA A/A/A/A/ AA`

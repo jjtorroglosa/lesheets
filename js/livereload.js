@@ -4,16 +4,32 @@
     overlay.innerText = "Reloading…";
     document.body.appendChild(overlay);
 
+    let firstConnect = true;
+
     var maxRetries = 5;
     var retries = 0;
 
     // Connect to SSE endpoint and reload on message
-    var es = new EventSource("/events");
+    let es = new EventSource("/events");
     window.addEventListener("beforeunload", () => {
         es.close();
     });
+    es.retry = 300;
 
 
+    es.onopen = function(evt) {
+        if (!firstConnect) {
+            console.log("[live-reload] reconnected — reloading page");
+            overlay.style.opacity = "1";
+            setTimeout(() => location.reload(true), 300);
+        } else {
+            console.log("[live-reload] connected");
+            firstConnect = false;
+        }
+
+        retries = 0;
+        reconnectDelay = 300;
+    }
     es.onmessage = function(evt) {
         try {
             const data = evt.data;
@@ -33,6 +49,8 @@
     };
     es.onerror = function(err) {
         // keep trying; the browser will reconnect automatically
+        console.warn("[live-reload] connection error", err);
+        overlay.style.opacity = "1";
         retries++;
         if (retries > maxRetries) {
             console.warn("[live-reload] connection error", err);

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @layer base {
   h1 {
@@ -24,22 +25,16 @@
     @apply text-base;
   }
   a {
-      @apply text-blue-500;
+      @apply text-blue-500 dark:text-blue-300;
   }
 }
+
 @font-face {
   font-family: 'music';
   src: url('./abc2svg.woff2') format('woff2');
   font-weight: normal;
   font-style: normal;
 }
-
-/* @font-face { */
-/*   font-family: 'Noto Music'; */
-/*   src: url('./NotoMusic-regular.ttf') format('truetype'); */
-/*   font-weight: normal; */
-/*   font-style: normal; */
-/* } */
 
 html{
     font-size: 15px;
@@ -50,8 +45,23 @@ body {
     @apply m-8 print:m-0;
 }
 
+.section-name {
+    @apply border border-solid p-1 inline-block my-1 text-sm min-w-8 text-center;
+}
+.barlines {
+    @apply flex flex-row mt-1 mb-4 ml-4;
+}
+
+.bar-note {
+    @apply mb-2 text-xs;
+}
+
+.bar-lyrics {
+    @apply mt-0 text-xs;
+}
+
 .bar {
-    @apply min-w-20 h-8 mb-4;
+    @apply min-w-20 h-8;
     @apply border-l border-solid;
     @apply flex justify-between items-center;
 }
@@ -73,32 +83,8 @@ body {
     @apply text-xs;
 }
 
-.abcjs-chord {
-    @apply text-2xl;
-}
-.abcjs-container svg {
-  pointer-events: none;
-  user-select: none;
-}
-
-.abcjs-note {
-}
-
-.abcinline {
-    @apply min-w-30;
-}
-
 .bt-svg {
     margin-top: 0.5rem;
-}
-
-.abcmultiline svg{
-    position: relative !important;
-}
-.abcmultiline {
-    @apply min-w-140;
-    padding-bottom: 0% !important;
-    /* width: 100%; */
 }
 
 .repeat-start {
@@ -154,30 +140,6 @@ body {
   pointer-events: none;
 }
 
-
-/* .annotation-diamond { */
-/*   position: relative; */
-/*   height: 3rem; */
-/*   width: 3rem; */
-/*   line-height: 3rem; */
-/*   text-align: center; */
-/*   /* margin: 00px 40px; */
-/*   top: -1rem; */
-/* } */
-/* .annotation-diamond:after { */
-/*   position: absolute; */
-/*   top: 1rem; */
-/*   left: 1rem; */
-/*   content: '&#9671;'; */
-/*   height: calc(100% - 1rem);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
-/*   width: calc(100% - 1rem);  /* -22px is 2 * 10px gap on either side - 2px border on either side */
-/*   @apply border border-solid; */
-/*   transform: rotateX(45deg) rotateZ(45deg); */
-/* } */
-
-.bar-note {
-    @apply mb-2 text-xs;
-}
 
 .annotation span.annotation-container::before {
     font-size: 0.8rem;
@@ -253,16 +215,3 @@ body {
   transform: rotate(-45deg);
 }
 
-.section-name {
-    @apply border border-solid p-1 inline-block my-1 text-sm min-w-8 text-center;
-}
-.barlines {
-    @apply flex flex-row my-1 ml-4;
-}
-
-
-/* .music{ */
-/*   font-family: 'Noto Music', sans-serif; */
-/*   font-size: 2rem; */
-/* } */
-/**/

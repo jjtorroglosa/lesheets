@@ -3,15 +3,20 @@ package internal
 import (
 	"fmt"
 	"nasheets/internal/timer"
+	"os"
 
 	yaml "github.com/oasdiff/yaml3"
 )
 
 type Parser struct {
-	lex                *Lexer
+	Lexer              *Lexer
 	backtickId         int
 	mutilineBacktickId int
 	song               *Song
+}
+
+func (p *Parser) SourceFile() string {
+	return p.Lexer.source
 }
 
 func (s *Song) DefaultLength() string {
@@ -27,14 +32,24 @@ func (s *Song) DefaultLength() string {
 
 func NewParser(lex *Lexer) *Parser {
 	return &Parser{
-		lex:        lex,
+		Lexer:      lex,
 		backtickId: 0,
 	}
 }
 
-func ParseSongFromString(s string) (*Song, error) {
+func ParseSongFromStringWithUnknownSource(s string) (*Song, error) {
+	return NewParser(NewLexerFromSource("unknown", s)).ParseSong()
+}
+
+func ParseSongFromFile(file string) (*Song, error) {
 	defer timer.LogElapsedTime("parsing")()
-	return NewParser(NewLexer(s)).ParseSong()
+
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read file: %v", err)
+	}
+
+	return NewParser(NewLexerFromSource(file, string(data))).ParseSong()
 }
 
 var SURROUNDING_CONTEXT = 15
@@ -46,10 +61,11 @@ var SURROUNDING_CONTEXT = 15
 //	;
 func (p *Parser) ParseSong() (*Song, error) {
 	song := Song{}
+	song.Parser = p
 	p.song = &song
-	p.lex.consumeWhitespacesAndNewLines()
+	p.Lexer.consumeWhitespacesAndNewLines()
 
-	tok, err := p.lex.Lookahead()
+	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +89,7 @@ func (p *Parser) ParseSong() (*Song, error) {
 
 // FrontMatter: TokenFrontmatter
 func (p *Parser) ParseFrontmatter() (map[string]string, error) {
-	tok, err := p.lex.ConsumeNextToken()
+	tok, err := p.Lexer.ConsumeNextToken()
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +111,7 @@ func (p *Parser) ParseFrontmatter() (map[string]string, error) {
 // |Sections
 // ;
 func (p *Parser) ParseBody() ([]Section, error) {
-	tok, err := p.lex.Lookahead()
+	tok, err := p.Lexer.Lookahead()
 	sections := []Section{}
 	if err != nil {
 		return sections, err
@@ -135,7 +151,7 @@ func (p *Parser) ParseBody() ([]Section, error) {
 func (p *Parser) ParseSections() ([]Section, error) {
 	sections := []Section{}
 	for {
-		tok, err := p.lex.Lookahead()
+		tok, err := p.Lexer.Lookahead()
 		if err != nil {
 			return nil, err
 		}
@@ -158,7 +174,7 @@ func (p *Parser) ParseSections() ([]Section, error) {
 // Section
 // :Header Lines
 func (p *Parser) ParseSection() (*Section, error) {
-	tok, err := p.lex.Lookahead()
+	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +185,7 @@ func (p *Parser) ParseSection() (*Section, error) {
 			Lines: nil,
 			Break: tok.Type == TokenHeaderBreak,
 		}
-		_, _ = p.lex.ConsumeNextToken()
+		_, _ = p.Lexer.ConsumeNextToken()
 
 		lines, err := p.ParseLines()
 		if err != nil {
@@ -178,7 +194,7 @@ func (p *Parser) ParseSection() (*Section, error) {
 		section.Lines = lines
 		return &section, nil
 	default:
-		return nil, fmt.Errorf("unexpected token while parsing section: %s at pos %d", tok.Type, p.lex.pos)
+		return nil, fmt.Errorf("unexpected token while parsing section: %s at pos %d", tok.Type, p.Lexer.pos)
 	}
 }
 
@@ -187,7 +203,7 @@ func (p *Parser) ParseSection() (*Section, error) {
 // |Line Lines
 // ;
 func (p *Parser) ParseLines() ([]Line, error) {
-	tok, err := p.lex.Lookahead()
+	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +221,7 @@ func (p *Parser) ParseLines() ([]Line, error) {
 			if len(line.Bars) > 0 || line.MultilineBacktick.Value != "" {
 				lines = append(lines, *line)
 			}
-			tok, err = p.lex.Lookahead()
+			tok, err = p.Lexer.Lookahead()
 			if err != nil {
 				return nil, err
 			}
@@ -219,19 +235,20 @@ func (p *Parser) ParseLines() ([]Line, error) {
 func (p *Parser) ParseLine() (*Line, error) {
 	bars := []Bar{}
 
-	tok, err := p.lex.Lookahead()
+	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
 
 	if tok.Type == TokenBacktickMultiline {
-		_, _ = p.lex.ConsumeNextToken()
+		_, _ = p.Lexer.ConsumeNextToken()
 		line := &Line{
 			Bars: []Bar{},
 			MultilineBacktick: MultilineBacktick{
 				Id:            p.mutilineBacktickId,
 				Value:         tok.Value,
 				DefaultLength: p.song.DefaultLength(),
+				SourceFile:    p.SourceFile(),
 			},
 		}
 		p.mutilineBacktickId++
@@ -244,7 +261,7 @@ func (p *Parser) ParseLine() (*Line, error) {
 			return nil, err
 		}
 		bars = append(bars, *bar)
-		tok, err = p.lex.Lookahead()
+		tok, err = p.Lexer.Lookahead()
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +273,7 @@ func (p *Parser) ParseLine() (*Line, error) {
 		// 	}
 		// }
 	}
-	_, _ = p.lex.ConsumeNextToken()
+	_, _ = p.Lexer.ConsumeNextToken()
 	return &Line{Bars: bars}, nil
 }
 
@@ -276,7 +293,7 @@ func (p *Parser) ParseLine() (*Line, error) {
 func (p *Parser) ParseBar() (*Bar, error) {
 	bar := Bar{}
 
-	tok, err := p.lex.Lookahead()
+	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
@@ -287,17 +304,17 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			if tok.Value == "||:" {
 				bar.RepeatStart = true
 			}
-			_, _ = p.lex.ConsumeNextToken()
-			tok, err = p.lex.Lookahead()
+			_, _ = p.Lexer.ConsumeNextToken()
+			tok, err = p.Lexer.Lookahead()
 			if err != nil {
 				return nil, err
 			}
 		case TokenBarNote:
 			bar.BarNote = tok.Value
 			// consume it
-			_, _ = p.lex.ConsumeNextToken()
-			p.lex.consumeWhitespacesAndNewLines()
-			tok, err = p.lex.Lookahead()
+			_, _ = p.Lexer.ConsumeNextToken()
+			p.Lexer.consumeWhitespacesAndNewLines()
+			tok, err = p.Lexer.Lookahead()
 			if err != nil {
 				return nil, err
 			}
@@ -305,7 +322,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 	}
 	// BarBody
 	if tok.Type != TokenChord && tok.Type != TokenAnnotation && tok.Type != TokenBacktick {
-		return nil, fmt.Errorf("parsing bar: unexpected token. Want Chord, Annotation or Backtick, got %s %s", tok.Type, p.lex.SurroundingString())
+		return nil, fmt.Errorf("parsing bar: unexpected token. Want Chord, Annotation or Backtick, got %s %s", tok.Type, p.Lexer.SurroundingString())
 	}
 
 	switch tok.Type {
@@ -315,7 +332,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			return nil, err
 		}
 		bar.Backtick = *backtick
-		tok, err = p.lex.Lookahead()
+		tok, err = p.Lexer.Lookahead()
 		if err != nil {
 			return nil, err
 		}
@@ -323,7 +340,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			if tok.Value == ":||" {
 				bar.RepeatEnd = true
 			}
-			_, _ = p.lex.ConsumeNextToken()
+			_, _ = p.Lexer.ConsumeNextToken()
 		}
 		return &bar, nil
 	case TokenAnnotation, TokenChord:
@@ -334,13 +351,13 @@ func (p *Parser) ParseBar() (*Bar, error) {
 				return nil, err
 			}
 			chords = append(chords, *chord)
-			tok, err = p.lex.Lookahead()
+			tok, err = p.Lexer.Lookahead()
 			if err != nil {
 				return nil, err
 			}
 		}
 		if len(chords) == 0 {
-			return nil, fmt.Errorf("found no chords in bar %s", p.lex.SurroundingString())
+			return nil, fmt.Errorf("found no chords in bar %s", p.Lexer.SurroundingString())
 		}
 		bar.Chords = chords
 
@@ -350,7 +367,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			}
 			// Don't consume repeat start, let the next bar to consume it at the beginning
 			if tok.Value != "||:" {
-				_, err = p.lex.ConsumeNextToken()
+				_, err = p.Lexer.ConsumeNextToken()
 				if err != nil {
 					return nil, err
 				}
@@ -361,13 +378,13 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		return nil, fmt.Errorf(
 			"expected chord or backtick expression but found %s %s",
 			tok.Type,
-			p.lex.SurroundingString(),
+			p.Lexer.SurroundingString(),
 		)
 	}
 }
 
 func (p *Parser) ParseBacktick() (*Backtick, error) {
-	tok, err := p.lex.Lookahead()
+	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
@@ -383,7 +400,7 @@ func (p *Parser) ParseBacktick() (*Backtick, error) {
 	}
 	p.backtickId++
 	bt.Value = tok.Value
-	_, _ = p.lex.ConsumeNextToken()
+	_, _ = p.Lexer.ConsumeNextToken()
 
 	return &bt, nil
 }
@@ -392,7 +409,7 @@ func (p *Parser) ParseBacktick() (*Backtick, error) {
 // :TokenChord
 // |TokenAnnotation TokenChord
 func (p *Parser) ParseChord() (*Chord, error) {
-	tok, err := p.lex.Lookahead()
+	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
@@ -402,8 +419,8 @@ func (p *Parser) ParseChord() (*Chord, error) {
 	}
 	if tok.Type == TokenAnnotation {
 		chord.Annotation.Value = tok.Value
-		_, _ = p.lex.ConsumeNextToken()
-		tok, err = p.lex.Lookahead()
+		_, _ = p.Lexer.ConsumeNextToken()
+		tok, err = p.Lexer.Lookahead()
 		if err != nil {
 			return nil, err
 		}
@@ -413,15 +430,15 @@ func (p *Parser) ParseChord() (*Chord, error) {
 		return nil, fmt.Errorf(
 			"expected chord but found %s, %s",
 			tok.Type,
-			p.lex.SurroundingString(),
+			p.Lexer.SurroundingString(),
 		)
 	}
 	chord.Value = tok.Value
 
 	if chord.Value == "" {
-		return nil, fmt.Errorf("empty chord found at %s", p.lex.SurroundingString())
+		return nil, fmt.Errorf("empty chord found at %s", p.Lexer.SurroundingString())
 	}
 
-	_, _ = p.lex.ConsumeNextToken()
+	_, _ = p.Lexer.ConsumeNextToken()
 	return &chord, nil
 }

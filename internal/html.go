@@ -7,6 +7,8 @@ import (
 	"log"
 	"nasheets/internal/timer"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 //go:embed views/*.html
@@ -22,14 +24,52 @@ func dict(values ...any) map[string]any {
 }
 
 var t *template.Template
+var list *template.Template
 
 func init() {
 	defer timer.LogElapsedTime("InitTmpl")()
 	t = template.Must(template.New("").Funcs(template.FuncMap{
 		"dict": dict,
 	}).ParseFS(templateFS, "views/*.html"))
+
+	list = template.Must(template.New("").Funcs(template.FuncMap{
+		"dict": dict,
+	}).ParseFS(templateFS, "views/list.html"))
 }
 
+func RenderListHTML(inputFiles []string) {
+	defer timer.LogElapsedTime("RenderList")()
+	filename := "output/index.html"
+	f, err := os.Create(filename)
+	if err != nil {
+		Fatalf("Failed to create HTML file: %v", filename)
+	}
+
+	type Link struct {
+		Name string
+		Href string
+	}
+	files := []Link{}
+	for _, i := range inputFiles {
+		name := strings.TrimSuffix(i, ".nns")
+		href := name + ".html"
+		href = filepath.Dir(i) + "/" + filepath.Base(href)
+
+		files = append(files, Link{
+			Name: name,
+			Href: href,
+		})
+	}
+
+	defer f.Close()
+	var buf bytes.Buffer
+	if err := t.ExecuteTemplate(&buf, "list.html", files); err != nil {
+		log.Fatalf("Failed to render template: %v", err)
+	}
+	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
+		log.Fatalf("Write error: %v", err)
+	}
+}
 func RenderSongHTML(dev bool, song *Song, filename string) {
 	defer timer.LogElapsedTime("RenderHtml")()
 

@@ -4,21 +4,19 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>{{- index .Song.FrontMatter "title"}}</title>
-    <link href="./compiled.css" rel="stylesheet">
-{{/*<script src="./abcjs-basic-min.js"></script>*/}}
+    <link href="/compiled.css?t=2" rel="stylesheet">
+{{/*<script src="/abcjs-basic-min.js"></script>*/}}
 
 
 <!-- <script src="./wasm_exec.js"></script> -->
 <!-- <script src="./index.js"></script> -->
 </head>
-<body>
+<body class="bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-300">
 {{ template "header" .Song }}
 {{ template "body" .Song }}
 
-
-
 {{- if .Dev }}
-<script src="./livereload.js"></script>
+<script src="/livereload.js"></script>
 {{- end }}
 </body>
 </html>
