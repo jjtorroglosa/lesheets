@@ -12,7 +12,7 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
-//go:embed abc2svg/user.js abc2svg/tosvg.js abc2svg/abc2svg-1.js abc2svg/render.js
+//go:embed abc2svg/user.js abc2svg/tosvg.js abc2svg/abc2svg-1.js
 var abc2svg embed.FS
 
 func loadFile(ctx *qjs.Context, filename string) (*qjs.Value, func()) {
@@ -53,7 +53,6 @@ func RenderAbcToSvg(file, data string) (string, error) {
 	key := makeKey(file, data)
 
 	if res, ok := renderCache.Get(key); ok {
-		log.Println("Cached!")
 		return res.svg, res.err
 	}
 
@@ -79,17 +78,16 @@ func loadJsRuntime() func() {
 
 	ctx := rt.Context()
 
-	for _, f := range []string{"user.js", "tosvg.js", "abc2svg-1.js"} {
+	for _, f := range []string{"user.js", "abc2svg-1.js"} {
 		_, cleanup := loadFile(ctx, f)
 		defer cleanup()
 	}
-
-	result, _ := loadFile(ctx, "render.js")
+	result, _ := loadFile(ctx, "tosvg.js")
 
 	if err != nil {
 		log.Fatal("Eval error:", err)
 	}
-	jsRenderFunction := result.GetPropertyStr("renderAbcToSvg")
+	jsRenderFunction := result.GetPropertyStr("tosvg")
 	goRenderFunc, err := qjs.JsFuncToGo[func(string, string) (string, error)](jsRenderFunction)
 	if err != nil {
 		log.Fatal("Func conversion error:", err)

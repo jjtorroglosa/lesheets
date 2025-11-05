@@ -14,5 +14,5 @@ func TestSvgSnapshot(t *testing.T) {
 
 	bytes, err := os.ReadFile("testdata/expected.svg")
 	assert.NoError(t, err)
-	assert.Equal(t, result, strings.TrimSpace(string(bytes)))
+	assert.Equal(t, strings.TrimSpace(string(bytes)), result)
 }

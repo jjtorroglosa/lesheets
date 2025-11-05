@@ -29,13 +29,18 @@ type Token struct {
 }
 
 type Lexer struct {
-	input string
-	pos   int
-	line  int
+	source string
+	input  string
+	pos    int
+	line   int
 }
 
 func NewLexer(input string) *Lexer {
-	return &Lexer{input: input, pos: 0}
+	return NewLexerFromSource("", input)
+}
+
+func NewLexerFromSource(source string, input string) *Lexer {
+	return &Lexer{source: source, input: input, pos: 0}
 }
 
 func (l *Lexer) nextChar() rune {

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Index of songs</title>
+    <link href="/compiled.css" rel="stylesheet">
+</head>
+<body class="bg-white text-gray-800 dark:bg-gray-300 dark:text-gray-300">
+<div class="mx-auto max-w-fit">
+
+    <h1>Songs</h1>
+<ul class="mt-8">
+{{- range .}}
+<li>
+  <a href="{{.Href }}">{{.Name}}</a>
+</li>
+{{- end}}
+</ul>
+</div>
+{{template "ui"}}
+</body>
+</html>

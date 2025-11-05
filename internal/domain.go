@@ -9,6 +9,7 @@ import (
 type Song struct {
 	FrontMatter map[string]string `json:"front_matter"`
 	Sections    []Section         `json:"sections"`
+	Parser      *Parser           `json:"-"`
 }
 
 type Section struct {
@@ -26,6 +27,7 @@ type MultilineBacktick struct {
 	Value         string
 	Id            int
 	DefaultLength string
+	SourceFile    string
 }
 
 type Annotation struct {
@@ -60,6 +62,7 @@ type Bar struct {
 	RepeatEnd   bool     `json:"repeat_end"`
 	RepeatStart bool     `json:"repeat_start"`
 	BarNote     string   `json:"bar_note"`
+	Lyrics      string   `json:"lyrics"`
 }
 
 func (section *Section) IsEmpty() bool {
@@ -128,9 +131,9 @@ func (song *Song) ToJson() string {
 }
 
 func (mb *MultilineBacktick) Svg() template.HTML {
-	return svg.AbcToHtml(mb.DefaultLength, mb.Value)
+	return svg.AbcToHtml(mb.SourceFile, mb.DefaultLength, mb.Value)
 }
 
 func (backtick *Backtick) Svg() template.HTML {
-	return svg.InlineAbcToHtml(backtick.DefaultLength, backtick.Value)
+	return svg.InlineAbcToHtml("", backtick.DefaultLength, backtick.Value)
 }

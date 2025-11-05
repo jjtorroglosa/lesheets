@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func AbcToHtml(defaultLength string, abcInput string) template.HTML {
+func AbcToHtml(sourceFile string, defaultLength string, abcInput string) template.HTML {
 	abc := `
 %%topspace 0
 %%musicfont
@@ -21,10 +21,10 @@ func AbcToHtml(defaultLength string, abcInput string) template.HTML {
 %%rightmargin    0px
 %%titlespace     0px
 ` + abcInput
-	return template.HTML(AbcToSvg(abc))
+	return template.HTML(AbcToSvg(sourceFile, abc))
 }
 
-func InlineAbcToHtml(defaultLength string, abcInput string) template.HTML {
+func InlineAbcToHtml(sourceFile string, defaultLength string, abcInput string) template.HTML {
 	abc := `
 %%topspace 0
 %%musicfont
@@ -42,13 +42,13 @@ L:` + defaultLength + `
 K:none clef=none stafflines=0 stem=up
 %%voicemap all2A
 ` + abcInput
-	return template.HTML(AbcToSvg(abc))
+	return template.HTML(AbcToSvg(sourceFile, abc))
 }
 
-func AbcToSvg(abcInput string) string {
+func AbcToSvg(sourceFile string, abcInput string) string {
 	defer timer.LogElapsedTime("RenderSvg")()
 	if true {
-		res, err := RenderAbcToSvg("somefilename", abcInput)
+		res, err := RenderAbcToSvg(sourceFile, abcInput)
 		if err != nil {
 			log.Fatalf("error rendering abc to svg: %v", err)
 		}

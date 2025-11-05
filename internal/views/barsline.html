@@ -7,6 +7,10 @@
     {{- else}}
         {{- range .Bars}}
         <div class="flex flex-col-reverse ">
+            <div class="bar-lyrics">
+                {{if .Lyrics}}{{.Lyrics}}{{end}}
+            </div>
+
             <div class="bar {{if eq .Type "Double"}}double{{end}} {{if .RepeatEnd }}repeat-end{{end}} {{if .RepeatStart}}repeat-start{{end}} ">
                 {{- if eq .Backtick.Value ""}}
                     {{- range .Chords}}

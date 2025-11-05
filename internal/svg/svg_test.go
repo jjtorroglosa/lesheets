@@ -16,8 +16,7 @@ L:1/4
 K:C
 C D E F | G A B c |
 `
-
-	svgOutput := AbcToSvg(abcInput)
+	svgOutput := AbcToSvg("testSvg", abcInput)
 
 	assert.True(t, strings.HasPrefix(`<svg xmlns="http://www.w3.org/2000/svg" version="1.1"`, svgOutput[0:53]))
 }
