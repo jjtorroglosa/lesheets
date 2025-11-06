@@ -168,6 +168,13 @@ E
 		tok, err = lex.ConsumeNextToken()
 	}
 }
+
+func TestLexUnclosedAnnotation(t *testing.T) {
+	lex := NewLexer("!unclosedannotation")
+	_, err := lex.ConsumeNextToken()
+	assert.Error(t, err)
+}
+
 func TestLexChord(t *testing.T) {
 	lex := NewLexer("!annotation!Cmaj7 !second!D")
 

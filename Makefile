@@ -30,12 +30,13 @@ dev:
 test:
 	$(GO) test ./...
 
+IN ?= examples/*.nns
 
 .PHONY: watch
 watch:
 	@echo watch
 	ls internal/views/*.html css/styles.css build/*.js $(GO_FILES) | \
-				$(ENTR) -r -s "make nasheets ; $(NASHEETS) watch examples/*.nns"
+				$(ENTR) -r -s "make nasheets ; $(NASHEETS) watch $(IN)"
 .PHONY: run
 
 run:

@@ -23,18 +23,14 @@ func dict(values ...any) map[string]any {
 	return m
 }
 
-var t *template.Template
-var list *template.Template
+var templ *template.Template
 
 func init() {
 	defer timer.LogElapsedTime("InitTmpl")()
-	t = template.Must(template.New("").Funcs(template.FuncMap{
+	funcs := template.FuncMap{
 		"dict": dict,
-	}).ParseFS(templateFS, "views/*.html"))
-
-	list = template.Must(template.New("").Funcs(template.FuncMap{
-		"dict": dict,
-	}).ParseFS(templateFS, "views/list.html"))
+	}
+	templ = template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "views/*.html"))
 }
 
 func RenderListHTML(inputFiles []string) {
@@ -63,7 +59,7 @@ func RenderListHTML(inputFiles []string) {
 
 	defer f.Close()
 	var buf bytes.Buffer
-	if err := t.ExecuteTemplate(&buf, "list.html", files); err != nil {
+	if err := templ.ExecuteTemplate(&buf, "list.html", files); err != nil {
 		log.Fatalf("Failed to render template: %v", err)
 	}
 	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
@@ -85,7 +81,7 @@ func RenderSongHTML(dev bool, song *Song, filename string) {
 	var buf bytes.Buffer
 
 	func() {
-		if err := t.ExecuteTemplate(&buf, "tmpl.html", params); err != nil {
+		if err := templ.ExecuteTemplate(&buf, "tmpl.html", params); err != nil {
 			log.Fatalf("Failed to render template: %v", err)
 		}
 	}()

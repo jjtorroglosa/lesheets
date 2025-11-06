@@ -3,30 +3,14 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 @layer base {
-  h1 {
-    @apply text-2xl font-bold;
-  }
-  h2 {
-    @apply text-2xl font-bold;
-  }
-  h3 {
-    @apply text-2xl font-bold;
-  }
-  h4 {
-    @apply text-xl font-bold;
-  }
-  h5 {
-    @apply text-lg font-bold;
-  }
-  h6 {
-    @apply text-base font-bold;
-  }
-  p {
-    @apply text-base;
-  }
-  a {
-      @apply text-blue-500 dark:text-blue-300;
-  }
+  h1 { @apply text-2xl font-bold; }
+  h2 { @apply text-2xl font-bold; }
+  h3 { @apply text-2xl font-bold; }
+  h4 { @apply text-xl font-bold; }
+  h5 { @apply text-lg font-bold; }
+  h6 { @apply text-base font-bold; }
+  p { @apply text-base; }
+  a { @apply text-blue-500 dark:text-blue-300; }
 }
 
 @font-face {
@@ -63,16 +47,13 @@ body {
 .bar {
     @apply min-w-20 h-8;
     @apply border-l border-solid;
-    @apply flex justify-between items-center;
+    @apply flex justify-items-start items-center;
 }
 
 .flex:last-child .bar:not(.repeat-end) {
     @apply border-r border-solid;
 }
 
-.ch {
-    @apply px-2 h-6 grow;
-}
 .ch sub {
     @apply text-xs;
 }
@@ -87,108 +68,34 @@ body {
     margin-top: 0.5rem;
 }
 
-.repeat-start {
-  position: relative;
-  @apply border-l-4 border-solid pl-2;
-}
-
-.repeat-start::before {
-  content: ":";
-  padding-top: 0.2rem;
-  padding-left: 0.11rem;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 3px; /* distance between the two borders */
-  @apply border-l;
-  border-left: 1px solid currentColor; /* or a specific color */
-  pointer-events: none;
-}
-
 .repeat-end {
-  position: relative;
-  @apply border-r-4 pr-2;
+  @apply border-r-4 border-solid pr-[2px];
 }
 
-.repeat-end::before {
-  content: ":";
-  padding-top: 0.2rem;
-  padding-right: 0.1rem;
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 3px; /* distance between the two borders */
-  border-right: 1px solid currentColor; /* or a specific color */
-  pointer-events: none;
+.repeat-end .repeat-end-symbol {
+    @apply border-r flex items-center justify-center h-full pr-[2px];
+}
+
+.repeat-start {
+  @apply border-l-4 border-solid pl-[2px];
+}
+
+.repeat-start .repeat-start-symbol{
+    @apply border-l flex items-center justify-center h-full pl-[2px];
 }
 
 .double {
-  position: relative;
-  @apply border-r border-solid pr-4;
-  border-right: 2px solid currentColor !important; /* or a specific color */
+  @apply relative border-r border-solid pr-4;
 }
 
 .double::before {
   content: "";
-  padding-top: 0.2rem;
   padding-right: 0.5rem;
   position: absolute;
   top: 0;
   bottom: 0;
   right: 3px; /* distance between the two borders */
-  border-right: 1px solid currentColor; /* or a specific color */
-  pointer-events: none;
-}
-
-
-.annotation span.annotation-container::before {
-    font-size: 0.8rem;
-    line-height: 0.6rem;
-}
-.annotation span.annotation-container {
-    position:relative;
-    top: -0.6rem;
-    @apply flex flex-col;
-}
-
-.annotation-choke span.annotation-container::before{
-    content: "^";
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.annotation-choke span.annotation-container {
-    position:relative;
-    top: -0.47rem;
-    line-height: 1.24rem;
-    @apply flex flex-col;
-}
-
-.annotation-marcato span.annotation-container::before{
-    content: "^";
-    font-size: 1.1rem;
-    font-weight: 600;
-}
-
-.annotation-marcato span.annotation-container {
-    position:relative;
-    top: -0.47rem;
-    line-height: 1.24rem;
-    @apply flex flex-col;
-}
-
-
-.annotation-push span.annotation-container::before{
-    content: "❮";
-}
-
-.annotation-fermata span.annotation-container::before{
-    content: "𝄐";
-    font-size: 1.4rem;
-}
-
-.annotation-pull span.annotation-container::before{
-    content: "❯";
+  @apply border-r border-solid;
 }
 
 .annotation-diamond {

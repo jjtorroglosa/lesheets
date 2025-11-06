@@ -219,6 +219,16 @@ func TestParseBarRepeatEnd(t *testing.T) {
 	assert.False(t, bar.RepeatStart)
 	assert.True(t, bar.RepeatEnd)
 }
+func TestParseBarDoubleBar(t *testing.T) {
+	p := NewParser(NewLexer("C ||\n\n"))
+	song, err := p.ParseSong()
+	assert.NoError(t, err)
+	bar := song.Sections[0].Lines[0].Bars[0]
+	assert.Equal(t, "C", bar.Chords[0].Value)
+	assert.False(t, bar.RepeatStart)
+	assert.False(t, bar.RepeatEnd)
+	assert.True(t, bar.DoubleBarEnd)
+}
 
 func TestParseBarRepeatStart(t *testing.T) {
 

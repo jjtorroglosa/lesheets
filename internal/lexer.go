@@ -216,6 +216,9 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		for l.pos < len(l.input) && !unicode.IsSpace(rune(l.input[l.pos])) && l.input[l.pos] != '!' {
 			l.advance()
 		}
+		if l.nextChar() != '!' {
+			return nil, ErrGeneric(l.SurroundingString(), "!", string(l.nextChar()))
+		}
 		tok := Token{
 			Type:  TokenAnnotation,
 			Value: l.input[start:l.pos],

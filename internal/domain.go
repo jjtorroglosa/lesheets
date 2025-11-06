@@ -33,6 +33,7 @@ type MultilineBacktick struct {
 type Annotation struct {
 	Value string `json:"value"`
 }
+
 type Backtick struct {
 	Id            int    `json:"id"`
 	Value         string `json:"value"`
@@ -55,18 +56,25 @@ func (p Chord) MarshalJSON() ([]byte, error) {
 }
 
 type Bar struct {
-	Tokens      []Token  `json:"-"` // chords, symbols, annotations, backticks
-	Chords      []Chord  `json:"chords"`
-	Backtick    Backtick `json:"backtick"`
-	Type        string   `json:"type"`
-	RepeatEnd   bool     `json:"repeat_end"`
-	RepeatStart bool     `json:"repeat_start"`
-	BarNote     string   `json:"bar_note"`
-	Lyrics      string   `json:"lyrics"`
+	Tokens               []Token  `json:"-"` // chords, symbols, annotations, backticks
+	Chords               []Chord  `json:"chords"`
+	Backtick             Backtick `json:"backtick"`
+	Type                 string   `json:"type"`
+	RepeatEnd            bool     `json:"repeat_end"`
+	RepeatStart          bool     `json:"repeat_start"`
+	DoubleBarEnd         bool     `json:"double_bar_end"`
+	BarNote              string   `json:"bar_note"`
+	Lyrics               string   `json:"lyrics"`
+	Id                   int      `json:"id"`
+	PreviousWasRepeatEnd bool     `json:"-"`
 }
 
 func (section *Section) IsEmpty() bool {
 	return len(section.Lines) == 0 && section.Name == ""
+}
+
+func (bar *Bar) Number() int {
+	return bar.Id + 1
 }
 
 func (bar *Bar) IsEmpty() bool {
@@ -136,4 +144,17 @@ func (mb *MultilineBacktick) Svg() template.HTML {
 
 func (backtick *Backtick) Svg() template.HTML {
 	return svg.InlineAbcToHtml("", backtick.DefaultLength, backtick.Value)
+}
+func (a *Annotation) Symbol() template.HTML {
+	switch a.Value {
+	case "marcato":
+		return "<strong>^</strong>"
+	case "push":
+		return "❮"
+	case "pull":
+		return "❯"
+	case "fermata":
+		return "𝄐"
+	}
+	return ""
 }
