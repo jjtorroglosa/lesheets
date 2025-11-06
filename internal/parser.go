@@ -13,6 +13,7 @@ type Parser struct {
 	backtickId         int
 	mutilineBacktickId int
 	song               *Song
+	barsCount          int
 }
 
 func (p *Parser) SourceFile() string {
@@ -255,23 +256,20 @@ func (p *Parser) ParseLine() (*Line, error) {
 		return line, nil
 	}
 
+	var prev *Bar
 	for tok.Type != TokenReturn && tok.Type != TokenEof {
 		bar, err := p.ParseBar()
 		if err != nil {
 			return nil, err
 		}
+		bar.PreviousWasRepeatEnd = prev != nil && prev.RepeatEnd
+
 		bars = append(bars, *bar)
 		tok, err = p.Lexer.Lookahead()
 		if err != nil {
 			return nil, err
 		}
-		// if tok.Type == TokenBar {
-		// 	_, _ = p.lex.ConsumeNextToken()
-		// 	tok, err = p.lex.Lookahead()
-		// 	if err != nil {
-		// 		return nil, err
-		// 	}
-		// }
+		prev = bar
 	}
 	_, _ = p.Lexer.ConsumeNextToken()
 	return &Line{Bars: bars}, nil
@@ -292,6 +290,8 @@ func (p *Parser) ParseLine() (*Line, error) {
 // |Chord Chords
 func (p *Parser) ParseBar() (*Bar, error) {
 	bar := Bar{}
+	bar.Id = p.barsCount
+	p.barsCount++
 
 	tok, err := p.Lexer.Lookahead()
 	if err != nil {
@@ -337,10 +337,16 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			return nil, err
 		}
 		if tok.Type == TokenBar && tok.Value != "||:" {
-			if tok.Value == ":||" {
+			switch tok.Value {
+			case ":||":
 				bar.RepeatEnd = true
+			case "||":
+				bar.DoubleBarEnd = true
 			}
-			_, _ = p.Lexer.ConsumeNextToken()
+			_, err = p.Lexer.ConsumeNextToken()
+			if err != nil {
+				return nil, err
+			}
 		}
 		return &bar, nil
 	case TokenAnnotation, TokenChord:
@@ -361,16 +367,16 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		}
 		bar.Chords = chords
 
-		if tok.Type == TokenBar {
-			if tok.Value == ":||" {
+		if tok.Type == TokenBar && tok.Value != "||:" {
+			switch tok.Value {
+			case ":||":
 				bar.RepeatEnd = true
+			case "||":
+				bar.DoubleBarEnd = true
 			}
-			// Don't consume repeat start, let the next bar to consume it at the beginning
-			if tok.Value != "||:" {
-				_, err = p.Lexer.ConsumeNextToken()
-				if err != nil {
-					return nil, err
-				}
+			_, err = p.Lexer.ConsumeNextToken()
+			if err != nil {
+				return nil, err
 			}
 		}
 		return &bar, nil

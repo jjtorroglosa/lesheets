@@ -35,7 +35,7 @@ func InlineAbcToHtml(sourceFile string, defaultLength string, abcInput string) t
 %%leftmargin     20px
 %%rightmargin    0px
 %%titlespace     0px
-%%map all2A * print=A
+%%map all2A * print=F
 X:1
 M:none
 L:` + defaultLength + `
