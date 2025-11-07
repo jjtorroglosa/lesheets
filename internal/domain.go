@@ -148,13 +148,15 @@ func (backtick *Backtick) Svg() template.HTML {
 func (a *Annotation) Symbol() template.HTML {
 	switch a.Value {
 	case "marcato":
-		return "<strong>^</strong>"
+		return `<div class="font-bold relative top-[4px] leading-[1.3] text-[1rem]/2 font-music">^</div>`
 	case "push":
-		return "❮"
-	case "pull":
-		return "❯"
+		return `<span class="text-[10px]/[1.25rem]">❮</span>`
+	case "pull", "hold":
+		return `<span class="text-[10px]/[1.25rem]">❯</span>`
 	case "fermata":
-		return "𝄐"
+		return `<div class="font-music text-xl leading-none"></div>`
+	case "diamond-fermata":
+		return `<div class="ml-1 font-music font-size text-xl leading-none"></div>`
 	}
 	return ""
 }

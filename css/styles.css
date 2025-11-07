@@ -13,13 +13,6 @@
   a { @apply text-blue-500 dark:text-blue-300; }
 }
 
-@font-face {
-  font-family: 'music';
-  src: url('./abc2svg.woff2') format('woff2');
-  font-weight: normal;
-  font-style: normal;
-}
-
 html{
     font-size: 15px;
     font-family: "Helvetica Neue", "Helvetica", "Arial";
@@ -27,6 +20,17 @@ html{
 
 body {
     @apply m-8 print:m-0;
+}
+
+@font-face {
+  font-family: 'music';
+  src: url('./abc2svg.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+}
+
+.font-music {
+    font-family: 'music';
 }
 
 .section-name {
@@ -44,13 +48,7 @@ body {
     @apply mt-0 text-xs;
 }
 
-.bar {
-    @apply min-w-20 h-8;
-    @apply border-l border-solid;
-    @apply flex justify-items-start items-center;
-}
-
-.flex:last-child .bar:not(.repeat-end) {
+.bar-and-annotations:last-child .bar:not(.repeat-end) {
     @apply border-r border-solid;
 }
 
@@ -101,7 +99,6 @@ body {
 .annotation-diamond {
   text-align: center;
   position: relative;
-  top: -0.25rem;
   width: 2rem;
   height: 2rem;
   @apply border border-solid;

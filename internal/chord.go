@@ -22,6 +22,9 @@ var superscriptMap = map[rune]rune{
 // FormatChord formats a chord symbol like "F#min11" to "F♯m¹¹"
 func FormatChord(chord string) string {
 	// Replace sharps and flats
+	if strings.HasPrefix(chord, "N.C") {
+		return chord
+	}
 	chord = strings.ReplaceAll(chord, "#", "♯")
 	chord = strings.ReplaceAll(chord, "b", "♭")
 
