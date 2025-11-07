@@ -36,9 +36,6 @@ body {
 .section-name {
     @apply border border-solid p-1 inline-block my-1 text-sm min-w-8 text-center;
 }
-.barlines {
-    @apply flex flex-row mt-1 mb-4 ml-4;
-}
 
 .bar-note {
     @apply mb-2 text-xs;
