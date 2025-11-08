@@ -135,13 +135,12 @@ another: value
 ---
 # section1
 
-!a!!The second exclamation should be an error
-`))
+!a!!The second exclamation should be an error`))
 	_, err := p.ParseSong()
-	assert.Equal(t, err.Error(), `expected chord but found Annotation, at pos 51 line 7 near:
-# section1\n\n!a!!The second exc
+	assert.Equal(t, err.Error(), `unexpected string at pos 55 line 7 near:
+ction1\n\n!a!!The second exclama
                  ^
-`)
+ Want: <!> Got: < >`)
 }
 
 func TestParseBar(t *testing.T) {
@@ -375,5 +374,5 @@ func TestParseChord(t *testing.T) {
 
 func TestPrettyPrint(t *testing.T) {
 	song, _ := ParseSongFromStringWithUnknownSource("Amaj7(#11)|B|")
-	assert.Equal(t, "A△⁷(♯¹¹)", song.Sections[0].Lines[0].Bars[0].Chords[0].PrettyPrint())
+	assert.Equal(t, "A△⁷<small>(♯¹¹)</small>", song.Sections[0].Lines[0].Bars[0].Chords[0].PrettyPrint())
 }
