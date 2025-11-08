@@ -88,10 +88,10 @@ func (l *Lexer) consumeWhitespacesAndNewLines() {
 }
 
 func ErrGeneric(context string, want string, got string) error {
-	return fmt.Errorf("unexpected string %s Want: %s Got: %s", context, want, got)
+	return fmt.Errorf("unexpected string %s Want: <%s> Got: <%s>", context, want, got)
 }
 func ErrInvalidFrontmatter(context string, want string, got string) error {
-	return fmt.Errorf("invalid frontmatter %s Want: %s Got: %s ", context, want, got)
+	return fmt.Errorf("invalid frontmatter %s Want: <%s> Got: <%s> ", context, want, got)
 }
 
 func (l *Lexer) consumeFrontmatter() (*Token, error) {
@@ -204,10 +204,11 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		for l.pos < len(l.input) && l.input[l.pos] != '\n' {
 			l.advance()
 		}
-		// consume newline (only if the comment started in a new line
+		// consume newline only if the comment started in a new line
 		if l.getPos(start-1, 1) == "\n" {
 			l.advance()
 		}
+		return l.ConsumeNextToken()
 	}
 	// Annotation
 	if ch == '!' {

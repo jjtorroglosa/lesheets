@@ -105,6 +105,11 @@ func (song *Song) Backticks() []Backtick {
 	return bts
 }
 
+func (song *Song) Key() template.HTML {
+	key := song.FrontMatter["key"]
+	return template.HTML(FormatChord(key))
+}
+
 func (song *Song) PrintSong() {
 	Println("Frontmatter:")
 	for k, v := range song.FrontMatter {

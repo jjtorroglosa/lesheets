@@ -48,7 +48,7 @@ func FormatChord(chord string) string {
 	}
 
 	// Superscript numbers (extensions)
-	numbers := regexp.MustCompile(`([♯♭]?[0-9A-G])([^/]*)(/[A-G0-7].*)?`).FindStringSubmatch(chord)
+	numbers := regexp.MustCompile(`([♯♭]?[0-9A-G])([^/]*)(/[♯♭]?[A-G0-7].*)?`).FindStringSubmatch(chord)
 	if len(numbers) == 4 {
 		var sb strings.Builder
 		sb.WriteString(numbers[1])
@@ -67,9 +67,12 @@ func FormatChord(chord string) string {
 		pattern *regexp.Regexp
 		replace string
 	}{
+		{regexp.MustCompile(`%`), "<span class=\"text-xs\">%</span>"},
 		{regexp.MustCompile(`(?i)min|m`), "<small>m</small>"},
 		{regexp.MustCompile(`(?i)min7|m7`), "<small>m7</small>"},
-		{regexp.MustCompile(`(?i)/([A-G1-7].*)`), "<span class=\"over\">/$1</span>"},
+		{regexp.MustCompile(`(?i)/([♯♭]?[A-G1-7].*)`), "<span class=\"over\">/$1</span>"},
+		{regexp.MustCompile(`(?i)(\(.+\))`), "<small>$1</small>"},
+		{regexp.MustCompile(`(?i)ø`), "<small>ø</small>"},
 	}
 
 	for _, r := range replacements {
