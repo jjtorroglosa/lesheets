@@ -8,18 +8,13 @@ import (
 	"syscall/js"
 )
 
-func nasheetToJson(this js.Value, args []js.Value) interface{} {
+func nasheetToJson(this js.Value, args []js.Value) any {
 	s := args[0].String() // Convert JS string to Go string
-
-	println("1 Hi from go: " + s)
 	song, err := internal.ParseSongFromString(s)
 	if err != nil {
 		return err
 	}
-
-	//song.PrintSong()
-	j := song.ToJson()
-
+	j := internal.RenderSongHtml(false, false, s, song, "some")
 	return string(j)
 }
 

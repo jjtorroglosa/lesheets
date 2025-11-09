@@ -1,0 +1,76 @@
+{{- if .Whole}}
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1.0">
+            <title>{{- index .Song.FrontMatter "title"}}</title>
+                <link href="/compiled.css?t=2" rel="stylesheet">
+            {{/*<script src="/abcjs-basic-min.js"></script>*/}}
+
+
+            <script src="/wasm_exec.js"></script>
+
+            {{- if .Editor}}
+                <script src="/ace.js" type="text/javascript" charset="utf-8"></script>
+            {{- end }}
+            <script type="module" src="/index.js"></script>
+        </head>
+        <body class="h-screen bg-white print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
+            <div id="layout" class="flex h-full flex-row overflow-hidden select-none p-4 print:m-0 ">
+                {{- if .Editor}}
+                    <div id="editor" class="shrink-0 w-6/14 print:hidden bg-gray-800"><textarea id="editor-text" class="w-full h-full p-4">{{- .Abc }}</textarea></div>
+                    <div id="resizer" class="h-full w-[5px] shrink-0 print:hidden bg-gray-300 cursor-col-resize"></div>
+                {{- end}}
+                <div id="root" class="h-full w-full pl-4 overflow-auto">
+                    {{- template "root" . }}
+                </div>
+            </div>
+
+            {{- if .Dev }}
+            <script src="/livereload.js"></script>
+            {{- end }}
+
+            {{ template "ui" }}
+
+            {{- if .Editor}}
+            <script>
+                const resizer = document.getElementById('resizer');
+                const left = document.getElementById('editor');
+                const body = document.getElementById('layout');
+
+                let isResizing = false;
+                let startX = 0;
+                let startWidth = 0;
+
+                resizer.addEventListener('mousedown', e => {
+                  isResizing = true;
+                  startX = e.clientX;
+                  startWidth = left.offsetWidth;
+                  document.body.style.cursor = 'col-resize';
+                  document.body.style.userSelect = 'none';
+                });
+
+                document.addEventListener('mousemove', e => {
+                  if (!isResizing) return;
+
+                  const delta = e.clientX - startX;
+                  const newWidth = startWidth + delta;
+
+                  const minWidth = 150;
+                  const maxWidth = window.innerWidth - 150;
+                  left.style.width = Math.min(Math.max(newWidth, minWidth), maxWidth) + 'px';
+                });
+
+                document.addEventListener('mouseup', () => {
+                  isResizing = false;
+                  document.body.style.cursor = 'default';
+                  document.body.style.userSelect = 'auto';
+                });
+            </script>
+            {{- end }}
+        </body>
+    </html>
+{{- else}}
+    {{- template "root" . }}
+{{- end}}

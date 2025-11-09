@@ -66,26 +66,37 @@ func RenderListHTML(inputFiles []string) {
 		log.Fatalf("Write error: %v", err)
 	}
 }
-func RenderSongHTML(dev bool, song *Song, filename string) {
+
+func RenderSongHtml(dev bool, wholeHtml bool, sourceCode string, song *Song, filename string) string {
 	defer timer.LogElapsedTime("RenderHtml")()
 
+	params := map[string]any{
+		"Song":   song,
+		"Dev":    dev,
+		"Abc":    sourceCode,
+		"Whole":  wholeHtml,
+		"Editor": true,
+	}
+	var buf bytes.Buffer
+	tmpl := "base.html"
+
+	func() {
+		if err := templ.ExecuteTemplate(&buf, tmpl, params); err != nil {
+			log.Fatalf("Failed to render template: %v", err)
+		}
+	}()
+	res := buf.String()
+	return res
+}
+
+func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename string) {
 	f, err := os.Create(filename)
 	if err != nil {
 		Fatalf("Failed to create HTML file: %v", filename)
 	}
 	defer f.Close()
-	params := map[string]any{
-		"Song": song,
-		"Dev":  dev,
-	}
-	var buf bytes.Buffer
-
-	func() {
-		if err := templ.ExecuteTemplate(&buf, "tmpl.html", params); err != nil {
-			log.Fatalf("Failed to render template: %v", err)
-		}
-	}()
-	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
+	htmlOut := []byte(RenderSongHtml(dev, true, sourceCode, song, filename))
+	if err := os.WriteFile(filename, htmlOut, 0644); err != nil {
 		log.Fatalf("Write error: %v", err)
 	}
 }

@@ -37,7 +37,7 @@ other: value
 
 }
 func TestSongSection(t *testing.T) {
-	song, err := ParseSongFromStringWithUnknownSource("# a section\nA")
+	song, err := ParseSongFromString("# a section\nA")
 	assert.NoError(t, err)
 	assert.False(t, song.Sections[0].IsEmpty())
 	assert.Equal(t, 1, len(song.Sections))
@@ -45,7 +45,7 @@ func TestSongSection(t *testing.T) {
 }
 
 func TestSongWithUnnamedSection(t *testing.T) {
-	song, _ := ParseSongFromStringWithUnknownSource("Amaj7 C | B")
+	song, _ := ParseSongFromString("Amaj7 C | B")
 	assert.Equal(t, "", song.Sections[0].Name)
 	assert.Equal(t, "Amaj7", song.Sections[0].Lines[0].Bars[0].Chords[0].Value)
 	assert.Equal(t, "C", song.Sections[0].Lines[0].Bars[0].Chords[1].Value)
@@ -53,7 +53,7 @@ func TestSongWithUnnamedSection(t *testing.T) {
 }
 
 func TestSongWithUnnamedSectionAndNamedSection(t *testing.T) {
-	song, _ := ParseSongFromStringWithUnknownSource("A | B \n# verse\nD")
+	song, _ := ParseSongFromString("A | B \n# verse\nD")
 	assert.Equal(t, "", song.Sections[0].Name)
 	assert.Equal(t, "A", song.Sections[0].Lines[0].Bars[0].Chords[0].Value)
 	assert.Equal(t, "B", song.Sections[0].Lines[0].Bars[1].Chords[0].Value)
@@ -69,7 +69,7 @@ func TestSectionWithEmptyBody(t *testing.T) {
 }
 
 func TestSongEmptySection(t *testing.T) {
-	song, _ := ParseSongFromStringWithUnknownSource("\n#verse\nAmaj7 C | B")
+	song, _ := ParseSongFromString("\n#verse\nAmaj7 C | B")
 	assert.Equal(t, "verse", song.Sections[0].Name)
 	assert.False(t, song.Sections[0].IsEmpty())
 	assert.Equal(t, "Amaj7", song.Sections[0].Lines[0].Bars[0].Chords[0].Value)
@@ -78,7 +78,7 @@ func TestSongEmptySection(t *testing.T) {
 }
 
 func TestSongNotEmptySectionIfItHasAName(t *testing.T) {
-	song, _ := ParseSongFromStringWithUnknownSource("\n#verse\n")
+	song, _ := ParseSongFromString("\n#verse\n")
 	assert.Equal(t, 1, len(song.Sections))
 	assert.Equal(t, "verse", song.Sections[0].Name)
 	assert.False(t, song.Sections[0].IsEmpty())
@@ -188,7 +188,7 @@ func TestParseBarWithBarNotePreviousLineWithBacktick(t *testing.T) {
 }
 
 func TestSongRepeatStart(t *testing.T) {
-	song, _ := ParseSongFromStringWithUnknownSource("||: A :|| B |")
+	song, _ := ParseSongFromString("||: A :|| B |")
 	assert.Equal(t, "A", song.Sections[0].Lines[0].Bars[0].Chords[0].Value)
 	assert.True(t, song.Sections[0].Lines[0].Bars[0].RepeatStart)
 	assert.True(t, song.Sections[0].Lines[0].Bars[0].RepeatEnd)
@@ -199,7 +199,7 @@ func TestSongRepeatStart(t *testing.T) {
 }
 
 func TestSongTwoConsecutiveRepeats(t *testing.T) {
-	song, err := ParseSongFromStringWithUnknownSource("||: A :|| ||: B |")
+	song, err := ParseSongFromString("||: A :|| ||: B |")
 	assert.NoError(t, err)
 	assert.Equal(t, "A", song.Sections[0].Lines[0].Bars[0].Chords[0].Value)
 	assert.True(t, song.Sections[0].Lines[0].Bars[0].RepeatStart)
@@ -248,7 +248,7 @@ func TestParseBarsLineEmpty(t *testing.T) {
 }
 
 func TestSongWithBacktickMultiline(t *testing.T) {
-	song, err := ParseSongFromStringWithUnknownSource("\n#verse\n```mybacktick```\nA|B\n")
+	song, err := ParseSongFromString("\n#verse\n```mybacktick```\nA|B\n")
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(song.Sections))
 	assert.Equal(t, "verse", song.Sections[0].Name)
@@ -259,7 +259,7 @@ func TestSongWithBacktickMultiline(t *testing.T) {
 }
 
 func TestSongWith2BacktickMultilinesIncrementsTheirId(t *testing.T) {
-	song, err := ParseSongFromStringWithUnknownSource("\n#verse\n```mybacktick```\n```\nsecond```")
+	song, err := ParseSongFromString("\n#verse\n```mybacktick```\n```\nsecond```")
 
 	assert.NoError(t, err)
 	assert.Equal(t, 1, len(song.Sections))
@@ -373,6 +373,6 @@ func TestParseChord(t *testing.T) {
 }
 
 func TestPrettyPrint(t *testing.T) {
-	song, _ := ParseSongFromStringWithUnknownSource("Amaj7(#11)|B|")
+	song, _ := ParseSongFromString("Amaj7(#11)|B|")
 	assert.Equal(t, "A△⁷<small>(♯¹¹)</small>", song.Sections[0].Lines[0].Bars[0].Chords[0].PrettyPrint())
 }

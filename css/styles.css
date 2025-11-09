@@ -18,10 +18,6 @@ html{
     font-family: "Helvetica Neue", "Helvetica", "Arial";
 }
 
-body {
-    @apply m-8 print:m-0;
-}
-
 @font-face {
   font-family: 'music';
   src: url('./abc2svg.woff2') format('woff2');
@@ -31,6 +27,10 @@ body {
 
 .font-music {
     font-family: 'music';
+}
+
+#editor-text {
+    font-family: 'Courier';
 }
 
 .section-name {

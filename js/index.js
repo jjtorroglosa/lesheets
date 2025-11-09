@@ -1,6 +1,26 @@
-const initWasm = () => {
+function debounce(fn, delay) {
+    let timeoutId;
+    return (...args) => {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => fn(...args), delay);
+    };
+}
+
+const handleTextChange = (ev) => {
+    const val = ev.target.value.trim();
+    renderAbc(val);
+
+}
+const renderAbc = (abc) => {
+    console.log("render abc");
+    const html = go_nasheetToJson(abc);
+    const body = document.getElementById("root")
+    body.innerHTML = html;
+}
+
+const initWasm = async () => {
     const go = new Go(); // Defined in wasm_exec.js
-    const WASM_URL = 'wasm.wasm';
+    const WASM_URL = '/wasm.wasm';
 
     var wasm;
 
@@ -13,14 +33,13 @@ const initWasm = () => {
             .then(bytes => WebAssembly.instantiate(bytes, go.importObject))
     }
 
-    instance.then(function(obj) {
+    await instance.then(function(obj) {
         wasm = obj.instance;
         go.run(wasm);
-    }).then(function(obj) {
-        const res = go_nasheetToJson("# section\nA | Dm7(#11)");
-        console.log(JSON.parse(res));
+    })
 
-    });
+    // const textarea = document.getElementById("editor-text");
+    // textarea.addEventListener("input", debounce(handleTextChange, 200));
 
     go.importObject.env = {
         'add': function(x, y) {
@@ -31,4 +50,31 @@ const initWasm = () => {
     console.log("Wasm initialized");
 }
 
+
+const initAce = () => {
+    var editor = ace.edit("editor");
+    editor.setTheme("ace/theme/dracula");
+    editor.session.setMode("ace/mode/markdown");
+    editor.setKeyboardHandler("ace/keyboard/vim");
+    editor.setFontSize("14px");
+    // Listen for changes
+    editor.session.on('change', debounce(() => renderAbc(editor.getValue()), 100));
+    editor.focus();
+    // Store initial content
+    const initialContent = editor.getValue();
+
+    // Listen for page unload
+    window.addEventListener("beforeunload", function(e) {
+        const currentContent = editor.getValue();
+
+        // Check if content has changed
+        if (currentContent !== initialContent) {
+            // Standard message for modern browsers (custom messages ignored)
+            e.preventDefault();
+            e.returnValue = ""; // Required for Chrome
+        }
+    });
+}
+
 initWasm();
+initAce();

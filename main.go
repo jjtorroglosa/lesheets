@@ -21,7 +21,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-//go:embed build/*.css build/*.js build/abc2svg.woff2 build/wasm.wasm
+//go:embed build/*.css build/*.js build/abc2svg.woff2 build/*.wasm
 var staticsFS embed.FS
 
 func main() {
@@ -125,17 +125,22 @@ func render(dev bool, inputFile string, outputDir string) {
 		internal.Fatalf("Failed to create outupt dir: %v", err)
 	}
 
-	song, err := internal.ParseSongFromFile(inputFile)
+	sourceCode, err := internal.ReadFile(inputFile)
+	if err != nil {
+		internal.Fatalf("error reading input file %s: %v", inputFile, err)
+	}
+
+	song, err := internal.ParseSongFromStringWithFileName(inputFile, sourceCode)
 	if err != nil {
 		internal.Fatalf("error parsing song: %v", err)
 	}
 
 	fmt.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
-	internal.RenderSongHTML(dev, song, outputDir+"/"+outputFilename)
+	internal.WriteSongHtmlToFile(dev, sourceCode, song, outputDir+"/"+outputFilename)
 }
 
 func ExtractStatics(outputDir string) error {
-	extensions := []string{".js", ".css", ".wasm", ".woff2"}
+	extensions := []string{".js", ".css", ".wasm", ".woff2", ".wasm.gz"}
 	// Walk through embedded FS and write any .js files to disk
 	err := fs.WalkDir(staticsFS, "build", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
