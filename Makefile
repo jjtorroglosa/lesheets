@@ -7,7 +7,7 @@ TMPL_FILES := $(wildcard internal/views/*.html)
 NASHEETS := ./nasheets
 MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
-ENTR:= entr -n
+ENTR:= entr
 
 .PHONY: tailwind
 tailwind:
@@ -23,8 +23,9 @@ dev:
 	yarn run concurrently \
 		"make tailwind" \
 		"make watch-wasm" \
-		"make watch" \
-		"make watch-js"
+		"make watch-js" \
+		"make watch-build" \
+		"make watch-run"
 
 
 .PHONY: test
@@ -33,13 +34,18 @@ test:
 
 IN ?= examples/*.nns
 
-.PHONY: watch
-watch:
-	@echo watch
-	ls internal/views/*.html build/compiled.css build/*.js $(GO_FILES) build/*.wasm | \
-				$(ENTR) -r -s "make nasheets ; $(NASHEETS) watch $(IN)"
-.PHONY: run
+.PHONY: watch-build
+watch-build:
+	@echo watch-build
+	ls $(TMPL_FILES) build/compiled.css build/*.js $(GO_FILES) build/*.wasm | \
+				entr -a make nasheets
 
+
+.PHONY: watch-run
+watch-run:
+	ls nasheets | entr -r -s "$(NASHEETS) watch $(IN)"
+
+.PHONY: run
 run:
 	$(NASHEETS) watch *.nns
 
@@ -64,7 +70,7 @@ output/%.html: examples/%.nns
 watch-wasm:
 	@echo watch-wasm
 	ls $(TMPL_FILES) build/compiled.css $(GO_FILES) $(wildcard build/*.js) | \
-			$(ENTR) -a -s "make wasm"
+			$(ENTR) -a -s "make build/wasm.wasm"
 
 .PHONY: wasm
 wasm: build/wasm.wasm

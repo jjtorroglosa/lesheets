@@ -62,6 +62,14 @@ html{
 .bt-svg {
     margin-top: 0.5rem;
 }
+.bt-svg svg{
+    width: 100%;
+}
+
+.multiline-backtick svg{
+    width: 100%;
+    height: fit-content;
+}
 
 .repeat-end {
   @apply border-r-4 border-solid pr-[2px];
