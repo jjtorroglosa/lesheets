@@ -20,16 +20,15 @@
                 {{if .RepeatStart }}
                     <div class="repeat-start-symbol ">:</div>
                 {{end}}
-                <div class="mx-2 flex flex-row flex-grow gap-2 justify-between">
+                <div class="mx-2 flex flex-row flex-grow gap-2 justify-between items-end">
                 {{- if eq .Backtick.Value ""}}
                     {{- range .Chords}}
-                        <div class="flex flex-col items-start gap-0">
+                        <div class="flex flex-col gap-0">
                                 {{$opacity := "opacity-0"}}
                                 {{$symbol := "."}}
                                 {{ if not (eq .Annotation.Symbol "") }}
                                     {{$opacity = ""}}
                                     {{$symbol = .Annotation.Symbol}}
-                                {{else}}
                                 {{end}}
                                 {{if or (eq .Annotation.Value "diamond") (eq .Annotation.Value "diamond-fermata") }}
                                 <div class="ch flex flex-col items-center">

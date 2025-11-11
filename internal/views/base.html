@@ -1,0 +1,92 @@
+{{- if .Whole}}
+    <!DOCTYPE html>
+    <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1.0">
+            {{- if .Editor }}
+            <title>Nasheets</title>
+            {{- else }}
+            <title>{{- index .Song.FrontMatter "title"}}</title>
+            {{- end }}
+
+            <link href="/compiled.css?t=2" rel="stylesheet">
+            {{/*<script src="/abcjs-basic-min.js"></script>*/}}
+
+
+            {{- if .Editor}}
+                <script src="/wasm_exec.js"></script>
+                <script src="/ace.js" type="text/javascript" charset="utf-8"></script>
+                <script src="/abc2svg-1.js" type="text/javascript" charset="utf-8"></script>
+            {{- end }}
+            <script type="module" src="/index.js"></script>
+        </head>
+        <body class="h-screen bg-white print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
+            <div id="layout" class="flex h-full flex-row select-none p-4 print:p-0 print:m-0">
+                <div id="editor" class="shrink-0 w-6/14 print:hidden {{if not .Editor}}hidden{{end}}">
+                    <!-- Toggle switch vim mode -->
+                    <label class="inline-flex items-center cursor-pointer relative">
+                      <input id="vim-mode-toggler" type="checkbox" class="peer sr-only" />
+                      <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors duration-200"></div>
+                      <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200
+                                   peer-checked:translate-x-4"></span>
+                      <span class="ml-3 text-sm font-medium select-none">Vim mode</span>
+                    </label>
+
+                    <div id="editor-contents" class="w-full h-full p-4"><textarea id="editor-text" class="font-mono">{{- .Abc }}</textarea></div>
+                </div>
+                <div id="resizer" class="h-full w-[5px] shrink-0 print:hidden bg-gray-300 cursor-col-resize {{if not .Editor}}hidden{{end}}"></div>
+                <div id="root" class="@container h-full w-full pl-4 print:pl-0 ">
+                    {{- if not .Editor}}
+                        {{- template "root" . }}
+                    {{end}}
+                </div>
+            </div>
+
+            {{- if .Dev }}
+            <script src="/livereload.js"></script>
+            {{- end }}
+
+            {{ template "ui" }}
+
+            {{- if .Editor}}
+            <script>
+                const resizer = document.getElementById('resizer');
+                const left = document.getElementById('editor');
+                const body = document.getElementById('layout');
+
+                let isResizing = false;
+                let startX = 0;
+                let startWidth = 0;
+
+                resizer.addEventListener('mousedown', e => {
+                  isResizing = true;
+                  startX = e.clientX;
+                  startWidth = left.offsetWidth;
+                  document.body.style.cursor = 'col-resize';
+                  document.body.style.userSelect = 'none';
+                });
+
+                document.addEventListener('mousemove', e => {
+                  if (!isResizing) return;
+
+                  const delta = e.clientX - startX;
+                  const newWidth = startWidth + delta;
+
+                  const minWidth = 150;
+                  const maxWidth = window.innerWidth - 150;
+                  left.style.width = Math.min(Math.max(newWidth, minWidth), maxWidth) + 'px';
+                });
+
+                document.addEventListener('mouseup', () => {
+                  isResizing = false;
+                  document.body.style.cursor = 'default';
+                  document.body.style.userSelect = 'auto';
+                });
+            </script>
+            {{- end }}
+        </body>
+    </html>
+{{- else}}
+    {{- template "root" . }}
+{{- end}}
