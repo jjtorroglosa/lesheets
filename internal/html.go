@@ -3,8 +3,8 @@ package internal
 import (
 	"bytes"
 	"embed"
+	"fmt"
 	"html/template"
-	"log"
 	"nasheets/internal/timer"
 	"os"
 	"path/filepath"
@@ -33,12 +33,12 @@ func init() {
 	templ = template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "views/*.html"))
 }
 
-func RenderListHTML(inputFiles []string) {
+func RenderListHTML(inputFiles []string) error {
 	defer timer.LogElapsedTime("RenderList")()
 	filename := "output/index.html"
 	f, err := os.Create(filename)
 	if err != nil {
-		Fatalf("Failed to create HTML file: %v", filename)
+		return err
 	}
 
 	type Link struct {
@@ -64,11 +64,12 @@ func RenderListHTML(inputFiles []string) {
 	defer f.Close()
 	var buf bytes.Buffer
 	if err := templ.ExecuteTemplate(&buf, "list.html", files); err != nil {
-		log.Fatalf("Failed to render template: %v", err)
+		return err
 	}
 	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
-		log.Fatalf("Write error: %v", err)
+		return err
 	}
+	return nil
 }
 
 type RenderConfig struct {
@@ -77,7 +78,7 @@ type RenderConfig struct {
 	WithEditor     bool
 }
 
-func RenderSongHtml(cfg RenderConfig, sourceCode string, song *Song, filename string) string {
+func RenderSongHtml(cfg RenderConfig, sourceCode string, song *Song, filename string) (string, error) {
 	defer timer.LogElapsedTime("RenderHtml")()
 
 	params := map[string]any{
@@ -91,43 +92,55 @@ func RenderSongHtml(cfg RenderConfig, sourceCode string, song *Song, filename st
 	var buf bytes.Buffer
 	tmpl := "base.html"
 
-	func() {
-		if err := templ.ExecuteTemplate(&buf, tmpl, params); err != nil {
-			log.Fatalf("Failed to render template: %v", err)
-		}
-	}()
+	if err := templ.ExecuteTemplate(&buf, tmpl, params); err != nil {
+		return "", fmt.Errorf("failed to render template: %w", err)
+	}
 	res := buf.String()
-	return res
+	return res, nil
 }
 
-func WriteEditorToHtmlFile(dev bool, filename string) {
+func WriteEditorToHtmlFile(dev bool, filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		Fatalf("Failed to create HTML file: %v", filename)
+		return fmt.Errorf("failed to create filename %s: %w", filename, err)
 	}
 	defer f.Close()
-	htmlOut := []byte(RenderSongHtml(RenderConfig{
+	htmlOut, err := RenderSongHtml(RenderConfig{
 		WithLiveReload: dev,
 		WholeHtml:      true,
 		WithEditor:     true,
-	}, "", nil, filename))
-	if err := os.WriteFile(filename, htmlOut, 0644); err != nil {
-		log.Fatalf("Write error: %v", err)
+	}, "", nil, filename)
+	if err != nil {
+		return err
 	}
+
+	if err := os.WriteFile(filename, []byte(htmlOut), 0644); err != nil {
+		return err
+	}
+	return nil
 }
 
-func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename string) {
+func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		Fatalf("Failed to create HTML file: %v", filename)
+		return fmt.Errorf("failed to create HTML file: %s", filename)
 	}
 	defer f.Close()
-	htmlOut := []byte(RenderSongHtml(RenderConfig{
+	htmlOut, err := RenderSongHtml(RenderConfig{
 		WithLiveReload: dev,
 		WholeHtml:      true,
 		WithEditor:     false,
-	}, sourceCode, song, filename))
-	if err := os.WriteFile(filename, htmlOut, 0644); err != nil {
-		log.Fatalf("Write error: %v", err)
+	}, sourceCode, song, filename)
+	if err != nil {
+		return err
 	}
+
+	if err := os.WriteFile(filename, []byte(htmlOut), 0644); err != nil {
+		return err
+	}
+	return nil
+}
+
+func RenderError(err error) string {
+	return "<pre>" + err.Error() + "</pre>"
 }

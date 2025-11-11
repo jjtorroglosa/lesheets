@@ -51,7 +51,10 @@ func main() {
 		for ; i < len(args); i++ {
 			files = append(files, args[i])
 		}
-		internal.RenderListHTML(files)
+		err := internal.RenderListHTML(files)
+		if err != nil {
+			log.Fatalf("error rendering list: %v", err)
+		}
 		internal.WriteEditorToHtmlFile(dev, "output/editor.html")
 	case "editor":
 		dev = false
@@ -66,7 +69,11 @@ func main() {
 	// Read the song file
 	switch cmd {
 	case "editor":
-		internal.RenderListHTML(files)
+		err := internal.RenderListHTML(files)
+		if err != nil {
+			log.Fatalf("error rendering list: %v", err)
+		}
+
 		internal.WriteEditorToHtmlFile(dev, "output/editor.html")
 	case "html":
 	case "serve":

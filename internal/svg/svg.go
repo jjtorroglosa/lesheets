@@ -2,14 +2,14 @@ package svg
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
-	"log"
 	"nasheets/internal/timer"
 	"os/exec"
 	"strings"
 )
 
-func AbcToHtml(sourceFile string, defaultLength string, abcInput string) template.HTML {
+func AbcToHtml(sourceFile string, defaultLength string, abcInput string) (template.HTML, error) {
 	abc := `
 %%topspace 0
 %%musicfont
@@ -21,10 +21,15 @@ func AbcToHtml(sourceFile string, defaultLength string, abcInput string) templat
 %%rightmargin    0px
 %%titlespace     0px
 ` + abcInput
-	return template.HTML(AbcToSvg(sourceFile, abc))
+	svg, err := AbcToSvg(sourceFile, abc)
+	if err != nil {
+		return template.HTML(""), err
+	}
+
+	return template.HTML(svg), nil
 }
 
-func InlineAbcToHtml(sourceFile string, defaultLength string, abcInput string) template.HTML {
+func InlineAbcToHtml(sourceFile string, defaultLength string, abcInput string) (template.HTML, error) {
 	abc := `
 %%topspace 0
 %%musicfont
@@ -42,17 +47,22 @@ L:` + defaultLength + `
 K:none clef=none stafflines=0 stem=up
 %%voicemap all2A
 ` + abcInput
-	return template.HTML(AbcToSvg(sourceFile, abc))
+	svg, err := AbcToSvg(sourceFile, abc)
+	if err != nil {
+		return template.HTML(""), err
+	}
+
+	return template.HTML(svg), nil
 }
 
-func AbcToSvg(sourceFile string, abcInput string) string {
+func AbcToSvg(sourceFile string, abcInput string) (string, error) {
 	defer timer.LogElapsedTime("RenderSvg")()
 	if true {
 		res, err := RenderAbcToSvg(sourceFile, abcInput)
 		if err != nil {
-			log.Fatalf("error rendering abc to svg: %v", err)
+			return "", fmt.Errorf("error rendering abc to svg: %w", err)
 		}
-		return res
+		return res, nil
 
 	} else {
 		// Example ABC notation
@@ -70,10 +80,10 @@ func AbcToSvg(sourceFile string, abcInput string) string {
 
 		// Execute the command
 		if err := cmd.Run(); err != nil {
-			log.Fatalf("Error running abc script: %v\nStderr: %s", err, stderr.String())
+			return "", fmt.Errorf("error running abc script: %w, stderr: %s", err, stderr.String())
 		}
 
 		// Get SVG output
-		return out.String()
+		return out.String(), nil
 	}
 }

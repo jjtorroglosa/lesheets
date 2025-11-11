@@ -49,7 +49,7 @@ func ParseSongFromStringWithFileName(filename string, sourceCode string) (*Song,
 func ReadFile(file string) (string, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
-		return "", fmt.Errorf("failed to read file: %v", err)
+		return "", fmt.Errorf("failed to read file: %w", err)
 	}
 	return string(data), nil
 }
@@ -59,7 +59,7 @@ func ParseSongFromFile(file string) (*Song, error) {
 
 	data, err := ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
 	return NewParser(NewLexerFromSource(file, string(data))).ParseSong()
