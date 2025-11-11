@@ -5,7 +5,7 @@ import (
 	"nasheets/internal/timer"
 	"os"
 
-	yaml "github.com/oasdiff/yaml3"
+	"gopkg.in/yaml.v3"
 )
 
 type Parser struct {
