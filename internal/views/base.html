@@ -17,9 +17,10 @@
             {{- if .Editor}}
                 <script src="/wasm_exec.js"></script>
                 <script src="/ace.js" type="text/javascript" charset="utf-8"></script>
-                <script src="/abc2svg-1.js" type="text/javascript" charset="utf-8"></script>
+                {{/*<script src="/abc2svg-1.js" type="text/javascript" charset="utf-8"></script>*/}}
             {{- end }}
-            <script type="module" src="/index.js"></script>
+            {{/*<script type="module" src="/index.js"></script>*/}}
+            <script type="module" src="/bundle.js"></script>
         </head>
         <body class="h-screen bg-white print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
             <div id="layout" class="flex h-full flex-row select-none p-4 print:p-0 print:m-0">

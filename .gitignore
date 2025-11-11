@@ -7,3 +7,4 @@ build
 nasheets
 *.nns
 !examples/*.nns
+vendorjs/abc2svg-compiled.js

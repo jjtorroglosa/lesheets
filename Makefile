@@ -2,7 +2,7 @@ GO := GOAMD64=v2 GOARM64=v8.0 GOPROXY=https://athens.jjtorroglosa.com,direct go
 GO_FLAGS = -ldflags -w
 
 GO_FILES := $(shell find . -name "*.go")
-JS_FILES := $(wildcard js/*.js vendorjs/*.js)
+JS_FILES := $(wildcard js/*.js)
 TMPL_FILES := $(wildcard internal/views/*.html)
 NASHEETS := ./nasheets
 MAIN := main.go
@@ -57,10 +57,18 @@ watch-js:
 	mkdir -p build
 	ls $(JS_FILES) | $(ENTR) -a -s "make js"
 
+ABC2SVG :=vendorjs/abc2svg-compiled.js
 .PHONY: js
-js:
+js: build/bundle.js
+build/bundle.js: $(ABC2SVG)
 	@echo build-js
-	cp fonts/*.woff2 fonts/*.ttf js/*.js vendorjs/*.js build/
+	cp fonts/*.woff2 fonts/*.ttf build/
+	node build.mjs
+
+$(ABC2SVG): vendorjs/abc2svg-1.js vendorjs/abc2svg-caller.js
+	# Concat the vendored abc2svg code with the -caller, to export the RenderFunction
+	cat vendorjs/abc2svg-1.js vendorjs/abc2svg-caller.js > $@
+
 
 nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css $(wildcard build/*.js)
 	@echo build-exec
