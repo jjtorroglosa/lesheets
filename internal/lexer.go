@@ -51,8 +51,11 @@ func (l *Lexer) nextChar() rune {
 }
 
 func (l *Lexer) getPos(pos int, length int) string {
-	if pos < 0 || pos+length > len(l.input) {
-		return ""
+	if pos < 0 {
+		return "BeginningOfFile"
+	}
+	if pos+length >= len(l.input) {
+		return "EndOfFile"
 	}
 	return l.input[pos : pos+length]
 }
@@ -88,10 +91,11 @@ func (l *Lexer) consumeWhitespacesAndNewLines() {
 }
 
 func ErrGeneric(context string, want string, got string) error {
-	return fmt.Errorf("unexpected string %s Want: <%s> Got: <%s>", context, want, got)
+	return fmt.Errorf("unexpected string %sWant: <%s> Got: <%s>", context, want, got)
 }
+
 func ErrInvalidFrontmatter(context string, want string, got string) error {
-	return fmt.Errorf("invalid frontmatter %s Want: <%s> Got: <%s> ", context, want, got)
+	return fmt.Errorf("invalid frontmatter %sWant: <%s> Got: <%s> ", context, want, got)
 }
 
 func (l *Lexer) consumeFrontmatter() (*Token, error) {
@@ -100,8 +104,8 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 	for !l.eof() && l.nextChar() == '-' {
 		l.advance()
 	}
-	if l.input[start:l.pos] != "---" {
-		return nil, ErrInvalidFrontmatter(l.SurroundingString(), "Opening ---", l.input[start:l.pos])
+	if l.getPos(start, 3) != "---" {
+		return nil, ErrInvalidFrontmatter(l.SurroundingString(), "Opening ---", l.getPos(start, 3))
 	}
 
 	// body
@@ -120,7 +124,7 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 		l.advance()
 	}
 	if l.input[start:l.pos] != "---" {
-		return nil, ErrInvalidFrontmatter(l.SurroundingString(), "Closing ---", l.input[start:l.pos])
+		return nil, ErrInvalidFrontmatter(l.SurroundingString(), "Closing ---", l.getPos(start, 3))
 	}
 
 	return &Token{
@@ -162,8 +166,8 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		return tok, nil
 	}
 	if ch == ':' {
-		if !strings.HasPrefix(l.input[l.pos:], ":||") {
-			return nil, ErrGeneric(l.SurroundingString(), ":||", l.input[l.pos:3])
+		if l.getPos(l.pos, 3) != ":||" {
+			return nil, ErrGeneric(l.SurroundingString(), ":||", l.getPos(l.pos, 3))
 		}
 		tok := Token{
 			Type:  TokenBar,
@@ -174,14 +178,14 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	}
 	// Single bar
 	if ch == '|' {
-		if strings.HasPrefix(l.input[l.pos:], "||:") {
+		if l.getPos(l.pos, 3) == "||:" {
 			tok := Token{
 				Type:  TokenBar,
 				Value: "||:",
 			}
 			l.pos += 3
 			return &tok, nil
-		} else if strings.HasPrefix(l.input[l.pos:], "||") {
+		} else if l.getPos(l.pos, 2) == "||" {
 			tok := Token{
 				Type:  TokenBar,
 				Value: "||",
@@ -199,7 +203,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	}
 
 	// Comment
-	if strings.HasPrefix(l.getPos(l.pos, 2), "//") {
+	if l.getPos(l.pos, 2) == "//" {
 		start := l.pos
 		for l.pos < len(l.input) && l.input[l.pos] != '\n' {
 			l.advance()
@@ -241,7 +245,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		}
 
 		if l.pos >= len(l.input) || l.input[l.pos] != '"' {
-			return nil, ErrGeneric(l.SurroundingString(), "\"", string(l.nextChar()))
+			return nil, ErrGeneric(l.SurroundingString(), "\"", l.getPos(l.pos, 1))
 		}
 		// consume closing "
 		l.advance() // skip closing "
@@ -251,15 +255,15 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	// Backtick expression
 	if ch == '`' {
 		// Backtick multiline
-		if l.pos+3 < len(l.input) && strings.HasPrefix(l.input[l.pos:l.pos+3], "```") {
+		if l.pos+3 < len(l.input) && l.getPos(l.pos, 3) == "```" {
 			l.pos += 3
 			l.consumeWhitespacesAndNewLines()
 			start := l.pos
 			for l.pos < len(l.input) && l.input[l.pos] != '`' {
 				l.advance()
 			}
-			if l.pos+3 > len(l.input) || !strings.HasPrefix(l.input[l.pos:l.pos+3], "```") {
-				return nil, ErrGeneric(l.SurroundingString(), "Closing ```", string(l.input[l.pos]))
+			if l.pos+3 > len(l.input) || l.getPos(l.pos, 3) != "```" {
+				return nil, ErrGeneric(l.SurroundingString(), "Closing ```", l.getPos(l.pos, 3))
 			}
 			tok := Token{
 				Type:  TokenBacktickMultiline,
@@ -280,7 +284,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 			}
 
 			if l.pos >= len(l.input) || l.input[l.pos] != '`' {
-				return nil, ErrGeneric(l.SurroundingString(), "`", string(l.nextChar()))
+				return nil, ErrGeneric(l.SurroundingString(), "`", l.getPos(l.pos, 1))
 			}
 			l.advance()
 			return &tok, nil

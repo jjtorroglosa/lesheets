@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"nasheets/internal/svg"
 )
@@ -135,20 +136,28 @@ func (song *Song) PrintSong() {
 	}
 }
 
-func (song *Song) ToJson() string {
+func (song *Song) ToJson() (string, error) {
 	j, err := json.MarshalIndent(song, "", "  ")
 	if err != nil {
-		Fatalf("Error marshalling json: %v", err)
+		return "", fmt.Errorf("error marshalling json: %w", err)
 	}
-	return string(j)
+	return string(j), nil
 }
 
 func (mb *MultilineBacktick) Svg() template.HTML {
-	return svg.AbcToHtml(mb.SourceFile, mb.DefaultLength, mb.Value)
+	html, err := svg.AbcToHtml(mb.SourceFile, mb.DefaultLength, mb.Value)
+	if err != nil {
+		return template.HTML("<pre>Error rendering svg</pre>")
+	}
+	return template.HTML(html)
 }
 
 func (backtick *Backtick) Svg() template.HTML {
-	return svg.InlineAbcToHtml("", backtick.DefaultLength, backtick.Value)
+	html, err := svg.InlineAbcToHtml("", backtick.DefaultLength, backtick.Value)
+	if err != nil {
+		return template.HTML("<pre>Error rendering svg</pre>")
+	}
+	return html
 }
 func (a *Annotation) Symbol() template.HTML {
 	switch a.Value {

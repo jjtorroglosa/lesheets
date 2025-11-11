@@ -1,7 +1,22 @@
 // abc2svg - ABC to SVG translator
 // @source: https://chiselapp.com/user/moinejf/repository/abc2svg
 // Copyright (C) 2014-2025 Jean-François Moine - LGPL3+
-//abc2svg-abc2svg.js
+// abc2svg - abc2svg.js
+// abc2svg - deco.js - decorations
+// abc2svg - draw.js - draw functions
+// abc2svg music font
+// abc2svg - format.js - formatting functions
+// abc2svg - front.js - ABC parsing front-end
+// abc2svg - music.js - music generation
+// abc2svg - parse.js - ABC parse
+// abc2svg - subs.js - text output
+// abc2svg - svg.js - svg functions
+// abc2svg - tune.js - tune generation
+// abc2svg - lyrics.js - lyrics
+// abc2svg - gchord.js - chord symbols
+// abc2svg - tail.js
+// abc2svg - modules.js - module handling
+
 if(typeof abc2svg=="undefined")
 var abc2svg={};abc2svg.C={BLEN:1536,BAR:0,CLEF:1,CUSTOS:2,SM:3,GRACE:4,KEY:5,METER:6,MREST:7,NOTE:8,PART:9,REST:10,SPACE:11,STAVES:12,STBRK:13,TEMPO:14,BLOCK:16,REMARK:17,FULL:0,EMPTY:1,OVAL:2,OVALBARS:3,SQUARE:4,SL_ABOVE:0x01,SL_BELOW:0x02,SL_AUTO:0x03,SL_HIDDEN:0x04,SL_DOTTED:0x08,SL_ALI_MSK:0x70,SL_ALIGN:0x10,SL_CENTER:0x20,SL_CLOSE:0x40};abc2svg.sym_name=['bar','clef','custos','smark','grace','key','meter','Zrest','note','part','rest','yspace','staves','Break','tempo','','block','remark']
 abc2svg.keys=[new Int8Array([-1,-1,-1,-1,-1,-1,-1]),new Int8Array([-1,-1,-1,0,-1,-1,-1]),new Int8Array([0,-1,-1,0,-1,-1,-1]),new Int8Array([0,-1,-1,0,0,-1,-1]),new Int8Array([0,0,-1,0,0,-1,-1]),new Int8Array([0,0,-1,0,0,0,-1]),new Int8Array([0,0,0,0,0,0,-1]),new Int8Array([0,0,0,0,0,0,0]),new Int8Array([0,0,0,1,0,0,0]),new Int8Array([1,0,0,1,0,0,0]),new Int8Array([1,0,0,1,1,0,0]),new Int8Array([1,1,0,1,1,0,0]),new Int8Array([1,1,0,1,1,1,0]),new Int8Array([1,1,1,1,1,1,0]),new Int8Array([1,1,1,1,1,1,1])]
@@ -6998,1727 +7013,1151 @@ continue
 s2.dur*=fac;s2.dur_orig*=fac;time+=s2.dur
 if(s2.type!=C.NOTE&&s2.type!=C.REST)
 continue
-            for (i = 0; i <= s2.nhd; i++)
-                s2.notes[i].dur *= fac
-        }
-        curvoice.time = s.time = time
-    }
-    function new_bar() {
-        var s2, c, bar_type, line = parse.line, s = { type: C.BAR, fname: parse.fname, istart: parse.bol + line.index, dur: 0, multi: 0 }
-        if (vover && vover.bar)
-            get_vover('|')
-        if (glovar.new_nbar) { s.bar_num = glovar.new_nbar; glovar.new_nbar = 0 }
-        bar_type = line.char()
-        while (1) {
-            c = line.next_char()
-            switch (c) {
-                case '|': case '[': case ']': case ':': bar_type += c
-                    continue
-            }
-            break
-        }
-        if (bar_type[0] == ':') { if (bar_type == ':') { bar_type = '|'; s.bar_dotted = true } else { s.rbstop = 2 } }
-        if (a_gch)
-            csan_add(s)
-        if (a_dcn.length)
-            deco_cnv(s)
-        if (bar_type.slice(-1) == '[' && !(/[0-9" ]/.test(c))) { bar_type = bar_type.slice(0, -1); line.index--; c = '[' }
-        if (c > '0' && c <= '9') {
-            s.text = c
-            while (1) {
-                c = line.next_char()
-                if ("0123456789,.-".indexOf(c) < 0)
-                    break
-                s.text += c
-            }
-        } else if (c == '"' && bar_type.slice(-1) == '[') {
-            s.text = ""
-            while (1) {
-                c = line.next_char()
-                if (!c) {
-                    syntax(1, "No end of repeat string")
-                    return
-                }
-                if (c == '"') {
-                    line.index++
-                    break
-                }
-                s.text += c
-            }
-        }
-        if (bar_type[0] == ']') {
-            s.rbstop = 2
-            if (bar_type.length != 1)
-                bar_type = bar_type.slice(1)
-            else
-                s.invis = true
-        }
-        s.iend = parse.bol + line.index
-        if (s.text && bar_type.slice(-1) == '[' && bar_type != '[')
-            bar_type = bar_type.slice(0, -1)
-        if (bar_type.slice(-1) == ':') {
-            s.rbstop = 1
-            if (s.text) {
-                syntax(1, "Variant ending on a left repeat bar")
-                delete s.text
-            }
-            curvoice.tie_s_rep = null
-        }
-        if (s.text) {
-            s.rbstart = s.rbstop = 2
-            if (s.text[0] == '1') {
-                curvoice.tie_s_rep = curvoice.tie_s
-                if (curvoice.acc_tie)
-                    curvoice.acc_tie_rep = curvoice.acc_tie.slice()
-                else if (curvoice.acc_tie_rep)
-                    curvoice.acc_tie_rep = null
-            } else {
-                curvoice.tie_s = curvoice.tie_s_rep
-                if (curvoice.acc_tie_rep)
-                    curvoice.acc_tie = curvoice.acc_tie_rep.slice()
-            }
-            if (curvoice.norepbra && !curvoice.second)
-                s.norepbra = 1
-        }
-        if (curvoice.ulen < 0)
-            adjust_dur(s); if ((bar_type == "[" || bar_type == "|:") && !curvoice.eoln && !s.a_gch && !s.invis) {
-                s2 = curvoice.last_sym
-                if (s2 && s2.type == C.BAR) {
-                    if ((bar_type == "[" && !s2.text) || s.norepbra) {
-                        if (s.text) {
-                            s2.text = s.text
-                            if (curvoice.st && !s.norepbra && !(par_sy.staves[curvoice.st - 1].flags & STOP_BAR))
-                                s2.xsh = 4
-                        }
-                        if (s.norepbra)
-                            s2.norepbra = 1
-                        if (s.rbstart)
-                            s2.rbstart = s.rbstart
-                        if (s.rbstop)
-                            s2.rbstop = s.rbstop
-                        return
-                    }
-                    if (bar_type == "|:") {
-                        switch (s2.bar_type) {
-                            case ":|": s2.bar_type = "::"; s2.rbstop = 2
-                                return
-                        }
-                    }
-                }
-            }
-        switch (bar_type) {
-            case "[": case "[]": case "[|]": s.invis = true; bar_type = s.rbstart ? "[" : "[]"
-                break
-            case ":|:": case ":||:": bar_type = "::"
-                break
-            case "||": if (cfmt["abc-version"] >= "2.2")
-                break
-            case "[|": case "|]": s.rbstop = 2
-                break
-        }
-        s.bar_type = bar_type
-        if (!curvoice.lyric_restart)
-            curvoice.lyric_restart = s
-        if (!curvoice.sym_restart)
-            curvoice.sym_restart = s
-        sym_link(s); s.st = curvoice.st
-        if (s.text && s.st > 0 && !s.norepbra && !(par_sy.staves[s.st - 1].flags & STOP_BAR) && bar_type != '[')
-            s.xsh = 4
-        if (!s.bar_dotted && !s.invis)
-            curvoice.acc = []
-    }
-    function parse_staves(p) {
-        var v, vid, vids = {}, a_vf = [], err = false, flags = 0, brace = 0, bracket = 0, parenth = 0, flags_st = 0, e, a = p.match(/[^[\]|{}()*+\s]+|[^\s]/g)
-        if (!a) {
-            syntax(1, errs.bad_val, "%%score")
-            return
-        }
-        while (1) {
-            e = a.shift()
-            if (!e)
-                break
-            switch (e) {
-                case '[': if (parenth || brace + bracket >= 2) {
-                    syntax(1, errs.misplaced, '['); err = true
-                    break
-                }
-                    flags |= brace + bracket == 0 ? OPEN_BRACKET : OPEN_BRACKET2; bracket++; flags_st <<= 8; flags_st |= OPEN_BRACKET
-                    break
-                case '{': if (parenth || brace || bracket >= 2) {
-                    syntax(1, errs.misplaced, '{'); err = true
-                    break
-                }
-                    flags |= !bracket ? OPEN_BRACE : OPEN_BRACE2; brace++; flags_st <<= 8; flags_st |= OPEN_BRACE
-                    break
-                case '(': if (parenth) {
-                    syntax(1, errs.misplaced, '('); err = true
-                    break
-                }
-                    flags |= OPEN_PARENTH; parenth++; flags_st <<= 8; flags_st |= OPEN_PARENTH
-                    break
-                case '*': if (brace && !parenth && !(flags & (OPEN_BRACE | OPEN_BRACE2)))
-                    flags |= FL_VOICE
-                    break
-                case '+': flags |= MASTER_VOICE
-                    break
-                case ']': case '}': case ')': syntax(1, "Bad voice ID in %%score"); err = true
-                    break
-                default: vid = e
-                    while (1) {
-                        e = a.shift()
-                        if (!e)
-                            break
-                        switch (e) {
-                            case ']': if (!(flags_st & OPEN_BRACKET)) {
-                                syntax(1, errs.misplaced, ']'); err = true
-                                break
-                            }
-                                bracket--; flags |= brace + bracket == 0 ? CLOSE_BRACKET : CLOSE_BRACKET2; flags_st >>= 8
-                                continue
-                            case '}': if (!(flags_st & OPEN_BRACE)) {
-                                syntax(1, errs.misplaced, '}'); err = true
-                                break
-                            }
-                                brace--; flags |= !bracket ? CLOSE_BRACE : CLOSE_BRACE2; flags &= ~FL_VOICE; flags_st >>= 8
-                                continue
-                            case ')': if (!(flags_st & OPEN_PARENTH)) {
-                                syntax(1, errs.misplaced, ')'); err = true
-                                break
-                            }
-                                parenth--; flags |= CLOSE_PARENTH; flags_st >>= 8
-                                continue
-                            case '|': flags |= STOP_BAR
-                                continue
-                        }
-                        break
-                    }
-                    if (vids[vid]) {
-                        syntax(1, "Double voice in %%score")
-                        err = true
-                    } else {
-                        vids[vid] = true
-                        a_vf.push([vid, flags])
-                    }
-                    flags = 0
-                    if (!e)
-                        break
-                    a.unshift(e)
-                    break
-            }
-        }
-        if (flags_st != 0) { syntax(1, "'}', ')' or ']' missing in %%score"); err = true }
-        if (err || !a_vf.length)
-            return
-        return a_vf
-    }
-    function info_split(text) {
-        if (!text)
-            return []
-        var a = text.match(/[^\s"=]+=?|"[^"]*"/g)
-        if (!a) {
-            syntax(1, "Unterminated string")
-            return []
-        }
-        return a
-    }
-    var reg_dur = /(\d*)(\/*)(\d*)/g
-    function parse_dur(line) {
-        var res, num, den; reg_dur.lastIndex = line.index; res = reg_dur.exec(line.buffer)
-        if (!res[0])
-            return [1, 1]; num = res[1] || 1; den = res[3] || 1
-        if (!res[3])
-            den *= 1 << res[2].length; line.index = reg_dur.lastIndex
-        return [+num, +den]
-    }
-    function parse_acc_pit(line) {
-        var note, acc, pit, d, nd, c = line.char()
-        switch (c) {
-            case '^': c = line.next_char()
-                if (c == '^') { acc = 2; c = line.next_char() } else { acc = 1 }
-                break
-            case '=': acc = 3; c = line.next_char()
-                break
-            case '_': c = line.next_char()
-                if (c == '_') { acc = -2; c = line.next_char() } else { acc = -1 }
-                break
-        }
-        if (acc == 1 || acc == -1) {
-            if ((c >= '1' && c <= '9') || c == '/') {
-                nd = parse_dur(line); if (acc < 0)
-                    nd[0] = -nd[0]
-                if (cfmt.nedo && nd[1] == 1) {
-                    nd[0] *= 12
-                    nd[1] *= cfmt.nedo
-                }
-                acc = nd
-                c = line.char()
-            }
-        }
-        pit = ntb.indexOf(c) + 16; c = line.next_char()
-        if (pit < 16) {
-            syntax(1, "'$1' is not a note", line.buffer[line.index - 1])
-            return
-        }
-        while (c == "'") { pit += 7; c = line.next_char() }
-        while (c == ',') { pit -= 7; c = line.next_char() }
-        note = { pit: pit, shhd: 0, shac: 0 }
-        if (acc)
-            note.acc = acc
-        return note
-    }
-    function set_map(p_v, note, acc, trp_p) {
-        var nn = not2abc(note.pit, acc), map = maps[p_v.map]
-        if (!map)
-            return
-        function map_p() {
-            if (map[nn])
-                return 1
-            var sf, d
-            nn = 'o' + nn.replace(/[',]+/, '')
-            if (map[nn])
-                return 1
-            d = abc2svg.keys[p_v.ckey.k_sf + 7][(note.pit + 75) % 7]
-            d = (!d && acc == 3) ? 0 : acc
-            nn = 'k' + ['__', '_', '', '^', '^^', '='][d + 2]
-                + ntb[(note.pit + 75 - p_v.ckey.k_sf * 11) % 7]
-            if (map[nn])
-                return 1
-            nn = nn.replace(/[_=^]/g, '')
-            if (map[nn])
-                return 1
-            sf = p_v.ckey.k_sf + [0, 2, 4, -1, 1, 3, -2][p_v.ckey.k_mode]
-            if (sf < -7)
-                sf += 7
-            else if (sf > 7)
-                sf -= 7
-            d = abc2svg.keys[sf + 7]
-            [(note.pit + 75) % 7]
-            if (d && acc == 3)
-                d = -d
-            else if (!d && !acc)
-                d = 3
-            else
-                d = acc - d
-            nn = 't' + ['__', '_', '=', '^', '^^', '']
-            [d + 2]
-                + ntb[(note.pit + 75 - p_v.ckey.k_mode
-                    - p_v.ckey.k_sf * 11) % 7]
-            if (map[nn])
-                return 1
-            nn = nn.replace(/[_=^]/g, '')
-            if (map[nn])
-                return 1
-            nn = '*'
-            return map[nn]
-        }
-        if (!map_p())
-            return
-        map = map[nn]
-        if (trp_p) {
-            if (map[1] && map[1].notrp)
-                note.notrp = 1
-            return
-        }
-        if (map[1] && !note.map) {
-            note.pit = map[1].pit
-            note.acc = map[1].acc
-            if (map[1].notrp) {
-                note.notrp = 1
-                note.noplay = 1
-            }
-        }
-        note.map = map
-        if (map[2])
-            note.color = map[2]
-        nn = map[3]
-        if (nn)
-            note.midi = pit2mid(nn.pit + 19, nn.acc)
-    }
-    function parse_basic_note(line, ulen) {
-        var nd, note = parse_acc_pit(line)
-        if (!note)
-            return
-        if (line.char() == '0') { parse.stemless = true; line.index++ }
-        nd = parse_dur(line); note.dur = ulen * nd[0] / nd[1]
-        return note
-    }
-    function parse_vpos() {
-        var line = parse.line, ty = 0
-        if (a_dcn.length && a_dcn[a_dcn.length - 1] == "dot") {
-            ty = C.SL_DOTTED
-            a_dcn.pop()
-        }
-        switch (line.next_char()) {
-            case "'": line.index++
-                return ty + C.SL_ABOVE
-            case ",": line.index++
-                return ty + C.SL_BELOW
-            case '?': line.index++
-                return ty + C.SL_CENTER
-        }
-        return ty + C.SL_AUTO
-    }
-    function slur_add(s, nt) {
-        var i, s2, sl
-        for (i = curvoice.sls.length; --i >= 0;) {
-            sl = curvoice.sls[i]
-            if (sl.ss == s)
-                continue
-            curvoice.sls.splice(i, 1)
-            sl.se = s
-            if (nt)
-                sl.nte = nt
-            s2 = sl.ss
-            if (!s2.sls)
-                s2.sls = []
-            s2.sls.push(sl)
-            if (sl.grace)
-                sl.grace.sl1 = true
-            return
-        }
-        for (s2 = s.prev; s2; s2 = s2.prev) {
-            if (s2.type == C.BAR && s2.bar_type[0] == ':' && s2.text) {
-                if (!s2.sls)
-                    s2.sls = []; s2.sls.push({ ty: C.SL_AUTO, ss: s2, se: s })
-                if (nt)
-                    s2.sls[s2.sls.length - 1].nte = nt
-                return
-            }
-        }
-        if (!s.sls)
-            s.sls = []; s.sls.push({ ty: C.SL_AUTO, se: s, loc: 'i' })
-        if (nt)
-            s.sls[s.sls.length - 1].nte = nt
-    }
-    function pit2mid(pit, acc) {
-        var p = [0, 2, 4, 5, 7, 9, 11][pit % 7], o = ((pit / 7) | 0) * 12, p0, p1, s, b40
-        if (curvoice.snd_oct)
-            o += curvoice.snd_oct
-        if (acc == 3)
-            acc = 0
-        if (acc) {
-            if (typeof acc == "object") {
-                s = acc[0] / acc[1]
-                if (acc[1] == 100)
-                    return p + o + s
-            } else { s = acc }
-        } else {
-            if (cfmt.temper)
-                return cfmt.temper[abc2svg.p_b40[pit % 7]] + o
-            return p + o
-        }
-        if (!cfmt.nedo) {
-            if (!cfmt.temper) {
-                p += o + s
-                return p
-            }
-        } else {
-            p0 = cfmt.temper[abc2svg.p_b40[pit % 7]]
-            if (typeof acc != "object") {
-                b40 = abc2svg.p_b40[pit % 7] + acc
-                p1 = cfmt.temper[b40]
-                if (s > 0) {
-                    if (p1 < p0)
-                        p1 += 12
-                } else {
-                    if (p1 > p0)
-                        p1 -= 12
-                }
-                return p1 + o
-            }
-            if (acc[1] == cfmt.nedo) {
-                b40 = abc2svg.p_b40[pit % 7]
-                return cfmt.temper[b40] + o + s
-            }
-        }
-        p0 = cfmt.temper[abc2svg.p_b40[pit % 7]]
-        if (s > 0) {
-            p1 = cfmt.temper[(abc2svg.p_b40[pit % 7] + 1) % 40]
-            if (p1 < p0)
-                p1 += 12
-        } else {
-            p1 = cfmt.temper[(abc2svg.p_b40[pit % 7] + 39) % 40]
-            if (p1 > p0)
-                p1 -= 12
-            s = -s
-        }
-        return p0 + o + (p1 - p0) * s
-    }
-    function do_ties(s, tie_s) {
-        var i, m, not1, not2, mid, g, nt = 0, se = (tie_s.time + tie_s.dur) == curvoice.time
-        for (m = 0; m <= s.nhd; m++) {
-            not2 = s.notes[m]
-            mid = not2.midi
-            if (tie_s.type != C.GRACE) {
-                for (i = 0; i <= tie_s.nhd; i++) {
-                    not1 = tie_s.notes[i]
-                    if (!not1.tie_ty)
-                        continue
-                    if (not1.midi == mid && (!se || !not1.tie_e)) {
-                        not2.tie_s = not1
-                        not2.s = s
-                        if (se) {
-                            not1.tie_e = not2
-                            not1.s = tie_s
-                        }
-                        nt++
-                        break
-                    }
-                }
-            } else {
-                for (g = tie_s.extra; g; g = g.next) {
-                    not1 = g.notes[0]
-                    if (!not1.tie_ty)
-                        continue
-                    if (not1.midi == mid) {
-                        g.ti1 = true
-                        not2.tie_s = not1
-                        not2.s = s
-                        not1.tie_e = not2
-                        not1.s = g
-                        nt++
-                        break
-                    }
-                }
-            }
-        }
-        if (!nt)
-            error(1, tie_s, "Bad tie")
-        else
-            s.ti2 = true
-    }
-    Abc.prototype.new_note = function(grace, sls) {
-        var note, s, in_chord, c, tie_s, acc_tie, i, n, s2, nd, res, num, apit, div, ty, chdur = 1, dpit = 0, sl1 = [], line = parse.line, a_dcn_sav = a_dcn
-        a_dcn = []
-        parse.stemless = false; s = { type: C.NOTE, fname: parse.fname, stem: 0, multi: 0, nhd: 0, xmx: 0 }
-        s.istart = parse.bol + line.index
-        if (curvoice.color)
-            s.color = curvoice.color
-        if (grace) { s.grace = true } else {
-            if (curvoice.tie_s) {
-                tie_s = curvoice.tie_s
-                curvoice.tie_s = null
-            }
-            if (a_gch)
-                csan_add(s)
-            if (parse.repeat_n) { s.repeat_n = parse.repeat_n; s.repeat_k = parse.repeat_k; parse.repeat_n = 0 }
-        }
-        c = line.char()
-        switch (c) {
-            case 'X': s.invis = true
-            case 'Z': s.type = C.MREST; c = line.next_char()
-                s.nmes = (c > '0' && c <= '9') ? line.get_int() : 1; if (curvoice.wmeasure == 1) {
-                    error(1, s, "multi-measure rest, but no measure!")
-                    return
-                }
-                s.dur = curvoice.wmeasure * s.nmes
-                if (s.nmes == 1) {
-                    s.type = C.REST; s.dur_orig = s.dur; s.fmr = 1
-                    s.notes = [{ pit: 18, dur: s.dur }]
-                } else {
-                    glovar.mrest_p = true
-                    if (par_sy.voices.length == 1) {
-                        s.tacet = curvoice.tacet
-                        delete s.invis
-                    }
-                }
-                break
-            case 'y': s.type = C.SPACE; s.invis = true; s.dur = 0; c = line.next_char()
-                if (c >= '0' && c <= '9')
-                    s.width = line.get_int()
-                else
-                    s.width = 10
-                if (tie_s) {
-                    curvoice.tie_s = tie_s
-                    tie_s = null
-                }
-                break
-            case 'x': s.invis = true
-            case 'z': s.type = C.REST; line.index++; nd = parse_dur(line); s.dur_orig = ((curvoice.ulen < 0) ? C.BLEN : curvoice.ulen) * nd[0] / nd[1]; if (s.dur_orig < 12) {
-                error(0, s, "Bad note duration $1", s.dur_orig)
-                s.dur_orig = 12
-            }
-                s.dur = s.dur_orig * curvoice.dur_fact; if (s.dur == curvoice.wmeasure)
-                    s.fmr = 1
-                s.notes = [{ pit: 18, dur: s.dur_orig }]
-                break
-            case '[': in_chord = true; c = line.next_char()
-                i = line.buffer.indexOf(']', line.index)
-                if (i < 0) {
-                    syntax(1, "No end of chord")
-                    return
-                }
-                n = line.index
-                line.index = i + 1
-                nd = parse_dur(line)
-                chdur = nd[0] / nd[1]
-                in_chord = reg_dur.lastIndex
-                line.index = n
-            default: if (curvoice.acc_tie) {
-                acc_tie = curvoice.acc_tie
-                curvoice.acc_tie = null
-            }
-                s.notes = []
-                while (1) {
-                    if (in_chord) {
-                        while (1) {
-                            if (!c)
-                                break
-                            i = c.charCodeAt(0); if (i >= 128) {
-                                syntax(1, errs.not_ascii)
-                                return
-                            }
-                            ty = char_tb[i]
-                            switch (ty[0]) {
-                                case '(': sl1.push(parse_vpos()); c = line.char()
-                                    continue
-                                case '!': if (ty.length > 1)
-                                    a_dcn.push(ty.slice(1, -1))
-                                else
-                                    get_deco()
-                                    c = line.next_char()
-                                    continue
-                            }
-                            break
-                        }
-                    }
-                    note = parse_basic_note(line, s.grace ? C.BLEN / 4 : curvoice.ulen < 0 ? C.BLEN : curvoice.ulen)
-                    if (!note)
-                        return
-                    note.dur *= chdur
-                    if (note.dur < 12) {
-                        error(0, s, "Bad note duration $1", note.dur)
-                        note.dur = 12
-                    }
-                    if (curvoice.octave)
-                        note.pit += curvoice.octave * 7
-                    apit = note.pit + 19
-                    i = note.acc
-                    if (!i) {
-                        if (cfmt["propagate-accidentals"][0] == 'p')
-                            i = curvoice.acc[apit % 7]
-                        else
-                            i = curvoice.acc[apit]
-                        if (!i)
-                            i = curvoice.ckey.k_map[apit % 7] || 0
-                    }
-                    if (i && !curvoice.ckey.k_drum) {
-                        if (cfmt["propagate-accidentals"][0] == 'p')
-                            curvoice.acc[apit % 7] = i
-                        else if (cfmt["propagate-accidentals"][0] != 'n')
-                            curvoice.acc[apit] = i
-                    }
-                    if (acc_tie && acc_tie[apit])
-                        i = acc_tie[apit]
-                    if (!note.midi)
-                        note.midi = pit2mid(apit, i)
-                    if (curvoice.tr_sco) {
-                        set_map(curvoice, note, i, 1)
-                        if (!note.notrp) {
-                            i = nt_trans(note, i)
-                            if (i == -3) {
-                                error(1, s, "triple sharp/flat")
-                                i = note.acc > 0 ? 1 : -1
-                                note.pit += i
-                                note.acc = i
-                            }
-                            dpit = note.pit + 19 - apit
-                        }
-                    }
-                    if (curvoice.tr_snd)
-                        note.midi += curvoice.tr_snd
-                    if (curvoice.map)
-                        set_map(curvoice, note, i)
-                    if (i) {
-                        switch (cfmt["writeout-accidentals"][1]) {
-                            case 'd': s2 = curvoice.ckey
-                                if (!s2.k_a_acc)
-                                    break
-                                for (n = 0; n < s2.k_a_acc.length; n++) {
-                                    if ((s2.k_a_acc[n].pit - note.pit) % 7 == 0) {
-                                        note.acc = i
-                                        break
-                                    }
-                                }
-                                break
-                            case 'l': note.acc = i
-                                break
-                        }
-                    }
-                    if (sl1.length) {
-                        while (1) {
-                            i = sl1.shift()
-                            if (!i)
-                                break
-                            curvoice.sls.push({ ty: i, ss: s, nts: note })
-                        }
-                    }
-                    s.notes.push(note)
-                    if (!in_chord)
-                        break
-                    c = line.char()
-                    while (1) {
-                        switch (c) {
-                            case ')': slur_add(s, note)
-                                c = line.next_char()
-                                continue
-                            case '-': note.tie_ty = parse_vpos()
-                                note.s = s
-                                curvoice.tie_s = s
-                                s.ti1 = true
-                                if (curvoice.acc[apit] || (acc_tie && acc_tie[apit])) {
-                                    if (!curvoice.acc_tie)
-                                        curvoice.acc_tie = []
-                                    i = curvoice.acc[apit]
-                                    if (acc_tie && acc_tie[apit])
-                                        i = acc_tie[apit]
-                                    curvoice.acc_tie[apit] = i
-                                }
-                                c = line.char()
-                                continue
-                            case '.': c = line.next_char()
-                                switch (c) {
-                                    case '-': case '(': a_dcn.push("dot")
-                                        continue
-                                }
-                                syntax(1, "Misplaced dot")
-                                break
-                        }
-                        break
-                    }
-                    if (a_dcn.length) {
-                        s.time = curvoice.time
-                        dh_cnv(s, note)
-                    }
-                    if (c == ']') {
-                        line.index = in_chord
-                        s.nhd = s.notes.length - 1
-                        break
-                    }
-                }
-                if (sls.length) {
-                    while (1) {
-                        i = sls.shift()
-                        if (!i)
-                            break
-                        curvoice.sls.push({ ty: i, ss: s })
-                        if (grace)
-                            curvoice.sls[curvoice.sls.length - 1].grace = grace
-                    }
-                }
-                s.dur_orig = s.notes[0].dur; s.dur = s.notes[0].dur * curvoice.dur_fact
-                break
-        }
-        if (s.grace && s.type != C.NOTE) {
-            syntax(1, errs.bad_grace)
-            return
-        }
-        if (s.notes) {
-            if (!s.fmr) {
-                n = s.dur_orig / 12
-                i = 0
-                while (!(n & 1)) {
-                    n >>= 1
-                    i++
-                }
-                if ((n + 1) & n)
-                    error(0, s, "Non standard note duration $1", n + '/' + (1 << (6 - i)))
-            }
-            if (!grace) {
-                switch (curvoice.pos.stm & 0x07) {
-                    case C.SL_ABOVE: s.stem = 1; break
-                    case C.SL_BELOW: s.stem = -1; break
-                    case C.SL_HIDDEN: s.stemless = true; break
-                }
-                num = curvoice.brk_rhythm
-                if (num) {
-                    curvoice.brk_rhythm = 0; s2 = curvoice.last_note
-                    if (num > 0) {
-                        n = num * 2 - 1; s.dur = s.dur * n / num; s.dur_orig = s.dur_orig * n / num
-                        for (i = 0; i <= s.nhd; i++)
-                            s.notes[i].dur = s.notes[i].dur * n / num; s2.dur /= num; s2.dur_orig /= num
-                        for (i = 0; i <= s2.nhd; i++)
-                            s2.notes[i].dur /= num
-                    } else {
-                        num = -num; n = num * 2 - 1; s.dur /= num; s.dur_orig /= num
-                        for (i = 0; i <= s.nhd; i++)
-                            s.notes[i].dur /= num; s2.dur = s2.dur * n / num; s2.dur_orig = s2.dur_orig * n / num
-                        for (i = 0; i <= s2.nhd; i++)
-                            s2.notes[i].dur = s2.notes[i].dur * n / num
-                    }
-                    curvoice.time = s2.time + s2.dur; for (s2 = s2.next; s2; s2 = s2.next)
-                        s2.time = curvoice.time
-                }
-            } else {
-                div = curvoice.ckey.k_bagpipe ? 8 : 4
-                for (i = 0; i <= s.nhd; i++)
-                    s.notes[i].dur /= div; s.dur /= div; s.dur_orig /= div
-                if (grace.stem)
-                    s.stem = grace.stem
-            }
-            curvoice.last_note = s
-            c = line.char()
-            while (1) {
-                switch (c) {
-                    case '.': if (line.buffer[line.index + 1] != '-')
-                        break
-                        a_dcn.push("dot")
-                        line.index++
-                    case '-': ty = parse_vpos()
-                        for (i = 0; i <= s.nhd; i++) {
-                            s.notes[i].tie_ty = ty
-                            s.notes[i].s = s
-                        }
-                        curvoice.tie_s = grace || s
-                        curvoice.tie_s.ti1 = true
-                        for (i = 0; i <= s.nhd; i++) {
-                            note = s.notes[i]
-                            apit = note.pit + 19
-                                - dpit
-                            if (curvoice.acc[apit] || (acc_tie && acc_tie[apit])) {
-                                if (!curvoice.acc_tie)
-                                    curvoice.acc_tie = []
-                                n = curvoice.acc[apit]
-                                if (acc_tie && acc_tie[apit])
-                                    n = acc_tie[apit]
-                                curvoice.acc_tie[apit] = n
-                            }
-                        }
-                        c = line.char()
-                        continue
-                }
-                break
-            }
-            if (tie_s)
-                do_ties(s, tie_s)
-        }
-        sym_link(s)
-        if (!grace) {
-            if (!curvoice.lyric_restart)
-                curvoice.lyric_restart = s
-            if (!curvoice.sym_restart)
-                curvoice.sym_restart = s
-        }
-        if (a_dcn_sav.length) {
-            a_dcn = a_dcn_sav
-            deco_cnv(s, s.prev)
-        }
-        if (grace && s.ottava)
-            grace.ottava = s.ottava
-        if (parse.stemless)
-            s.stemless = true
-        s.iend = parse.bol + line.index
-        return s
-    }
-    function tp_adj(s, fact) {
-        var d, tim = s.time, to = curvoice.time - tim, tt = to * fact
-        curvoice.time = tim + tt
-        while (1) {
-            s.in_tuplet = true
-            if (!s.grace) {
-                s.time = tim
-                if (s.dur) {
-                    d = Math.round(s.dur * tt / to)
-                    to -= s.dur
-                    s.dur = d
-                    tt -= s.dur
-                    tim += s.dur
-                }
-            }
-            if (!s.next) {
-                if (s.tpe)
-                    s.tpe++
-                else
-                    s.tpe = 1
-                break
-            }
-            s = s.next
-        }
-    }
-    function get_deco() {
-        var c, line = parse.line, i = line.index, dcn = ""
-        while (1) {
-            c = line.next_char()
-            if (!c) {
-                line.index = i
-                syntax(1, "No end of decoration")
-                return
-            }
-            if (c == '!')
-                break
-            dcn += c
-        }
-        a_dcn.push(dcn)
-    }
-    var nil = "0", char_tb = [nil, nil, nil, nil, nil, nil, nil, nil, nil, " ", "\n", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, " ", "!", '"', "i", "\n", nil, "&", nil, "(", ")", "i", nil, nil, "-", "!dot!", nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "|", "i", "<", "n", "<", "i", "i", "n", "n", "n", "n", "n", "n", "n", "!fermata!", "d", "d", "d", "!emphasis!", "!lowermordent!", "d", "!coda!", "!uppermordent!", "d", "d", "!segno!", "!trill!", "d", "d", "d", "n", "d", "n", "[", "\\", "|", "n", "n", "i", "n", "n", "n", "n", "n", "n", "n", "d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "!upbow!", "!downbow!", "d", "n", "n", "n", "{", "|", "}", "!gmark!", nil,]
-    function parse_music_line() {
-        var grace, last_note_sav, a_dcn_sav, no_eol, s, tps, tp = [], tpn = -1, sls = [], line = parse.line
-        function check_mac(m) {
-            var i, j, b
-            for (i = 1, j = line.index + 1; i < m.length; i++, j++) {
-                if (m[i] == line.buffer[j])
-                    continue
-                if (m[i] != 'n')
-                    return
-                b = ntb.indexOf(line.buffer[j])
-                if (b < 0)
-                    return
-                while (line.buffer[j + 1] == "'") { b += 7; j++ }
-                while (line.buffer[j + 1] == ',') { b -= 7; j++ }
-            }
-            line.index = j
-            return b
-        }
-        function n2n(n) {
-            var c = ''
-            while (n < 0) { n += 7; c += ',' }
-            while (n >= 14) { n -= 7; c += "'" }
-            return ntb[n] + c
-        }
-        function expand(m, b) {
-            if (b == undefined)
-                return m
-            var c, i, r = "", n = m.length
-            for (i = 0; i < n; i++) {
-                c = m[i]
-                if (c >= 'h' && c <= 'z') { r += n2n(b + c.charCodeAt(0) - 'n'.charCodeAt(0)) } else { r += c }
-            }
-            return r
-        }
-        function parse_mac(k, m, b) {
-            var te, ti, curv, s, line_sav = line, istart_sav = parse.istart; parse.line = line = new scanBuf; parse.istart += line_sav.index; if (cfmt.writefields.indexOf('m') < 0) {
-                line.buffer = k.replace('n', n2n(b))
-                s = curvoice.last_sym
-                ti = curvoice.time
-                parse_seq(true)
-                if (!s)
-                    s = curvoice.sym
-                for (s = s.next; s; s = s.next)
-                    s.noplay = true
-                te = curvoice.time
-                curv = curvoice
-                curvoice = clone_voice(curv.id + '-p')
-                if (!par_sy.voices[curvoice.v]) {
-                    curvoice.second = true
-                    par_sy.voices[curvoice.v] = { st: curv.st, second: true, range: curvoice.v }
-                }
-                curvoice.time = ti
-                s = curvoice.last_sym
-                parse.line = line = new scanBuf
-                parse.istart += line_sav.index
-                line.buffer = expand(m, b)
-                parse_seq(true)
-                if (curvoice.time != te)
-                    syntax(1, "Bad length of the macro sequence")
-                if (!s)
-                    s = curvoice.sym
-                for (; s; s = s.next)
-                    s.invis = s.play = true
-                curvoice = curv
-            } else {
-                line.buffer = expand(m, b)
-                parse_seq(true)
-            }
-            parse.line = line = line_sav
-            parse.istart = istart_sav
-        }
-        function parse_seq(in_mac) {
-            var c, idx, type, k, s, dcn, i, n, text, note
-            while (1) {
-                c = line.char()
-                if (!c)
-                    break
-                if (!in_mac && maci[c]) {
-                    n = undefined
-                    for (k in mac) {
-                        if (!mac.hasOwnProperty(k) || k[0] != c)
-                            continue
-                        if (k.indexOf('n') < 0) {
-                            if (line.buffer.indexOf(k, line.index)
-                                != line.index)
-                                continue
-                            line.index += k.length
-                        } else {
-                            n = check_mac(k)
-                            if (n == undefined)
-                                continue
-                        }
-                        parse_mac(k, mac[k], n)
-                        n = 1
-                        break
-                    }
-                    if (n)
-                        continue
-                }
-                idx = c.charCodeAt(0)
-                if (idx >= 128) {
-                    syntax(1, errs.not_ascii)
-                    line.index++
-                    break
-                }
-                type = char_tb[idx]
-                switch (type[0]) {
-                    case ' ': s = curvoice.last_note
-                        if (s) {
-                            s.beam_end = true
-                            if (grace)
-                                grace.gr_shift = true
-                        }
-                        break
-                    case '\n': if (cfmt.barsperstaff)
-                        break
-                        curvoice.eoln = true
-                        break
-                    case '&': if (grace) {
-                        syntax(1, errs.bad_grace)
-                        break
-                    }
-                        c = line.next_char()
-                        if (c == ')') {
-                            get_vover(c)
-                            break
-                        }
-                        get_vover('&')
-                        continue
-                    case '(': c = line.next_char()
-                        if (c > '0' && c <= '9') {
-                            if (grace) {
-                                syntax(1, errs.bad_grace)
-                                break
-                            }
-                            var pplet = line.get_int(), qplet = qplet_tb[pplet], rplet = pplet
-                            c = line.char()
-                            if (c == ':') {
-                                c = line.next_char()
-                                if (c > '0' && c <= '9') { qplet = line.get_int(); c = line.char() }
-                                if (c == ':') {
-                                    c = line.next_char()
-                                    if (c > '0' && c <= '9') { rplet = line.get_int(); c = line.char() } else {
-                                        syntax(1, "Invalid 'r' in tuplet")
-                                        continue
-                                    }
-                                }
-                            }
-                            if (qplet == 0 || qplet == undefined)
-                                qplet = (curvoice.wmeasure % 9) == 0 ? 3 : 2; if (tpn < 0)
-                                tpn = tp.length
-                            tp.push({ p: pplet, q: qplet, r: rplet, ro: rplet, f: curvoice.tup || cfmt.tuplets })
-                            continue
-                        }
-                        if (c == '&') {
-                            if (grace) {
-                                syntax(1, errs.bad_grace)
-                                break
-                            }
-                            get_vover('(')
-                            break
-                        }
-                        line.index--; sls.push(parse_vpos())
-                        continue
-                    case ')': s = curvoice.last_sym
-                        if (s) {
-                            switch (s.type) {
-                                case C.SPACE: if (!s.notes) {
-                                    s.notes = []
-                                    s.notes[0] = {}
-                                }
-                                case C.NOTE: case C.REST: break
-                                case C.GRACE: for (s = s.extra; s.next; s = s.next); break
-                                default: s = null
-                                    break
-                            }
-                        }
-                        if (!s) {
-                            syntax(1, errs.bad_char, c)
-                            break
-                        }
-                        slur_add(s)
-                        break
-                    case '!': if (type.length > 1)
-                        a_dcn.push(type.slice(1, -1))
-                    else
-                        get_deco()
-                        break
-                    case '"': if (grace) {
-                        syntax(1, errs.bad_grace)
-                        break
-                    }
-                        parse_gchord(type)
-                        break
-                    case '[': if (type.length > 1) {
-                        self.do_pscom(type.slice(3, -1))
-                        break
-                    }
-                        var c_next = line.buffer[line.index + 1]
-                        if ('|[]: "'.indexOf(c_next) >= 0 || (c_next >= '1' && c_next <= '9')) {
-                            if (grace) {
-                                syntax(1, errs.bar_grace)
-                                break
-                            }
-                            new_bar()
-                            continue
-                        }
-                        if (line.buffer[line.index + 2] == ':') {
-                            if (grace) {
-                                syntax(1, errs.bad_grace)
-                                break
-                            }
-                            i = line.buffer.indexOf(']', line.index + 1)
-                            if (i < 0) {
-                                syntax(1, "Lack of ']'")
-                                break
-                            }
-                            text = line.buffer.slice(line.index + 3, i).trim()
-                            parse.istart = parse.bol + line.index; parse.iend = parse.bol + ++i; line.index = 0; do_info(c_next, text); line.index = i
-                            continue
-                        }
-                    case 'n': s = self.new_note(grace, sls)
-                        if (!s)
-                            continue
-                        if (grace || !s.notes)
-                            continue
-                        if (tpn >= 0) {
-                            s.tp = tp.slice(tpn)
-                            tpn = -1
-                            if (tps)
-                                s.tp[0].s = tps
-                            tps = s
-                        } else if (!tps) { continue }
-                        k = tp[tp.length - 1]
-                        if (--k.r > 0)
-                            continue
-                        while (1) {
-                            tp_adj(tps, k.q / k.p)
-                            i = k.ro
-                            if (k.s)
-                                tps = k.s
-                            tp.pop()
-                            if (!tp.length) {
-                                tps = null
-                                break
-                            }
-                            k = tp[tp.length - 1]
-                            k.r -= i
-                            if (k.r > 0)
-                                break
-                        }
-                        continue
-                    case '<': if (!curvoice.last_note) {
-                        syntax(1, "No note before '<'")
-                        break
-                    }
-                        if (grace) {
-                            syntax(1, "Cannot have a broken rhythm in grace notes")
-                            break
-                        }
-                        n = c == '<' ? 1 : -1
-                        while (c == '<' || c == '>') { n *= 2; c = line.next_char() }
-                        curvoice.brk_rhythm = n
-                        continue
-                    case 'i': break
-                    case '{': if (grace) {
-                        syntax(1, "'{' in grace note")
-                        break
-                    }
-                        last_note_sav = curvoice.last_note; curvoice.last_note = null; a_dcn_sav = a_dcn; a_dcn = []
-                        grace = { type: C.GRACE, fname: parse.fname, istart: parse.bol + line.index, dur: 0, multi: 0 }
-                        if (curvoice.color)
-                            grace.color = curvoice.color
-                        switch (curvoice.pos.gst & 0x07) {
-                            case C.SL_ABOVE: grace.stem = 1; break
-                            case C.SL_BELOW: grace.stem = -1; break
-                            case C.SL_HIDDEN: grace.stem = 2; break
-                        }
-                        sym_link(grace); c = line.next_char()
-                        if (c == '/') {
-                            grace.sappo = true
-                            break
-                        }
-                        continue
-                    case '|': if (grace) {
-                        syntax(1, errs.bar_grace)
-                        break
-                    }
-                        new_bar()
-                        continue
-                    case '}': if (curvoice.ignore) {
-                        grace = null
-                        break
-                    }
-                        s = curvoice.last_note
-                        if (!grace || !s) {
-                            syntax(1, errs.bad_char, c)
-                            break
-                        }
-                        if (a_dcn.length)
-                            syntax(1, "Decoration ignored"); grace.extra = grace.next; grace.extra.prev = null; grace.next = null; curvoice.last_sym = grace; grace = null
-                        if (!s.prev && !curvoice.ckey.k_bagpipe) {
-                            for (i = 0; i <= s.nhd; i++)
-                                s.notes[i].dur *= 2; s.dur *= 2; s.dur_orig *= 2
-                        }
-                        curvoice.last_note = last_note_sav; a_dcn = a_dcn_sav
-                        break
-                    case "\\": if (!line.buffer[line.index + 1]) {
-                        no_eol = true
-                        break
-                    }
-                    default: syntax(1, errs.bad_char, c)
-                        break
-                }
-                line.index++
-            }
-        }
-        if (parse.state != 3)
-            return
-        if (parse.tp) {
-            tp = parse.tp
-            tpn = parse.tpn
-            tps = parse.tps
-            parse.tp = null
-        }
-        parse_seq()
-        if (tp.length) {
-            parse.tp = tp
-            parse.tps = tps
-            parse.tpn = tpn
-        }
-        if (sls.length)
-            syntax(1, "Start of slur without note")
-        if (grace) {
-            syntax(1, "No end of grace note sequence"); curvoice.last_sym = grace.prev; curvoice.last_note = last_note_sav
-            if (grace.prev)
-                grace.prev.next = null
-        }
-        if (!no_eol && !cfmt.barsperstaff && !vover && char_tb['\n'.charCodeAt(0)] == '\n')
-            curvoice.eoln = true
-        if (curvoice.eoln && cfmt.breakoneoln && curvoice.last_note)
-            curvoice.last_note.beam_end = true
-    }
-    var sheet
-    var add_fstyle = abc2svg.el ? function(s) {
-        var e
-        font_style += "\n" + s
-        if (!abc2svg.styles) {
-            e = document.createElement('style')
-            document.head.appendChild(e)
-            abc2svg.styles = e
-        }
-        sheet = abc2svg.styles.sheet
-        s = s.match(/[^{]+{[^}]+}/g)
-        while (1) {
-            e = s.shift()
-            if (!e)
-                break
-            sheet.insertRule(e, sheet.cssRules.length)
-        }
-    } : function(s) { font_style += "\n" + s }
-    var
-        sw_tb = new Float32Array([.000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .250, .333, .408, .500, .500, .833, .778, .333, .333, .333, .500, .564, .250, .564, .250, .278, .500, .500, .500, .500, .500, .500, .500, .500, .500, .500, .278, .278, .564, .564, .564, .444, .921, .722, .667, .667, .722, .611, .556, .722, .722, .333, .389, .722, .611, .889, .722, .722, .556, .722, .667, .556, .611, .722, .722, .944, .722, .722, .611, .333, .278, .333, .469, .500, .333, .444, .500, .444, .500, .444, .333, .500, .500, .278, .278, .500, .278, .778, .500, .500, .500, .500, .333, .389, .278, .500, .500, .722, .500, .500, .444, .480, .200, .480, .541, .500]), ssw_tb = new Float32Array([.000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .000, .278, .278, .355, .556, .556, .889, .667, .191, .333, .333, .389, .584, .278, .333, .278, .278, .556, .556, .556, .556, .556, .556, .556, .556, .556, .556, .278, .278, .584, .584, .584, .556, 1.015, .667, .667, .722, .722, .667, .611, .778, .722, .278, .500, .667, .556, .833, .722, .778, .667, .778, .722, .667, .611, .722, .667, .944, .667, .667, .611, .278, .278, .278, .469, .556, .333, .556, .556, .500, .556, .556, .278, .556, .556, .222, .222, .500, .222, .833, .556, .556, .556, .556, .333, .500, .278, .556, .500, .722, .500, .500, .500, .334, .260, .334, .584, .512]), mw_tb = new Float32Array([.0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .0, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52, .52])
-    function cwid(c, font) {
-        var i = c.charCodeAt(0)
-        if (i >= 0x80) {
-            if (i >= 0x300 && i < 0x370)
-                return 0; i = 0x61
-        }
-        return (font || gene.curfont).cw_tb[i]
-    }
-    function cwidf(c) { return cwid(c) * gene.curfont.swfac }
-    function clean_txt(p) {
-        return p.replace(/<|>|&[^&\s]*?;|&/g, function(c) {
-            switch (c) {
-                case '<': return "&lt;"
-                case '>': return "&gt;"
-                case '&': return "&amp;"
-            }
-            return c
-        })
-    }
-    var strwh
-    (function() {
-        if (typeof document != "undefined" && abc2svg.el) {
-            strwh = function(str) {
-                if (str.wh)
-                    return str.wh
-                var c, el = abc2svg.el, font = gene.curfont, h = font.size, w = 0, n = str.length, i0 = 0, i = 0
-                if (!el.parentElement)
-                    document.body.appendChild(el)
-                el.className = font_class(font)
-                if (typeof str == "object") {
-                    el.innerHTML = str
-                    str.wh = [el.clientWidth, el.clientHeight]
-                    return str.wh
-                }
-                str = clean_txt(str)
-                while (1) {
-                    i = str.indexOf('$', i)
-                    if (i >= 0) {
-                        c = str[i + 1]
-                        if (c == '0') { font = gene.deffont } else if (c >= '1' && c <= '9') { font = get_font("u" + c) } else {
-                            i++
-                            continue
-                        }
-                        el.className = font_class(font)
-                    }
-                    el.innerHTML = str.slice(i0, i >= 0 ? i : undefined)
-                    w += el.clientWidth
-                    if (el.clientHeight > h)
-                        h = el.clientHeight
-                    if (i < 0)
-                        break
-                    i += 2; i0 = i
-                }
-                return [w, h]
-            }
-        } else {
-            strwh = function(str) {
-                var font = gene.curfont, swfac = font.swfac, h = font.size, w = 0, i, j, c, n = str.length
-                for (i = 0; i < n; i++) {
-                    c = str[i]
-                    switch (c) {
-                        case '$': c = str[i + 1]
-                            if (c == '0') { font = gene.deffont } else if (c >= '1' && c <= '9') { font = get_font("u" + c) } else {
-                                c = '$'
-                                break
-                            }
-                            i++; swfac = font.swfac
-                            if (font.size > h)
-                                h = font.size
-                            continue
-                        case '&': if (str[i + 1] == ' ')
-                            break
-                            j = str.indexOf(';', i)
-                            if (j > 0 && j - i < 10) { i = j; c = 'a' }
-                            break
-                    }
-                    w += cwid(c, font) * swfac
-                }
-                return [w, h]
-            }
-        }
-    })()
-    function str2svg(str) {
-        if (typeof str == "object")
-            return str
-        var n_font, wh, o_font = gene.deffont, c_font = gene.curfont, o = ""
-        function tspan(nf, of) {
-            var cl
-            if (nf.class && nf.name == of.name && nf.size == of.size && nf.weight == of.weight && nf.style == of.style)
-                cl = nf.class
-            else
-                cl = font_class(nf)
-            return '<tspan\n\tclass="' + cl + '">'
-        }
-        if (c_font != o_font)
-            o = tspan(c_font, o_font)
-        o += str.replace(/<|>|&[^&\s]*?;|&|\$./g, function(c) {
-            switch (c) {
-                case '<': return "&lt;"
-                case '>': return "&gt;"
-                case '&': return "&amp;"
-                default: if (c[0] != '$')
-                    break
-                    if (c[1] == '0')
-                        n_font = gene.deffont
-                    else if (c[1] >= '1' && c[1] <= '9')
-                        n_font = get_font("u" + c[1])
-                    else
-                        break
-                    c = ''
-                    if (n_font == c_font)
-                        return c
-                    if (c_font != o_font)
-                        c = "</tspan>"
-                    c_font = n_font
-                    if (c_font == o_font)
-                        return c
-                    return c + tspan(c_font, o_font)
-            }
-            return c
-        })
-        if (c_font != o_font)
-            o += "</tspan>"
-        o = new String(o)
-        if (abc2svg.el)
-            strwh(o)
-        else
-            o.wh = strwh(str)
-        gene.curfont = c_font
-        return o
-    }
-    function set_font(xxx) {
-        if (typeof xxx == "string")
-            xxx = get_font(xxx)
-        gene.curfont = gene.deffont = xxx
-    }
-    function out_str(str) { output += str2svg(str) }
-    function xy_str(x, y, str, action, w, wh) {
-        if (!wh)
-            wh = str.wh || strwh(str)
-        if (cfmt.singleline || cfmt.trimsvg) {
-            var wx = wh[0]
-            switch (action) {
-                case 'c': wx = wh[0] / 2
-                    break
-                case 'j': wx = w
-                    break
-                case 'r': wx = 0
-                    break
-            }
-            if (img.wx < x + wx)
-                img.wx = x + wx
-        }
-        output += '<text class="' + font_class(gene.deffont)
-        if (action != 'j' && str.length > 5 && gene.deffont.wadj)
-            output += '" lengthAdjust="' + gene.deffont.wadj + '" textLength="' + wh[0].toFixed(1); output += '" x="'; out_sxsy(x, '" y="', y)
-        switch (action) {
-            case 'c': output += '" text-anchor="middle">'
-                break
-            case 'j': output += '" textLength="' + w.toFixed(1) + '">'
-                break
-            case 'r': output += '" text-anchor="end">'
-                break
-            default: output += '">'
-                break
-        }
-        out_str(str); output += "</text>\n"
-    }
-    function trim_title(title, is_subtitle) {
-        var i
-        if (cfmt.titletrim) {
-            i = title.lastIndexOf(", ")
-            if (i < 0 || title[i + 2] < 'A' || title[i + 2] > 'Z') { i = 0 } else if (cfmt.titletrim == 1) {
-                if (i < title.length - 7 || title.indexOf(' ', i + 3) >= 0)
-                    i = 0
-            } else {
-                if (i < title.length - cfmt.titletrim - 2)
-                    i = 0
-            }
-            if (i)
-                title = title.slice(i + 2).trim() + ' ' + title.slice(0, i)
-        }
-        if (!is_subtitle && cfmt.writefields.indexOf('X') >= 0)
-            title = info.X + '.  ' + title
-        if (cfmt.titlecaps)
-            return title.toUpperCase()
-        return title
-    }
-    function get_lwidth() {
-        if (img.chg)
-            set_page()
-        return (img.width - img.lm - img.rm
-            - 2)
-            / cfmt.scale
-    }
-    function write_title(title, is_subtitle) {
-        var h, wh
-        if (!title)
-            return
-        set_page(); if (is_subtitle) { set_font("subtitle"); h = cfmt.subtitlespace } else { set_font("title"); h = cfmt.titlespace }
-        wh = strwh(title)
-        wh[1] += gene.curfont.pad * 2
-        vskip(wh[1] + h + gene.curfont.pad)
-        h = gene.curfont.pad + wh[1] * .22
-        if (cfmt.titleleft)
-            xy_str(0, h, title, null, null, wh)
-        else
-            xy_str(get_lwidth() / 2, h, title, "c", null, wh)
-    }
-    function put_inf2r(x, y, str1, str2, action) {
-        if (!str1) {
-            if (!str2)
-                return
-            str1 = str2; str2 = null
-        }
-        if (!str2)
-            xy_str(x, y, str1, action)
-        else
-            xy_str(x, y, str1 + ' (' + str2 + ')', action)
-    }
-    function write_text(text, action) {
-        if (action == 's')
-            return
-        set_page(); var wh, font, o, strlw = get_lwidth(), sz = gene.curfont.size, lineskip = sz * cfmt.lineskipfac, parskip = sz * cfmt.parskipfac, i, j, x, words, w, k, ww, str; switch (action) {
-            default: font = gene.curfont
-                switch (action) {
-                    case 'c': x = strlw / 2; break
-                    case 'r': x = strlw - font.pad; break
-                    default: x = font.pad; break
-                }
-                j = 0
-                while (1) {
-                    i = text.indexOf('\n', j)
-                    if (i == j) {
-                        vskip(parskip); blk_flush()
-                        use_font(gene.curfont)
-                        while (text[i + 1] == '\n') { vskip(lineskip); i++ }
-                        if (i == text.length)
-                            break
-                    } else {
-                        if (i < 0)
-                            str = text.slice(j)
-                        else
-                            str = text.slice(j, i)
-                        ww = strwh(str)
-                        vskip(ww[1] * cfmt.lineskipfac
-                            + font.pad * 2)
-                        xy_str(x, font.pad + ww[1] * .2, str, action)
-                        if (i < 0)
-                            break
-                    }
-                    j = i + 1
-                }
-                vskip(parskip); blk_flush()
-                break
-            case 'f': case 'j': j = 0
-                while (1) {
-                    i = text.indexOf('\n\n', j)
-                    if (i < 0)
-                        words = text.slice(j)
-                    else
-                        words = text.slice(j, i); words = words.split(/\s+/); w = k = wh = 0
-                    for (j = 0; j < words.length; j++) {
-                        ww = strwh(words[j] + ' ')
-                        w += ww[0]
-                        if (w >= strlw) {
-                            vskip(wh * cfmt.lineskipfac)
-                            xy_str(0, ww[1] * .2, words.slice(k, j).join(' '), action, strlw, [w - ww[0], ww[1]])
-                            k = j; w = ww[0]
-                            wh = 0
-                        }
-                        if (ww[1] > wh)
-                            wh = ww[1]
-                    }
-                    if (w != 0) {
-                        vskip(wh * cfmt.lineskipfac)
-                        xy_str(0, ww[1] * .2, words.slice(k).join(' '))
-                    }
-                    vskip(parskip); blk_flush()
-                    if (i < 0)
-                        break
-                    while (text[i + 2] == '\n') { vskip(lineskip); i++ }
-                    if (i == text.length)
-                        break
-                    use_font(gene.curfont); j = i + 2
-                }
-                break
-        }
-    }
-    function put_words(words) {
-        var p, i, j, nw, w, lw, x1, x2, i1, i2, do_flush, maxn = 0, n = 1
-        function put_wline(p, x) {
-            var i = 0, k = 0
-            if (p[0] == '$' && p[1] >= '0' && p[1] <= '9') {
-                gene.curfont = p[1] == '0' ? gene.deffont : get_font("u" + p[1])
-                p = p.slice(2)
-            }
-            if ((p[i] >= '0' && p[i] <= '9') || p[i + 1] == '.') {
-                while (i < p.length) {
-                    i++
-                    if (p[i] == ' ' || p[i - 1] == ':' || p[i - 1] == '.')
-                        break
-                }
-                k = i
-                while (p[i] == ' ')
-                    i++
-            }
-            var y = gene.curfont.size * .22
-            if (k != 0)
-                xy_str(x, y, p.slice(0, k), 'r')
-            if (i < p.length)
-                xy_str(x + 5, y, p.slice(i), 'l')
-        }
-        words = words.split('\n')
-        nw = words.length
-        for (i = 0; i < nw; i++) {
-            p = words[i]
-            if (!p) {
-                while (i + 1 < nw && !words[i + 1])
-                    i++
-                n++
-            } else if (p.length > maxn) {
-                maxn = p.length
-                i1 = i
-            }
-        }
-        if (i1 == undefined)
-            return
-        set_font("words")
-        vskip(cfmt.wordsspace)
-        svg_flush()
-        w = get_lwidth() / 2
-        lw = strwh(words[i1])[0]
-        i1 = i2 = 0
-        if (lw < w) {
-            j = n >> 1
-            for (i = 0; i < nw; i++) {
-                p = words[i]
-                if (!p) {
-                    if (--j <= 0)
-                        i1 = i
-                    while (i + 1 < nw && !words[i + 1])
-                        i++
-                    if (j <= 0) {
-                        i2 = i + 1
-                        break
-                    }
-                }
-            }
-            n >>= 1
-        }
-        if (i2) {
-            x1 = (w - lw) / 2 + 10
-            x2 = x1 + w
-        } else { x2 = w - lw / 2 + 10 }
-        do_flush = true
-        for (i = 0; i < i1 || i2 < nw; i++, i2++) {
-            vskip(cfmt.lineskipfac * gene.curfont.size)
-            if (i < i1) {
-                p = words[i]
-                if (p)
-                    put_wline(p, x1)
-                else
-                    use_font(gene.curfont)
-            }
-            if (i2 < nw) {
-                p = words[i2]
-                if (p) { put_wline(p, x2) } else {
-                    if (--n == 0) {
-                        if (i < i1) { n++ } else if (i2 < nw - 1) {
-                            x2 = w - lw / 2 + 10
-                            svg_flush()
-                        }
-                    }
-                }
-            }
-            if (!words[i + 1] && !words[i2 + 1]) {
-                if (do_flush) {
-                    svg_flush()
-                    do_flush = false
-                }
-            } else { do_flush = true }
-        }
-    }
-    function put_history() {
-        var i, j, c, str, font, h, w, wh, head, names = cfmt.infoname.split("\n"), n = names.length
-        for (i = 0; i < n; i++) {
-            c = names[i][0]
-            if (cfmt.writefields.indexOf(c) < 0)
-                continue
-            str = info[c]
-            if (!str)
-                continue
-            if (!font) { font = true; set_font("history"); vskip(cfmt.textspace); h = gene.curfont.size * cfmt.lineskipfac }
-            head = names[i].slice(2)
-            if (head[0] == '"')
-                head = head.slice(1, -1); vskip(h); wh = strwh(head); xy_str(0, wh[1] * .22, head, null, null, wh); w = wh[0]; str = str.split('\n'); xy_str(w, wh[1] * .22, str[0])
-            for (j = 1; j < str.length; j++) {
-                if (!str[j]) {
-                    vskip(gene.curfont.size * cfmt.parskipfac)
-                    continue
-                }
-                vskip(h); xy_str(w, wh[1] * .22, str[j])
-            }
-            vskip(h * cfmt.parskipfac)
-            use_font(gene.curfont)
-        }
-    }
-    function part_seq() {
-        var i, o = ""
-        for (i = 0; i < info.P.length; i++) {
-            if (i)
-                o += ' '
-            o += partname(info.P[i])[1]
-        }
-        return o
-    }
-    function partname(c) {
-        var i, r, tmp
-        if (cfmt.partname) {
-            tmp = cfmt.partname.split('\n')
-            for (i = 0; i < tmp.length; i++) {
-                if (tmp[i][0] == c) {
-                    r = tmp[i].match(/.\s+(\S+)\s*(.+)?/)
-                    break
-                }
-            }
-        }
-        if (!r)
-            return [0, c, c]
-        if (!r[2])
-            r[2] = r[1]
-        if (r[2][0] == '"')
-            r[2] = r[2].slice(1, -1)
-        return r
-    }
-    Abc.prototype.tunhd = function() {
-        var i, j, area, composer, origin, rhythm, down1, down2, p, lwidth = get_lwidth()
-        vskip(cfmt.topspace)
-        if (info.T && cfmt.writefields.indexOf('T') >= 0) {
-            i = 0
-            while (1) {
-                j = info.T.indexOf("\n", i)
-                if (j < 0) {
-                    write_title(info.T.substring(i), i != 0)
-                    break
-                }
-                write_title(info.T.slice(i, j), i != 0); i = j + 1
-            }
-        }
-        down1 = down2 = 0
-        if (parse.ckey.k_bagpipe && !cfmt.infoline && cfmt.writefields.indexOf('R') >= 0)
-            rhythm = info.R
-        if (rhythm) {
-            set_font("composer"); down1 = cfmt.composerspace + gene.curfont.size + 2
-            xy_str(0, -down1 + gene.curfont.size * .22, rhythm)
-        }
-        area = info.A
-        if (cfmt.writefields.indexOf('C') >= 0)
-            composer = info.C
-        if (cfmt.writefields.indexOf('O') >= 0)
-            origin = info.O
-        if (composer || origin || cfmt.infoline) {
-            var xcomp, align; set_font("composer"); if (cfmt.aligncomposer < 0) { xcomp = 0; align = ' ' } else if (cfmt.aligncomposer == 0) { xcomp = lwidth * .5; align = 'c' } else { xcomp = lwidth; align = 'r' }
-            if (composer || origin) {
-                down2 = cfmt.composerspace + 2
-                i = 0
-                while (1) {
-                    down2 += gene.curfont.size
-                    if (composer)
-                        j = composer.indexOf("\n", i)
-                    else
-                        j = -1
-                    if (j < 0) {
-                        put_inf2r(xcomp, -down2 + gene.curfont.size * .22, composer ? composer.substring(i) : null, origin, align)
-                        break
-                    }
-                    xy_str(xcomp, -down2 + gene.curfont.size * .22, composer.slice(i, j), align); i = j + 1
-                }
-            }
-            rhythm = rhythm ? null : info.R
-            if ((rhythm || area) && cfmt.infoline) {
-                set_font("info"); down2 += cfmt.infospace + gene.curfont.size
-                put_inf2r(lwidth, -down2 + gene.curfont.size * .22, rhythm, area, 'r')
-            }
-        }
-        if (info.P && cfmt.writefields.indexOf('P') >= 0) {
-            set_font("parts"); i = cfmt.partsspace + gene.curfont.size + gene.curfont.pad
-            if (down1 + i > down2)
-                down2 = down1 + i
-            else
-                down2 += i
-            p = info.P
-            if (cfmt.partname)
-                p = part_seq()
-            xy_str(0, -down2 + gene.curfont.size * .22, p)
-            down2 += gene.curfont.pad
-        } else if (down1 > down2) { down2 = down1 }
-        vskip(down2 + cfmt.musicspace)
-    }
-    function write_heading() {
-        vskip(cfmt.topspace)
-        self.tunhd()
-    }
-    var output = "", style = '\
+for(i=0;i<=s2.nhd;i++)
+s2.notes[i].dur*=fac}
+curvoice.time=s.time=time}
+function new_bar(){var s2,c,bar_type,line=parse.line,s={type:C.BAR,fname:parse.fname,istart:parse.bol+line.index,dur:0,multi:0}
+if(vover&&vover.bar)
+get_vover('|')
+if(glovar.new_nbar){s.bar_num=glovar.new_nbar;glovar.new_nbar=0}
+bar_type=line.char()
+while(1){c=line.next_char()
+switch(c){case'|':case'[':case']':case':':bar_type+=c
+continue}
+break}
+if(bar_type[0]==':'){if(bar_type==':'){bar_type='|';s.bar_dotted=true}else{s.rbstop=2}}
+if(a_gch)
+csan_add(s)
+if(a_dcn.length)
+deco_cnv(s)
+if(bar_type.slice(-1)=='['&&!(/[0-9" ]/.test(c))){bar_type=bar_type.slice(0,-1);line.index--;c='['}
+if(c>'0'&&c<='9'){s.text=c
+while(1){c=line.next_char()
+if("0123456789,.-".indexOf(c)<0)
+break
+s.text+=c}}else if(c=='"'&&bar_type.slice(-1)=='['){s.text=""
+while(1){c=line.next_char()
+if(!c){syntax(1,"No end of repeat string")
+return}
+if(c=='"'){line.index++
+break}
+s.text+=c}}
+if(bar_type[0]==']'){s.rbstop=2
+if(bar_type.length!=1)
+bar_type=bar_type.slice(1)
+else
+s.invis=true}
+s.iend=parse.bol+line.index
+if(s.text&&bar_type.slice(-1)=='['&&bar_type!='[')
+bar_type=bar_type.slice(0,-1)
+if(bar_type.slice(-1)==':'){s.rbstop=1
+if(s.text){syntax(1,"Variant ending on a left repeat bar")
+delete s.text}
+curvoice.tie_s_rep=null}
+if(s.text){s.rbstart=s.rbstop=2
+if(s.text[0]=='1'){curvoice.tie_s_rep=curvoice.tie_s
+if(curvoice.acc_tie)
+curvoice.acc_tie_rep=curvoice.acc_tie.slice()
+else if(curvoice.acc_tie_rep)
+curvoice.acc_tie_rep=null}else{curvoice.tie_s=curvoice.tie_s_rep
+if(curvoice.acc_tie_rep)
+curvoice.acc_tie=curvoice.acc_tie_rep.slice()}
+if(curvoice.norepbra&&!curvoice.second)
+s.norepbra=1}
+if(curvoice.ulen<0)
+adjust_dur(s);if((bar_type=="["||bar_type=="|:")&&!curvoice.eoln&&!s.a_gch&&!s.invis){s2=curvoice.last_sym
+if(s2&&s2.type==C.BAR){if((bar_type=="["&&!s2.text)||s.norepbra){if(s.text){s2.text=s.text
+if(curvoice.st&&!s.norepbra&&!(par_sy.staves[curvoice.st-1].flags&STOP_BAR))
+s2.xsh=4}
+if(s.norepbra)
+s2.norepbra=1
+if(s.rbstart)
+s2.rbstart=s.rbstart
+if(s.rbstop)
+s2.rbstop=s.rbstop
+return}
+if(bar_type=="|:"){switch(s2.bar_type){case":|":s2.bar_type="::";s2.rbstop=2
+return}}}}
+switch(bar_type){case"[":case"[]":case"[|]":s.invis=true;bar_type=s.rbstart?"[":"[]"
+break
+case":|:":case":||:":bar_type="::"
+break
+case"||":if(cfmt["abc-version"]>="2.2")
+break
+case"[|":case"|]":s.rbstop=2
+break}
+s.bar_type=bar_type
+if(!curvoice.lyric_restart)
+curvoice.lyric_restart=s
+if(!curvoice.sym_restart)
+curvoice.sym_restart=s
+sym_link(s);s.st=curvoice.st
+if(s.text&&s.st>0&&!s.norepbra&&!(par_sy.staves[s.st-1].flags&STOP_BAR)&&bar_type!='[')
+s.xsh=4
+if(!s.bar_dotted&&!s.invis)
+curvoice.acc=[]}
+function parse_staves(p){var v,vid,vids={},a_vf=[],err=false,flags=0,brace=0,bracket=0,parenth=0,flags_st=0,e,a=p.match(/[^[\]|{}()*+\s]+|[^\s]/g)
+if(!a){syntax(1,errs.bad_val,"%%score")
+return}
+while(1){e=a.shift()
+if(!e)
+break
+switch(e){case'[':if(parenth||brace+bracket>=2){syntax(1,errs.misplaced,'[');err=true
+break}
+flags|=brace+bracket==0?OPEN_BRACKET:OPEN_BRACKET2;bracket++;flags_st<<=8;flags_st|=OPEN_BRACKET
+break
+case'{':if(parenth||brace||bracket>=2){syntax(1,errs.misplaced,'{');err=true
+break}
+flags|=!bracket?OPEN_BRACE:OPEN_BRACE2;brace++;flags_st<<=8;flags_st|=OPEN_BRACE
+break
+case'(':if(parenth){syntax(1,errs.misplaced,'(');err=true
+break}
+flags|=OPEN_PARENTH;parenth++;flags_st<<=8;flags_st|=OPEN_PARENTH
+break
+case'*':if(brace&&!parenth&&!(flags&(OPEN_BRACE|OPEN_BRACE2)))
+flags|=FL_VOICE
+break
+case'+':flags|=MASTER_VOICE
+break
+case']':case'}':case')':syntax(1,"Bad voice ID in %%score");err=true
+break
+default:vid=e
+while(1){e=a.shift()
+if(!e)
+break
+switch(e){case']':if(!(flags_st&OPEN_BRACKET)){syntax(1,errs.misplaced,']');err=true
+break}
+bracket--;flags|=brace+bracket==0?CLOSE_BRACKET:CLOSE_BRACKET2;flags_st>>=8
+continue
+case'}':if(!(flags_st&OPEN_BRACE)){syntax(1,errs.misplaced,'}');err=true
+break}
+brace--;flags|=!bracket?CLOSE_BRACE:CLOSE_BRACE2;flags&=~FL_VOICE;flags_st>>=8
+continue
+case')':if(!(flags_st&OPEN_PARENTH)){syntax(1,errs.misplaced,')');err=true
+break}
+parenth--;flags|=CLOSE_PARENTH;flags_st>>=8
+continue
+case'|':flags|=STOP_BAR
+continue}
+break}
+if(vids[vid]){syntax(1,"Double voice in %%score")
+err=true}else{vids[vid]=true
+a_vf.push([vid,flags])}
+flags=0
+if(!e)
+break
+a.unshift(e)
+break}}
+if(flags_st!=0){syntax(1,"'}', ')' or ']' missing in %%score");err=true}
+if(err||!a_vf.length)
+return
+return a_vf}
+function info_split(text){if(!text)
+return[]
+var a=text.match(/[^\s"=]+=?|"[^"]*"/g)
+if(!a){syntax(1,"Unterminated string")
+return[]}
+return a}
+var reg_dur=/(\d*)(\/*)(\d*)/g
+function parse_dur(line){var res,num,den;reg_dur.lastIndex=line.index;res=reg_dur.exec(line.buffer)
+if(!res[0])
+return[1,1];num=res[1]||1;den=res[3]||1
+if(!res[3])
+den*=1<<res[2].length;line.index=reg_dur.lastIndex
+return[+num,+den]}
+function parse_acc_pit(line){var note,acc,pit,d,nd,c=line.char()
+switch(c){case'^':c=line.next_char()
+if(c=='^'){acc=2;c=line.next_char()}else{acc=1}
+break
+case'=':acc=3;c=line.next_char()
+break
+case'_':c=line.next_char()
+if(c=='_'){acc=-2;c=line.next_char()}else{acc=-1}
+break}
+if(acc==1||acc==-1){if((c>='1'&&c<='9')||c=='/'){nd=parse_dur(line);if(acc<0)
+nd[0]=-nd[0]
+if(cfmt.nedo&&nd[1]==1){nd[0]*=12
+nd[1]*=cfmt.nedo}
+acc=nd
+c=line.char()}}
+pit=ntb.indexOf(c)+16;c=line.next_char()
+if(pit<16){syntax(1,"'$1' is not a note",line.buffer[line.index-1])
+return}
+while(c=="'"){pit+=7;c=line.next_char()}
+while(c==','){pit-=7;c=line.next_char()}
+note={pit:pit,shhd:0,shac:0}
+if(acc)
+note.acc=acc
+return note}
+function set_map(p_v,note,acc,trp_p){var nn=not2abc(note.pit,acc),map=maps[p_v.map]
+if(!map)
+return
+function map_p(){if(map[nn])
+return 1
+var sf,d
+nn='o'+nn.replace(/[',]+/,'')
+if(map[nn])
+return 1
+d=abc2svg.keys[p_v.ckey.k_sf+7][(note.pit+75)%7]
+d=(!d&&acc==3)?0:acc
+nn='k'+['__','_','','^','^^','='][d+2]
++ntb[(note.pit+75-p_v.ckey.k_sf*11)%7]
+if(map[nn])
+return 1
+nn=nn.replace(/[_=^]/g,'')
+if(map[nn])
+return 1
+sf=p_v.ckey.k_sf+[0,2,4,-1,1,3,-2][p_v.ckey.k_mode]
+if(sf<-7)
+sf+=7
+else if(sf>7)
+sf-=7
+d=abc2svg.keys[sf+7]
+[(note.pit+75)%7]
+if(d&&acc==3)
+d=-d
+else if(!d&&!acc)
+d=3
+else
+d=acc-d
+nn='t'+['__','_','=','^','^^','']
+[d+2]
++ntb[(note.pit+75-p_v.ckey.k_mode
+-p_v.ckey.k_sf*11)%7]
+if(map[nn])
+return 1
+nn=nn.replace(/[_=^]/g,'')
+if(map[nn])
+return 1
+nn='*'
+return map[nn]}
+if(!map_p())
+return
+map=map[nn]
+if(trp_p){if(map[1]&&map[1].notrp)
+note.notrp=1
+return}
+if(map[1]&&!note.map){note.pit=map[1].pit
+note.acc=map[1].acc
+if(map[1].notrp){note.notrp=1
+note.noplay=1}}
+note.map=map
+if(map[2])
+note.color=map[2]
+nn=map[3]
+if(nn)
+note.midi=pit2mid(nn.pit+19,nn.acc)}
+function parse_basic_note(line,ulen){var nd,note=parse_acc_pit(line)
+if(!note)
+return
+if(line.char()=='0'){parse.stemless=true;line.index++}
+nd=parse_dur(line);note.dur=ulen*nd[0]/nd[1]
+return note}
+function parse_vpos(){var line=parse.line,ty=0
+if(a_dcn.length&&a_dcn[a_dcn.length-1]=="dot"){ty=C.SL_DOTTED
+a_dcn.pop()}
+switch(line.next_char()){case"'":line.index++
+return ty+C.SL_ABOVE
+case",":line.index++
+return ty+C.SL_BELOW
+case'?':line.index++
+return ty+C.SL_CENTER}
+return ty+C.SL_AUTO}
+function slur_add(s,nt){var i,s2,sl
+for(i=curvoice.sls.length;--i>=0;){sl=curvoice.sls[i]
+if(sl.ss==s)
+continue
+curvoice.sls.splice(i,1)
+sl.se=s
+if(nt)
+sl.nte=nt
+s2=sl.ss
+if(!s2.sls)
+s2.sls=[]
+s2.sls.push(sl)
+if(sl.grace)
+sl.grace.sl1=true
+return}
+for(s2=s.prev;s2;s2=s2.prev){if(s2.type==C.BAR&&s2.bar_type[0]==':'&&s2.text){if(!s2.sls)
+s2.sls=[];s2.sls.push({ty:C.SL_AUTO,ss:s2,se:s})
+if(nt)
+s2.sls[s2.sls.length-1].nte=nt
+return}}
+if(!s.sls)
+s.sls=[];s.sls.push({ty:C.SL_AUTO,se:s,loc:'i'})
+if(nt)
+s.sls[s.sls.length-1].nte=nt}
+function pit2mid(pit,acc){var p=[0,2,4,5,7,9,11][pit%7],o=((pit/7)|0)*12,p0,p1,s,b40
+if(curvoice.snd_oct)
+o+=curvoice.snd_oct
+if(acc==3)
+acc=0
+if(acc){if(typeof acc=="object"){s=acc[0]/acc[1]
+if(acc[1]==100)
+return p+o+s}else{s=acc}}else{if(cfmt.temper)
+return cfmt.temper[abc2svg.p_b40[pit%7]]+o
+return p+o}
+if(!cfmt.nedo){if(!cfmt.temper){p+=o+s
+return p}}else{p0=cfmt.temper[abc2svg.p_b40[pit%7]]
+if(typeof acc!="object"){b40=abc2svg.p_b40[pit%7]+acc
+p1=cfmt.temper[b40]
+if(s>0){if(p1<p0)
+p1+=12}else{if(p1>p0)
+p1-=12}
+return p1+o}
+if(acc[1]==cfmt.nedo){b40=abc2svg.p_b40[pit%7]
+return cfmt.temper[b40]+o+s}}
+p0=cfmt.temper[abc2svg.p_b40[pit%7]]
+if(s>0){p1=cfmt.temper[(abc2svg.p_b40[pit%7]+1)%40]
+if(p1<p0)
+p1+=12}else{p1=cfmt.temper[(abc2svg.p_b40[pit%7]+39)%40]
+if(p1>p0)
+p1-=12
+s=-s}
+return p0+o+(p1-p0)*s}
+function do_ties(s,tie_s){var i,m,not1,not2,mid,g,nt=0,se=(tie_s.time+tie_s.dur)==curvoice.time
+for(m=0;m<=s.nhd;m++){not2=s.notes[m]
+mid=not2.midi
+if(tie_s.type!=C.GRACE){for(i=0;i<=tie_s.nhd;i++){not1=tie_s.notes[i]
+if(!not1.tie_ty)
+continue
+if(not1.midi==mid&&(!se||!not1.tie_e)){not2.tie_s=not1
+not2.s=s
+if(se){not1.tie_e=not2
+not1.s=tie_s}
+nt++
+break}}}else{for(g=tie_s.extra;g;g=g.next){not1=g.notes[0]
+if(!not1.tie_ty)
+continue
+if(not1.midi==mid){g.ti1=true
+not2.tie_s=not1
+not2.s=s
+not1.tie_e=not2
+not1.s=g
+nt++
+break}}}}
+if(!nt)
+error(1,tie_s,"Bad tie")
+else
+s.ti2=true}
+Abc.prototype.new_note=function(grace,sls){var note,s,in_chord,c,tie_s,acc_tie,i,n,s2,nd,res,num,apit,div,ty,chdur=1,dpit=0,sl1=[],line=parse.line,a_dcn_sav=a_dcn
+a_dcn=[]
+parse.stemless=false;s={type:C.NOTE,fname:parse.fname,stem:0,multi:0,nhd:0,xmx:0}
+s.istart=parse.bol+line.index
+if(curvoice.color)
+s.color=curvoice.color
+if(grace){s.grace=true}else{if(curvoice.tie_s){tie_s=curvoice.tie_s
+curvoice.tie_s=null}
+if(a_gch)
+csan_add(s)
+if(parse.repeat_n){s.repeat_n=parse.repeat_n;s.repeat_k=parse.repeat_k;parse.repeat_n=0}}
+c=line.char()
+switch(c){case'X':s.invis=true
+case'Z':s.type=C.MREST;c=line.next_char()
+s.nmes=(c>'0'&&c<='9')?line.get_int():1;if(curvoice.wmeasure==1){error(1,s,"multi-measure rest, but no measure!")
+return}
+s.dur=curvoice.wmeasure*s.nmes
+if(s.nmes==1){s.type=C.REST;s.dur_orig=s.dur;s.fmr=1
+s.notes=[{pit:18,dur:s.dur}]}else{glovar.mrest_p=true
+if(par_sy.voices.length==1){s.tacet=curvoice.tacet
+delete s.invis}}
+break
+case'y':s.type=C.SPACE;s.invis=true;s.dur=0;c=line.next_char()
+if(c>='0'&&c<='9')
+s.width=line.get_int()
+else
+s.width=10
+if(tie_s){curvoice.tie_s=tie_s
+tie_s=null}
+break
+case'x':s.invis=true
+case'z':s.type=C.REST;line.index++;nd=parse_dur(line);s.dur_orig=((curvoice.ulen<0)?C.BLEN:curvoice.ulen)*nd[0]/nd[1];if(s.dur_orig<12){error(0,s,"Bad note duration $1",s.dur_orig)
+s.dur_orig=12}
+s.dur=s.dur_orig*curvoice.dur_fact;if(s.dur==curvoice.wmeasure)
+s.fmr=1
+s.notes=[{pit:18,dur:s.dur_orig}]
+break
+case'[':in_chord=true;c=line.next_char()
+i=line.buffer.indexOf(']',line.index)
+if(i<0){syntax(1,"No end of chord")
+return}
+n=line.index
+line.index=i+1
+nd=parse_dur(line)
+chdur=nd[0]/nd[1]
+in_chord=reg_dur.lastIndex
+line.index=n
+default:if(curvoice.acc_tie){acc_tie=curvoice.acc_tie
+curvoice.acc_tie=null}
+s.notes=[]
+while(1){if(in_chord){while(1){if(!c)
+break
+i=c.charCodeAt(0);if(i>=128){syntax(1,errs.not_ascii)
+return}
+ty=char_tb[i]
+switch(ty[0]){case'(':sl1.push(parse_vpos());c=line.char()
+continue
+case'!':if(ty.length>1)
+a_dcn.push(ty.slice(1,-1))
+else
+get_deco()
+c=line.next_char()
+continue}
+break}}
+note=parse_basic_note(line,s.grace?C.BLEN/4:curvoice.ulen<0?C.BLEN:curvoice.ulen)
+if(!note)
+return
+note.dur*=chdur
+if(note.dur<12){error(0,s,"Bad note duration $1",note.dur)
+note.dur=12}
+if(curvoice.octave)
+note.pit+=curvoice.octave*7
+apit=note.pit+19
+i=note.acc
+if(!i){if(cfmt["propagate-accidentals"][0]=='p')
+i=curvoice.acc[apit%7]
+else
+i=curvoice.acc[apit]
+if(!i)
+i=curvoice.ckey.k_map[apit%7]||0}
+if(i&&!curvoice.ckey.k_drum){if(cfmt["propagate-accidentals"][0]=='p')
+curvoice.acc[apit%7]=i
+else if(cfmt["propagate-accidentals"][0]!='n')
+curvoice.acc[apit]=i}
+if(acc_tie&&acc_tie[apit])
+i=acc_tie[apit]
+if(!note.midi)
+note.midi=pit2mid(apit,i)
+if(curvoice.tr_sco){set_map(curvoice,note,i,1)
+if(!note.notrp){i=nt_trans(note,i)
+if(i==-3){error(1,s,"triple sharp/flat")
+i=note.acc>0?1:-1
+note.pit+=i
+note.acc=i}
+dpit=note.pit+19-apit}}
+if(curvoice.tr_snd)
+note.midi+=curvoice.tr_snd
+if(curvoice.map)
+set_map(curvoice,note,i)
+if(i){switch(cfmt["writeout-accidentals"][1]){case'd':s2=curvoice.ckey
+if(!s2.k_a_acc)
+break
+for(n=0;n<s2.k_a_acc.length;n++){if((s2.k_a_acc[n].pit-note.pit)%7==0){note.acc=i
+break}}
+break
+case'l':note.acc=i
+break}}
+if(sl1.length){while(1){i=sl1.shift()
+if(!i)
+break
+curvoice.sls.push({ty:i,ss:s,nts:note})}}
+s.notes.push(note)
+if(!in_chord)
+break
+c=line.char()
+while(1){switch(c){case')':slur_add(s,note)
+c=line.next_char()
+continue
+case'-':note.tie_ty=parse_vpos()
+note.s=s
+curvoice.tie_s=s
+s.ti1=true
+if(curvoice.acc[apit]||(acc_tie&&acc_tie[apit])){if(!curvoice.acc_tie)
+curvoice.acc_tie=[]
+i=curvoice.acc[apit]
+if(acc_tie&&acc_tie[apit])
+i=acc_tie[apit]
+curvoice.acc_tie[apit]=i}
+c=line.char()
+continue
+case'.':c=line.next_char()
+switch(c){case'-':case'(':a_dcn.push("dot")
+continue}
+syntax(1,"Misplaced dot")
+break}
+break}
+if(a_dcn.length){s.time=curvoice.time
+dh_cnv(s,note)}
+if(c==']'){line.index=in_chord
+s.nhd=s.notes.length-1
+break}}
+if(sls.length){while(1){i=sls.shift()
+if(!i)
+break
+curvoice.sls.push({ty:i,ss:s})
+if(grace)
+curvoice.sls[curvoice.sls.length-1].grace=grace}}
+s.dur_orig=s.notes[0].dur;s.dur=s.notes[0].dur*curvoice.dur_fact
+break}
+if(s.grace&&s.type!=C.NOTE){syntax(1,errs.bad_grace)
+return}
+if(s.notes){if(!s.fmr){n=s.dur_orig/12
+i=0
+while(!(n&1)){n>>=1
+i++}
+if((n+1)&n)
+error(0,s,"Non standard note duration $1",n+'/'+(1<<(6-i)))}
+if(!grace){switch(curvoice.pos.stm&0x07){case C.SL_ABOVE:s.stem=1;break
+case C.SL_BELOW:s.stem=-1;break
+case C.SL_HIDDEN:s.stemless=true;break}
+num=curvoice.brk_rhythm
+if(num){curvoice.brk_rhythm=0;s2=curvoice.last_note
+if(num>0){n=num*2-1;s.dur=s.dur*n/num;s.dur_orig=s.dur_orig*n/num
+for(i=0;i<=s.nhd;i++)
+s.notes[i].dur=s.notes[i].dur*n/num;s2.dur/=num;s2.dur_orig/=num
+for(i=0;i<=s2.nhd;i++)
+s2.notes[i].dur/=num}else{num=-num;n=num*2-1;s.dur/=num;s.dur_orig/=num
+for(i=0;i<=s.nhd;i++)
+s.notes[i].dur/=num;s2.dur=s2.dur*n/num;s2.dur_orig=s2.dur_orig*n/num
+for(i=0;i<=s2.nhd;i++)
+s2.notes[i].dur=s2.notes[i].dur*n/num}
+curvoice.time=s2.time+s2.dur;for(s2=s2.next;s2;s2=s2.next)
+s2.time=curvoice.time}}else{div=curvoice.ckey.k_bagpipe?8:4
+for(i=0;i<=s.nhd;i++)
+s.notes[i].dur/=div;s.dur/=div;s.dur_orig/=div
+if(grace.stem)
+s.stem=grace.stem}
+curvoice.last_note=s
+c=line.char()
+while(1){switch(c){case'.':if(line.buffer[line.index+1]!='-')
+break
+a_dcn.push("dot")
+line.index++
+case'-':ty=parse_vpos()
+for(i=0;i<=s.nhd;i++){s.notes[i].tie_ty=ty
+s.notes[i].s=s}
+curvoice.tie_s=grace||s
+curvoice.tie_s.ti1=true
+for(i=0;i<=s.nhd;i++){note=s.notes[i]
+apit=note.pit+19
+-dpit
+if(curvoice.acc[apit]||(acc_tie&&acc_tie[apit])){if(!curvoice.acc_tie)
+curvoice.acc_tie=[]
+n=curvoice.acc[apit]
+if(acc_tie&&acc_tie[apit])
+n=acc_tie[apit]
+curvoice.acc_tie[apit]=n}}
+c=line.char()
+continue}
+break}
+if(tie_s)
+do_ties(s,tie_s)}
+sym_link(s)
+if(!grace){if(!curvoice.lyric_restart)
+curvoice.lyric_restart=s
+if(!curvoice.sym_restart)
+curvoice.sym_restart=s}
+if(a_dcn_sav.length){a_dcn=a_dcn_sav
+deco_cnv(s,s.prev)}
+if(grace&&s.ottava)
+grace.ottava=s.ottava
+if(parse.stemless)
+s.stemless=true
+s.iend=parse.bol+line.index
+return s}
+function tp_adj(s,fact){var d,tim=s.time,to=curvoice.time-tim,tt=to*fact
+curvoice.time=tim+tt
+while(1){s.in_tuplet=true
+if(!s.grace){s.time=tim
+if(s.dur){d=Math.round(s.dur*tt/to)
+to-=s.dur
+s.dur=d
+tt-=s.dur
+tim+=s.dur}}
+if(!s.next){if(s.tpe)
+s.tpe++
+else
+s.tpe=1
+break}
+s=s.next}}
+function get_deco(){var c,line=parse.line,i=line.index,dcn=""
+while(1){c=line.next_char()
+if(!c){line.index=i
+syntax(1,"No end of decoration")
+return}
+if(c=='!')
+break
+dcn+=c}
+a_dcn.push(dcn)}
+var nil="0",char_tb=[nil,nil,nil,nil,nil,nil,nil,nil,nil," ","\n",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil," ","!",'"',"i","\n",nil,"&",nil,"(",")","i",nil,nil,"-","!dot!",nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,"|","i","<","n","<","i","i","n","n","n","n","n","n","n","!fermata!","d","d","d","!emphasis!","!lowermordent!","d","!coda!","!uppermordent!","d","d","!segno!","!trill!","d","d","d","n","d","n","[","\\","|","n","n","i","n","n","n","n","n","n","n","d","d","d","d","d","d","d","d","d","d","d","d","d","!upbow!","!downbow!","d","n","n","n","{","|","}","!gmark!",nil,]
+function parse_music_line(){var grace,last_note_sav,a_dcn_sav,no_eol,s,tps,tp=[],tpn=-1,sls=[],line=parse.line
+function check_mac(m){var i,j,b
+for(i=1,j=line.index+1;i<m.length;i++,j++){if(m[i]==line.buffer[j])
+continue
+if(m[i]!='n')
+return
+b=ntb.indexOf(line.buffer[j])
+if(b<0)
+return
+while(line.buffer[j+1]=="'"){b+=7;j++}
+while(line.buffer[j+1]==','){b-=7;j++}}
+line.index=j
+return b}
+function n2n(n){var c=''
+while(n<0){n+=7;c+=','}
+while(n>=14){n-=7;c+="'"}
+return ntb[n]+c}
+function expand(m,b){if(b==undefined)
+return m
+var c,i,r="",n=m.length
+for(i=0;i<n;i++){c=m[i]
+if(c>='h'&&c<='z'){r+=n2n(b+c.charCodeAt(0)-'n'.charCodeAt(0))}else{r+=c}}
+return r}
+function parse_mac(k,m,b){var te,ti,curv,s,line_sav=line,istart_sav=parse.istart;parse.line=line=new scanBuf;parse.istart+=line_sav.index;if(cfmt.writefields.indexOf('m')<0){line.buffer=k.replace('n',n2n(b))
+s=curvoice.last_sym
+ti=curvoice.time
+parse_seq(true)
+if(!s)
+s=curvoice.sym
+for(s=s.next;s;s=s.next)
+s.noplay=true
+te=curvoice.time
+curv=curvoice
+curvoice=clone_voice(curv.id+'-p')
+if(!par_sy.voices[curvoice.v]){curvoice.second=true
+par_sy.voices[curvoice.v]={st:curv.st,second:true,range:curvoice.v}}
+curvoice.time=ti
+s=curvoice.last_sym
+parse.line=line=new scanBuf
+parse.istart+=line_sav.index
+line.buffer=expand(m,b)
+parse_seq(true)
+if(curvoice.time!=te)
+syntax(1,"Bad length of the macro sequence")
+if(!s)
+s=curvoice.sym
+for(;s;s=s.next)
+s.invis=s.play=true
+curvoice=curv}else{line.buffer=expand(m,b)
+parse_seq(true)}
+parse.line=line=line_sav
+parse.istart=istart_sav}
+function parse_seq(in_mac){var c,idx,type,k,s,dcn,i,n,text,note
+while(1){c=line.char()
+if(!c)
+break
+if(!in_mac&&maci[c]){n=undefined
+for(k in mac){if(!mac.hasOwnProperty(k)||k[0]!=c)
+continue
+if(k.indexOf('n')<0){if(line.buffer.indexOf(k,line.index)
+!=line.index)
+continue
+line.index+=k.length}else{n=check_mac(k)
+if(n==undefined)
+continue}
+parse_mac(k,mac[k],n)
+n=1
+break}
+if(n)
+continue}
+idx=c.charCodeAt(0)
+if(idx>=128){syntax(1,errs.not_ascii)
+line.index++
+break}
+type=char_tb[idx]
+switch(type[0]){case' ':s=curvoice.last_note
+if(s){s.beam_end=true
+if(grace)
+grace.gr_shift=true}
+break
+case'\n':if(cfmt.barsperstaff)
+break
+curvoice.eoln=true
+break
+case'&':if(grace){syntax(1,errs.bad_grace)
+break}
+c=line.next_char()
+if(c==')'){get_vover(c)
+break}
+get_vover('&')
+continue
+case'(':c=line.next_char()
+if(c>'0'&&c<='9'){if(grace){syntax(1,errs.bad_grace)
+break}
+var pplet=line.get_int(),qplet=qplet_tb[pplet],rplet=pplet
+c=line.char()
+if(c==':'){c=line.next_char()
+if(c>'0'&&c<='9'){qplet=line.get_int();c=line.char()}
+if(c==':'){c=line.next_char()
+if(c>'0'&&c<='9'){rplet=line.get_int();c=line.char()}else{syntax(1,"Invalid 'r' in tuplet")
+continue}}}
+if(qplet==0||qplet==undefined)
+qplet=(curvoice.wmeasure%9)==0?3:2;if(tpn<0)
+tpn=tp.length
+tp.push({p:pplet,q:qplet,r:rplet,ro:rplet,f:curvoice.tup||cfmt.tuplets})
+continue}
+if(c=='&'){if(grace){syntax(1,errs.bad_grace)
+break}
+get_vover('(')
+break}
+line.index--;sls.push(parse_vpos())
+continue
+case')':s=curvoice.last_sym
+if(s){switch(s.type){case C.SPACE:if(!s.notes){s.notes=[]
+s.notes[0]={}}
+case C.NOTE:case C.REST:break
+case C.GRACE:for(s=s.extra;s.next;s=s.next);break
+default:s=null
+break}}
+if(!s){syntax(1,errs.bad_char,c)
+break}
+slur_add(s)
+break
+case'!':if(type.length>1)
+a_dcn.push(type.slice(1,-1))
+else
+get_deco()
+break
+case'"':if(grace){syntax(1,errs.bad_grace)
+break}
+parse_gchord(type)
+break
+case'[':if(type.length>1){self.do_pscom(type.slice(3,-1))
+break}
+var c_next=line.buffer[line.index+1]
+if('|[]: "'.indexOf(c_next)>=0||(c_next>='1'&&c_next<='9')){if(grace){syntax(1,errs.bar_grace)
+break}
+new_bar()
+continue}
+if(line.buffer[line.index+2]==':'){if(grace){syntax(1,errs.bad_grace)
+break}
+i=line.buffer.indexOf(']',line.index+1)
+if(i<0){syntax(1,"Lack of ']'")
+break}
+text=line.buffer.slice(line.index+3,i).trim()
+parse.istart=parse.bol+line.index;parse.iend=parse.bol+ ++i;line.index=0;do_info(c_next,text);line.index=i
+continue}
+case'n':s=self.new_note(grace,sls)
+if(!s)
+continue
+if(grace||!s.notes)
+continue
+if(tpn>=0){s.tp=tp.slice(tpn)
+tpn=-1
+if(tps)
+s.tp[0].s=tps
+tps=s}else if(!tps){continue}
+k=tp[tp.length-1]
+if(--k.r>0)
+continue
+while(1){tp_adj(tps,k.q/k.p)
+i=k.ro
+if(k.s)
+tps=k.s
+tp.pop()
+if(!tp.length){tps=null
+break}
+k=tp[tp.length-1]
+k.r-=i
+if(k.r>0)
+break}
+continue
+case'<':if(!curvoice.last_note){syntax(1,"No note before '<'")
+break}
+if(grace){syntax(1,"Cannot have a broken rhythm in grace notes")
+break}
+n=c=='<'?1:-1
+while(c=='<'||c=='>'){n*=2;c=line.next_char()}
+curvoice.brk_rhythm=n
+continue
+case'i':break
+case'{':if(grace){syntax(1,"'{' in grace note")
+break}
+last_note_sav=curvoice.last_note;curvoice.last_note=null;a_dcn_sav=a_dcn;a_dcn=[]
+grace={type:C.GRACE,fname:parse.fname,istart:parse.bol+line.index,dur:0,multi:0}
+if(curvoice.color)
+grace.color=curvoice.color
+switch(curvoice.pos.gst&0x07){case C.SL_ABOVE:grace.stem=1;break
+case C.SL_BELOW:grace.stem=-1;break
+case C.SL_HIDDEN:grace.stem=2;break}
+sym_link(grace);c=line.next_char()
+if(c=='/'){grace.sappo=true
+break}
+continue
+case'|':if(grace){syntax(1,errs.bar_grace)
+break}
+new_bar()
+continue
+case'}':if(curvoice.ignore){grace=null
+break}
+s=curvoice.last_note
+if(!grace||!s){syntax(1,errs.bad_char,c)
+break}
+if(a_dcn.length)
+syntax(1,"Decoration ignored");grace.extra=grace.next;grace.extra.prev=null;grace.next=null;curvoice.last_sym=grace;grace=null
+if(!s.prev&&!curvoice.ckey.k_bagpipe){for(i=0;i<=s.nhd;i++)
+s.notes[i].dur*=2;s.dur*=2;s.dur_orig*=2}
+curvoice.last_note=last_note_sav;a_dcn=a_dcn_sav
+break
+case"\\":if(!line.buffer[line.index+1]){no_eol=true
+break}
+default:syntax(1,errs.bad_char,c)
+break}
+line.index++}}
+if(parse.state!=3)
+return
+if(parse.tp){tp=parse.tp
+tpn=parse.tpn
+tps=parse.tps
+parse.tp=null}
+parse_seq()
+if(tp.length){parse.tp=tp
+parse.tps=tps
+parse.tpn=tpn}
+if(sls.length)
+syntax(1,"Start of slur without note")
+if(grace){syntax(1,"No end of grace note sequence");curvoice.last_sym=grace.prev;curvoice.last_note=last_note_sav
+if(grace.prev)
+grace.prev.next=null}
+if(!no_eol&&!cfmt.barsperstaff&&!vover&&char_tb['\n'.charCodeAt(0)]=='\n')
+curvoice.eoln=true
+if(curvoice.eoln&&cfmt.breakoneoln&&curvoice.last_note)
+curvoice.last_note.beam_end=true}
+var sheet
+var add_fstyle=abc2svg.el?function(s){var e
+font_style+="\n"+s
+if(!abc2svg.styles){e=document.createElement('style')
+document.head.appendChild(e)
+abc2svg.styles=e}
+sheet=abc2svg.styles.sheet
+s=s.match(/[^{]+{[^}]+}/g)
+while(1){e=s.shift()
+if(!e)
+break
+sheet.insertRule(e,sheet.cssRules.length)}}:function(s){font_style+="\n"+s}
+var
+sw_tb=new Float32Array([.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.250,.333,.408,.500,.500,.833,.778,.333,.333,.333,.500,.564,.250,.564,.250,.278,.500,.500,.500,.500,.500,.500,.500,.500,.500,.500,.278,.278,.564,.564,.564,.444,.921,.722,.667,.667,.722,.611,.556,.722,.722,.333,.389,.722,.611,.889,.722,.722,.556,.722,.667,.556,.611,.722,.722,.944,.722,.722,.611,.333,.278,.333,.469,.500,.333,.444,.500,.444,.500,.444,.333,.500,.500,.278,.278,.500,.278,.778,.500,.500,.500,.500,.333,.389,.278,.500,.500,.722,.500,.500,.444,.480,.200,.480,.541,.500]),ssw_tb=new Float32Array([.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.000,.278,.278,.355,.556,.556,.889,.667,.191,.333,.333,.389,.584,.278,.333,.278,.278,.556,.556,.556,.556,.556,.556,.556,.556,.556,.556,.278,.278,.584,.584,.584,.556,1.015,.667,.667,.722,.722,.667,.611,.778,.722,.278,.500,.667,.556,.833,.722,.778,.667,.778,.722,.667,.611,.722,.667,.944,.667,.667,.611,.278,.278,.278,.469,.556,.333,.556,.556,.500,.556,.556,.278,.556,.556,.222,.222,.500,.222,.833,.556,.556,.556,.556,.333,.500,.278,.556,.500,.722,.500,.500,.500,.334,.260,.334,.584,.512]),mw_tb=new Float32Array([.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.0,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52,.52])
+function cwid(c,font){var i=c.charCodeAt(0)
+if(i>=0x80){if(i>=0x300&&i<0x370)
+return 0;i=0x61}
+return(font||gene.curfont).cw_tb[i]}
+function cwidf(c){return cwid(c)*gene.curfont.swfac}
+function clean_txt(p){return p.replace(/<|>|&[^&\s]*?;|&/g,function(c){switch(c){case'<':return"&lt;"
+case'>':return"&gt;"
+case'&':return"&amp;"}
+return c})}
+var strwh
+(function(){if(typeof document!="undefined"&&abc2svg.el){strwh=function(str){if(str.wh)
+return str.wh
+var c,el=abc2svg.el,font=gene.curfont,h=font.size,w=0,n=str.length,i0=0,i=0
+if(!el.parentElement)
+document.body.appendChild(el)
+el.className=font_class(font)
+if(typeof str=="object"){el.innerHTML=str
+str.wh=[el.clientWidth,el.clientHeight]
+return str.wh}
+str=clean_txt(str)
+while(1){i=str.indexOf('$',i)
+if(i>=0){c=str[i+1]
+if(c=='0'){font=gene.deffont}else if(c>='1'&&c<='9'){font=get_font("u"+c)}else{i++
+continue}
+el.className=font_class(font)}
+el.innerHTML=str.slice(i0,i>=0?i:undefined)
+w+=el.clientWidth
+if(el.clientHeight>h)
+h=el.clientHeight
+if(i<0)
+break
+i+=2;i0=i}
+return[w,h]}}else{strwh=function(str){var font=gene.curfont,swfac=font.swfac,h=font.size,w=0,i,j,c,n=str.length
+for(i=0;i<n;i++){c=str[i]
+switch(c){case'$':c=str[i+1]
+if(c=='0'){font=gene.deffont}else if(c>='1'&&c<='9'){font=get_font("u"+c)}else{c='$'
+break}
+i++;swfac=font.swfac
+if(font.size>h)
+h=font.size
+continue
+case'&':if(str[i+1]==' ')
+break
+j=str.indexOf(';',i)
+if(j>0&&j-i<10){i=j;c='a'}
+break}
+w+=cwid(c,font)*swfac}
+return[w,h]}}})()
+function str2svg(str){if(typeof str=="object")
+return str
+var n_font,wh,o_font=gene.deffont,c_font=gene.curfont,o=""
+function tspan(nf,of){var cl
+if(nf.class&&nf.name==of.name&&nf.size==of.size&&nf.weight==of.weight&&nf.style==of.style)
+cl=nf.class
+else
+cl=font_class(nf)
+return'<tspan\n\tclass="'+cl+'">'}
+if(c_font!=o_font)
+o=tspan(c_font,o_font)
+o+=str.replace(/<|>|&[^&\s]*?;|&|\$./g,function(c){switch(c){case'<':return"&lt;"
+case'>':return"&gt;"
+case'&':return"&amp;"
+default:if(c[0]!='$')
+break
+if(c[1]=='0')
+n_font=gene.deffont
+else if(c[1]>='1'&&c[1]<='9')
+n_font=get_font("u"+c[1])
+else
+break
+c=''
+if(n_font==c_font)
+return c
+if(c_font!=o_font)
+c="</tspan>"
+c_font=n_font
+if(c_font==o_font)
+return c
+return c+tspan(c_font,o_font)}
+return c})
+if(c_font!=o_font)
+o+="</tspan>"
+o=new String(o)
+if(abc2svg.el)
+strwh(o)
+else
+o.wh=strwh(str)
+gene.curfont=c_font
+return o}
+function set_font(xxx){if(typeof xxx=="string")
+xxx=get_font(xxx)
+gene.curfont=gene.deffont=xxx}
+function out_str(str){output+=str2svg(str)}
+function xy_str(x,y,str,action,w,wh){if(!wh)
+wh=str.wh||strwh(str)
+if(cfmt.singleline||cfmt.trimsvg){var wx=wh[0]
+switch(action){case'c':wx=wh[0]/2
+break
+case'j':wx=w
+break
+case'r':wx=0
+break}
+if(img.wx<x+wx)
+img.wx=x+wx}
+output+='<text class="'+font_class(gene.deffont)
+if(action!='j'&&str.length>5&&gene.deffont.wadj)
+output+='" lengthAdjust="'+gene.deffont.wadj+'" textLength="'+wh[0].toFixed(1);output+='" x="';out_sxsy(x,'" y="',y)
+switch(action){case'c':output+='" text-anchor="middle">'
+break
+case'j':output+='" textLength="'+w.toFixed(1)+'">'
+break
+case'r':output+='" text-anchor="end">'
+break
+default:output+='">'
+break}
+out_str(str);output+="</text>\n"}
+function trim_title(title,is_subtitle){var i
+if(cfmt.titletrim){i=title.lastIndexOf(", ")
+if(i<0||title[i+2]<'A'||title[i+2]>'Z'){i=0}else if(cfmt.titletrim==1){if(i<title.length-7||title.indexOf(' ',i+3)>=0)
+i=0}else{if(i<title.length-cfmt.titletrim-2)
+i=0}
+if(i)
+title=title.slice(i+2).trim()+' '+title.slice(0,i)}
+if(!is_subtitle&&cfmt.writefields.indexOf('X')>=0)
+title=info.X+'.  '+title
+if(cfmt.titlecaps)
+return title.toUpperCase()
+return title}
+function get_lwidth(){if(img.chg)
+set_page()
+return(img.width-img.lm-img.rm
+-2)
+/ cfmt.scale}
+function write_title(title,is_subtitle){var h,wh
+if(!title)
+return
+set_page();if(is_subtitle){set_font("subtitle");h=cfmt.subtitlespace}else{set_font("title");h=cfmt.titlespace}
+wh=strwh(title)
+wh[1]+=gene.curfont.pad*2
+vskip(wh[1]+h+gene.curfont.pad)
+h=gene.curfont.pad+wh[1]*.22
+if(cfmt.titleleft)
+xy_str(0,h,title,null,null,wh)
+else
+xy_str(get_lwidth()/2,h,title,"c",null,wh)}
+function put_inf2r(x,y,str1,str2,action){if(!str1){if(!str2)
+return
+str1=str2;str2=null}
+if(!str2)
+xy_str(x,y,str1,action)
+else
+xy_str(x,y,str1+' ('+str2+')',action)}
+function write_text(text,action){if(action=='s')
+return
+set_page();var wh,font,o,strlw=get_lwidth(),sz=gene.curfont.size,lineskip=sz*cfmt.lineskipfac,parskip=sz*cfmt.parskipfac,i,j,x,words,w,k,ww,str;switch(action){default:font=gene.curfont
+switch(action){case'c':x=strlw/2;break
+case'r':x=strlw-font.pad;break
+default:x=font.pad;break}
+j=0
+while(1){i=text.indexOf('\n',j)
+if(i==j){vskip(parskip);blk_flush()
+use_font(gene.curfont)
+while(text[i+1]=='\n'){vskip(lineskip);i++}
+if(i==text.length)
+break}else{if(i<0)
+str=text.slice(j)
+else
+str=text.slice(j,i)
+ww=strwh(str)
+vskip(ww[1]*cfmt.lineskipfac
++font.pad*2)
+xy_str(x,font.pad+ww[1]*.2,str,action)
+if(i<0)
+break}
+j=i+1}
+vskip(parskip);blk_flush()
+break
+case'f':case'j':j=0
+while(1){i=text.indexOf('\n\n',j)
+if(i<0)
+words=text.slice(j)
+else
+words=text.slice(j,i);words=words.split(/\s+/);w=k=wh=0
+for(j=0;j<words.length;j++){ww=strwh(words[j]+' ')
+w+=ww[0]
+if(w>=strlw){vskip(wh*cfmt.lineskipfac)
+xy_str(0,ww[1]*.2,words.slice(k,j).join(' '),action,strlw,[w-ww[0],ww[1]])
+k=j;w=ww[0]
+wh=0}
+if(ww[1]>wh)
+wh=ww[1]}
+if(w!=0){vskip(wh*cfmt.lineskipfac)
+xy_str(0,ww[1]*.2,words.slice(k).join(' '))}
+vskip(parskip);blk_flush()
+if(i<0)
+break
+while(text[i+2]=='\n'){vskip(lineskip);i++}
+if(i==text.length)
+break
+use_font(gene.curfont);j=i+2}
+break}}
+function put_words(words){var p,i,j,nw,w,lw,x1,x2,i1,i2,do_flush,maxn=0,n=1
+function put_wline(p,x){var i=0,k=0
+if(p[0]=='$'&&p[1]>='0'&&p[1]<='9'){gene.curfont=p[1]=='0'?gene.deffont:get_font("u"+p[1])
+p=p.slice(2)}
+if((p[i]>='0'&&p[i]<='9')||p[i+1]=='.'){while(i<p.length){i++
+if(p[i]==' '||p[i-1]==':'||p[i-1]=='.')
+break}
+k=i
+while(p[i]==' ')
+i++}
+var y=gene.curfont.size*.22
+if(k!=0)
+xy_str(x,y,p.slice(0,k),'r')
+if(i<p.length)
+xy_str(x+5,y,p.slice(i),'l')}
+words=words.split('\n')
+nw=words.length
+for(i=0;i<nw;i++){p=words[i]
+if(!p){while(i+1<nw&&!words[i+1])
+i++
+n++}else if(p.length>maxn){maxn=p.length
+i1=i}}
+if(i1==undefined)
+return
+set_font("words")
+vskip(cfmt.wordsspace)
+svg_flush()
+w=get_lwidth()/2
+lw=strwh(words[i1])[0]
+i1=i2=0
+if(lw<w){j=n>>1
+for(i=0;i<nw;i++){p=words[i]
+if(!p){if(--j<=0)
+i1=i
+while(i+1<nw&&!words[i+1])
+i++
+if(j<=0){i2=i+1
+break}}}
+n>>=1}
+if(i2){x1=(w-lw)/2+10
+x2=x1+w}else{x2=w-lw/2+10}
+do_flush=true
+for(i=0;i<i1||i2<nw;i++,i2++){vskip(cfmt.lineskipfac*gene.curfont.size)
+if(i<i1){p=words[i]
+if(p)
+put_wline(p,x1)
+else
+use_font(gene.curfont)}
+if(i2<nw){p=words[i2]
+if(p){put_wline(p,x2)}else{if(--n==0){if(i<i1){n++}else if(i2<nw-1){x2=w-lw/2+10
+svg_flush()}}}}
+if(!words[i+1]&&!words[i2+1]){if(do_flush){svg_flush()
+do_flush=false}}else{do_flush=true}}}
+function put_history(){var i,j,c,str,font,h,w,wh,head,names=cfmt.infoname.split("\n"),n=names.length
+for(i=0;i<n;i++){c=names[i][0]
+if(cfmt.writefields.indexOf(c)<0)
+continue
+str=info[c]
+if(!str)
+continue
+if(!font){font=true;set_font("history");vskip(cfmt.textspace);h=gene.curfont.size*cfmt.lineskipfac}
+head=names[i].slice(2)
+if(head[0]=='"')
+head=head.slice(1,-1);vskip(h);wh=strwh(head);xy_str(0,wh[1]*.22,head,null,null,wh);w=wh[0];str=str.split('\n');xy_str(w,wh[1]*.22,str[0])
+for(j=1;j<str.length;j++){if(!str[j]){vskip(gene.curfont.size*cfmt.parskipfac)
+continue}
+vskip(h);xy_str(w,wh[1]*.22,str[j])}
+vskip(h*cfmt.parskipfac)
+use_font(gene.curfont)}}
+function part_seq(){var i,o=""
+for(i=0;i<info.P.length;i++){if(i)
+o+=' '
+o+=partname(info.P[i])[1]}
+return o}
+function partname(c){var i,r,tmp
+if(cfmt.partname){tmp=cfmt.partname.split('\n')
+for(i=0;i<tmp.length;i++){if(tmp[i][0]==c){r=tmp[i].match(/.\s+(\S+)\s*(.+)?/)
+break}}}
+if(!r)
+return[0,c,c]
+if(!r[2])
+r[2]=r[1]
+if(r[2][0]=='"')
+r[2]=r[2].slice(1,-1)
+return r}
+Abc.prototype.tunhd=function(){var i,j,area,composer,origin,rhythm,down1,down2,p,lwidth=get_lwidth()
+vskip(cfmt.topspace)
+if(info.T&&cfmt.writefields.indexOf('T')>=0){i=0
+while(1){j=info.T.indexOf("\n",i)
+if(j<0){write_title(info.T.substring(i),i!=0)
+break}
+write_title(info.T.slice(i,j),i!=0);i=j+1}}
+down1=down2=0
+if(parse.ckey.k_bagpipe&&!cfmt.infoline&&cfmt.writefields.indexOf('R')>=0)
+rhythm=info.R
+if(rhythm){set_font("composer");down1=cfmt.composerspace+gene.curfont.size+2
+xy_str(0,-down1+gene.curfont.size*.22,rhythm)}
+area=info.A
+if(cfmt.writefields.indexOf('C')>=0)
+composer=info.C
+if(cfmt.writefields.indexOf('O')>=0)
+origin=info.O
+if(composer||origin||cfmt.infoline){var xcomp,align;set_font("composer");if(cfmt.aligncomposer<0){xcomp=0;align=' '}else if(cfmt.aligncomposer==0){xcomp=lwidth*.5;align='c'}else{xcomp=lwidth;align='r'}
+if(composer||origin){down2=cfmt.composerspace+2
+i=0
+while(1){down2+=gene.curfont.size
+if(composer)
+j=composer.indexOf("\n",i)
+else
+j=-1
+if(j<0){put_inf2r(xcomp,-down2+gene.curfont.size*.22,composer?composer.substring(i):null,origin,align)
+break}
+xy_str(xcomp,-down2+gene.curfont.size*.22,composer.slice(i,j),align);i=j+1}}
+rhythm=rhythm?null:info.R
+if((rhythm||area)&&cfmt.infoline){set_font("info");down2+=cfmt.infospace+gene.curfont.size
+put_inf2r(lwidth,-down2+gene.curfont.size*.22,rhythm,area,'r')}}
+if(info.P&&cfmt.writefields.indexOf('P')>=0){set_font("parts");i=cfmt.partsspace+gene.curfont.size+gene.curfont.pad
+if(down1+i>down2)
+down2=down1+i
+else
+down2+=i
+p=info.P
+if(cfmt.partname)
+p=part_seq()
+xy_str(0,-down2+gene.curfont.size*.22,p)
+down2+=gene.curfont.pad}else if(down1>down2){down2=down1}
+vskip(down2+cfmt.musicspace)}
+function write_heading(){vskip(cfmt.topspace)
+self.tunhd()}
+var output="",style='\
 \n.stroke{stroke:currentColor;fill:none}\
 \n.bW{stroke:currentColor;fill:none;stroke-width:1}\
 \n.bthW{stroke:currentColor;fill:none;stroke-width:3}\
@@ -8727,3108 +8166,2088 @@ continue
 \n.sltnW{stroke:currentColor;fill:none;stroke-width:.25}\
 \n.sldW{stroke:currentColor;fill:none;stroke-width:.7;stroke-dasharray:5,10}\
 \n.sW{stroke:currentColor;fill:none;stroke-width:.7}\
-\n.box{outline:1px solid black;outline-offset:1px}', font_style = '', posx = cfmt.leftmargin / cfmt.scale, posy = 0, img = { width: cfmt.pagewidth, lm: cfmt.leftmargin, rm: cfmt.rightmargin, wx: 0, chg: 1 }, defined_glyph = {}, defs = '', fulldefs = '', stv_g = { scale: 1, stsc: 1, vsc: 1, dy: 0, st: -1, v: -1, g: 0 }, blkdiv = 0
-    var tgls = { "mtr ": { x: 0, y: 0, c: "\u0020" }, brace: { x: 0, y: 0, c: "\ue000" }, lphr: { x: 0, y: 23, c: "\ue030" }, mphr: { x: 0, y: 23, c: "\ue038" }, sphr: { x: 0, y: 25, c: "\ue039" }, short: { x: 0, y: 32, c: "\ue038" }, tick: { x: 0, y: 25, c: "\ue039" }, rdots: { x: 0, y: 0, c: "\ue043" }, rdot: { x: 0, y: 0, c: "\ue044" }, dsgn: { x: -12, y: 0, c: "\ue045" }, dcap: { x: -12, y: 0, c: "\ue046" }, sgno: { x: -5, y: 0, c: "\ue047" }, coda: { x: -10, y: 0, c: "\ue048" }, tclef: { x: -8, y: 0, c: "\ue050" }, cclef: { x: -8, y: 0, c: "\ue05c" }, bclef: { x: -8, y: 0, c: "\ue062" }, pclef: { x: -6, y: 0, c: "\ue069" }, spclef: { x: -6, y: 0, c: "\ue069" }, stclef: { x: -8, y: 0, c: "\ue07a" }, scclef: { x: -8, y: 0, c: "\ue07b" }, sbclef: { x: -7, y: 0, c: "\ue07c" }, oct: { x: 0, y: 2, c: "\ue07d" }, oct2: { x: 0, y: 2, c: "\ue07e" }, mtr0: { x: 0, y: 0, c: "\ue080" }, mtr1: { x: 0, y: 0, c: "\ue081" }, mtr2: { x: 0, y: 0, c: "\ue082" }, mtr3: { x: 0, y: 0, c: "\ue083" }, mtr4: { x: 0, y: 0, c: "\ue084" }, mtr5: { x: 0, y: 0, c: "\ue085" }, mtr6: { x: 0, y: 0, c: "\ue086" }, mtr7: { x: 0, y: 0, c: "\ue087" }, mtr8: { x: 0, y: 0, c: "\ue088" }, mtr9: { x: 0, y: 0, c: "\ue089" }, mtrC: { x: 0, y: 0, c: "\ue08a" }, "mtrC|": { x: 0, y: 0, c: "\ue08b" }, "mtr+": { x: 0, y: 0, c: "\ue08c" }, "mtr(": { x: 0, y: 0, c: "\ue094" }, "mtr)": { x: 0, y: 0, c: "\ue095" }, HDD: { x: -7, y: 0, c: "\ue0a0" }, breve: { x: -7, y: 0, c: "\ue0a1" }, HD: { x: -5.2, y: 0, c: "\ue0a2" }, Hd: { x: -3.8, y: 0, c: "\ue0a3" }, hd: { x: -3.7, y: 0, c: "\ue0a4" }, ghd: { x: 2, y: 0, c: "\ue0a4", sc: .66 }, pshhd: { x: -3.7, y: 0, c: "\ue0a9" }, pfthd: { x: -3.7, y: 0, c: "\ue0b3" }, x: { x: -3.7, y: 0, c: "\ue0a9" }, "circle-x": { x: -3.7, y: 0, c: "\ue0b3" }, srep: { x: -5, y: 0, c: "\ue101" }, "dot+": { x: -5, y: 0, sc: .7, c: "\ue101" }, diamond: { x: -4, y: 0, c: "\ue1b9" }, triangle: { x: -4, y: 0, c: "\ue1bb" }, dot: { x: -1, y: 0, c: "\ue1e7" }, flu1: { x: -.3, y: 0, c: "\ue240" }, fld1: { x: -.3, y: 0, c: "\ue241" }, flu2: { x: -.3, y: 0, c: "\ue242" }, fld2: { x: -.3, y: 0, c: "\ue243" }, flu3: { x: -.3, y: 3.5, c: "\ue244" }, fld3: { x: -.3, y: -4, c: "\ue245" }, flu4: { x: -.3, y: 8, c: "\ue246" }, fld4: { x: -.3, y: -9, c: "\ue247" }, flu5: { x: -.3, y: 12.5, c: "\ue248" }, fld5: { x: -.3, y: -14, c: "\ue249" }, "acc-1": { x: -1, y: 0, c: "\ue260" }, "cacc-1": { x: -18, y: 0, c: "\ue26a\ue260\ue26b" }, "sacc-1": { x: -1, y: 0, sc: .7, c: "\ue260" }, acc3: { x: -1, y: 0, c: "\ue261" }, "cacc3": { x: -18, y: 0, c: "\ue26a\ue261\ue26b" }, sacc3: { x: -1, y: 0, sc: .7, c: "\ue261" }, acc1: { x: -2, y: 0, c: "\ue262" }, "cacc1": { x: -18, y: 0, c: "\ue26a\ue262\ue26b" }, sacc1: { x: -2, y: 0, sc: .7, c: "\ue262" }, acc2: { x: -3, y: 0, c: "\ue263" }, "acc-2": { x: -3, y: 0, c: "\ue264" }, "acc-1_2": { x: -2, y: 0, c: "\ue280" }, "acc-3_2": { x: -3, y: 0, c: "\ue281" }, acc1_2: { x: -1, y: 0, c: "\ue282" }, acc3_2: { x: -3, y: 0, c: "\ue283" }, accent: { x: -3, y: 2, c: "\ue4a0" }, stc: { x: 0, y: -2, c: "\ue4a2" }, emb: { x: 0, y: -2, c: "\ue4a4" }, wedge: { x: 0, y: 0, c: "\ue4a8" }, marcato: { x: -3, y: -2, c: "\ue4ac" }, hld: { x: -7, y: -2, c: "\ue4c0" }, brth: { x: 0, y: 0, c: "\ue4ce" }, caes: { x: 0, y: 8, c: "\ue4d1" }, r00: { x: -1.5, y: 0, c: "\ue4e1" }, r0: { x: -1.5, y: 0, c: "\ue4e2" }, r1: { x: -3.5, y: -6, c: "\ue4e3" }, r2: { x: -3.2, y: 0, c: "\ue4e4" }, r4: { x: -3, y: 0, c: "\ue4e5" }, r8: { x: -3, y: 0, c: "\ue4e6" }, r16: { x: -4, y: 0, c: "\ue4e7" }, r32: { x: -4, y: 0, c: "\ue4e8" }, r64: { x: -4, y: 0, c: "\ue4e9" }, r128: { x: -4, y: 0, c: "\ue4ea" }, mrep: { x: -6, y: 0, c: "\ue500" }, mrep2: { x: -9, y: 0, c: "\ue501" }, p: { x: -3, y: 0, c: "\ue520" }, f: { x: -3, y: 0, c: "\ue522" }, pppp: { x: -15, y: 0, c: "\ue529" }, ppp: { x: -14, y: 0, c: "\ue52a" }, pp: { x: -8, y: 0, c: "\ue52b" }, mp: { x: -8, y: 0, c: "\ue52c" }, mf: { x: -8, y: 0, c: "\ue52d" }, ff: { x: -7, y: 0, c: "\ue52f" }, fff: { x: -10, y: 0, c: "\ue530" }, ffff: { x: -14, y: 0, c: "\ue531" }, sfz: { x: -10, y: 0, c: "\ue539" }, trl: { x: -3, y: -3, c: "\ue566" }, turn: { x: -5, y: 0, c: "\ue567" }, turnx: { x: -5, y: 0, c: "\ue569" }, umrd: { x: -6, y: 2, c: "\ue56c" }, lmrd: { x: -6, y: 2, c: "\ue56d" }, dplus: { x: -3, y: 0, c: "\ue582" }, sld: { x: -3, y: 2, c: "\ue5d0" }, grm: { x: -3, y: -2, c: "\ue5e2" }, dnb: { x: -3, y: 0, c: "\ue610" }, upb: { x: -2, y: 0, c: "\ue612" }, opend: { x: -2, y: -2, c: "\ue614" }, roll: { x: 0, y: 0, c: "\ue618" }, thumb: { x: -2, y: -2, c: "\ue624" }, snap: { x: -2, y: -2, c: "\ue630" }, ped: { x: -10, y: 0, c: "\ue650" }, pedoff: { x: -5, y: 0, c: "\ue655" }, "mtro.": { x: 0, y: 0, c: "\ue910" }, mtro: { x: 0, y: 0, c: "\ue911" }, "mtro|": { x: 0, y: 0, c: "\ue912" }, "mtrc.": { x: 0, y: 0, c: "\ue914" }, mtrc: { x: 0, y: 0, c: "\ue915" }, "mtrc|": { x: 0, y: 0, c: "\ue918" }, longa: { x: -4.7, y: 0, c: "\ue95d" }, custos: { x: -4, y: 3, c: "\uea02" }, ltr: { x: 2, y: 6, c: "\ueaa4" } }
-    var glyphs = {}
-    function m_gl(s) {
-        return s.replace(/./g, function(e) {
-            var m = tgls["mtr" + e]
-            return m ? m.c : 0
-        })
-    }
-    function def_use(gl) {
-        var i, j, g
-        if (defined_glyph[gl])
-            return
-        defined_glyph[gl] = true; g = glyphs[gl]
-        if (!g) {
-            error(1, null, "Unknown glyph: '$1'", gl)
-            return
-        }
-        j = 0
-        while (1) {
-            i = g.indexOf('xlink:href="#', j)
-            if (i < 0)
-                break
-            i += 13; j = g.indexOf('"', i); def_use(g.slice(i, j))
-        }
-        defs += '\n' + g
-    }
-    function defs_add(text) {
-        var i, j, gl, tag, is, ie = 0
-        text = text.replace(/<!--.*?-->/g, '')
-        while (1) {
-            is = text.indexOf('<', ie); if (is < 0)
-                break
-            i = text.indexOf('id="', is)
-            if (i < 0)
-                break
-            i += 4; j = text.indexOf('"', i); if (j < 0)
-                break
-            gl = text.slice(i, j); ie = text.indexOf('>', j); if (ie < 0)
-                break
-            if (text[ie - 1] == '/') { ie++ } else {
-                i = text.indexOf(' ', is); if (i < 0)
-                    break
-                tag = text.slice(is + 1, i); ie = text.indexOf('</' + tag + '>', ie)
-                if (ie < 0)
-                    break
-                ie += 3 + tag.length
-            }
-            if (text.substr(is, 7) == '<filter')
-                fulldefs += text.slice(is, ie) + '\n'
-            else
-                glyphs[gl] = text.slice(is, ie)
-        }
-    }
-    function set_g() {
-        if (stv_g.started) {
-            stv_g.started = false; glout()
-            output += "</g>\n"
-        }
-        if (stv_g.scale == 1 && !stv_g.color)
-            return
-        glout()
-        output += '<g '
-        if (stv_g.scale != 1) {
-            if (stv_g.st < 0)
-                output += voice_tb[stv_g.v].scale_str
-            else if (stv_g.v < 0)
-                output += staff_tb[stv_g.st].scale_str
-            else
-                output += 'transform="translate(0,' +
-                    (posy - stv_g.dy).toFixed(1) + ') scale(' + stv_g.scale + ')"'
-        }
-        if (stv_g.color) {
-            if (stv_g.scale != 1)
-                output += ' '; output += 'color="' + stv_g.color + '"'
-        }
-        output += ">\n"; stv_g.started = true
-    }
-    function set_color(color) {
-        if (color == stv_g.color)
-            return undefined
-        var old_color = stv_g.color; stv_g.color = color; set_g()
-        return old_color
-    }
-    function set_sscale(st) {
-        var new_scale, dy
-        if (st != stv_g.st && stv_g.scale != 1)
-            stv_g.scale = 1
-        new_scale = st >= 0 ? staff_tb[st].staffscale : 1
-        if (st >= 0 && new_scale != 1)
-            dy = staff_tb[st].y
-        else
-            dy = posy
-        if (new_scale == stv_g.scale && dy == stv_g.dy && stv_g.st == st && stv_g.vsc == 1)
-            return
-        stv_g.stsc = stv_g.scale = new_scale
-        stv_g.vsc = 1
-        stv_g.dy = dy; stv_g.st = st; stv_g.v = -1; set_g()
-    }
-    function set_scale(s) {
-        var new_dy = posy, st = staff_tb[s.st].staffscale == 1 ? -1 : s.st, new_scale = s.p_v.scale
-        if (st >= 0) {
-            new_scale *= staff_tb[st].staffscale
-            new_dy = staff_tb[st].y
-        }
-        if (new_scale == stv_g.scale && stv_g.dy == new_dy)
-            return
-        stv_g.scale = new_scale; stv_g.vsc = s.p_v.scale
-        stv_g.dy = new_dy; stv_g.st = st
-        stv_g.v = s.v; set_g()
-    }
-    function set_dscale(st, no_scale) {
-        if (output) {
-            if (stv_g.started) {
-                stv_g.started = false
-                glout()
-                output += "</g>\n"
-            }
-            if (stv_g.st < 0) { staff_tb[0].output += output } else if (stv_g.scale == 1) { staff_tb[stv_g.st].output += output } else { staff_tb[stv_g.st].sc_out += output }
-            output = ""
-        }
-        if (st < 0)
-            stv_g.scale = 1
-        else
-            stv_g.scale = no_scale ? 1 : staff_tb[st].staffscale; stv_g.st = st; stv_g.dy = 0
-    }
-    function delayed_update() {
-        var st, new_out, text
-        for (st = 0; st <= nstaff; st++) {
-            if (staff_tb[st].sc_out) {
-                output += '<g ' + staff_tb[st].scale_str + '>\n' +
-                staff_tb[st].sc_out + '</g>\n'; staff_tb[st].sc_out = ""
-            }
-            if (!staff_tb[st].output)
-                continue
-            output += '<g transform="translate(0,' +
-                (-staff_tb[st].y).toFixed(1) + ')">\n' +
-                staff_tb[st].output + '</g>\n'; staff_tb[st].output = ""
-        }
-    }
-    function anno_out(s, t, f) {
-        if (s.istart == undefined)
-            return
-        var type = s.type, h = s.ymx - s.ymn + 4, wl = s.wl || 2, wr = s.wr || 2
-        if (s.grace)
-            type = C.GRACE
-        f(t || abc2svg.sym_name[type], s.istart, s.iend, s.x - wl - 2, staff_tb[s.st].y + s.ymn + h - 2, wl + wr + 4, h, s)
-    }
-    function a_start(s, t) { anno_out(s, t, user.anno_start) }
-    function a_stop(s, t) { anno_out(s, t, user.anno_stop) }
-    function empty_function() { }
-    var anno_start = empty_function, anno_stop = empty_function
-    function anno_put() {
-        var s
-        while (1) {
-            s = anno_a.shift()
-            if (!s)
-                break
-            switch (s.type) {
-                case C.CLEF: case C.METER: case C.KEY: case C.REST: if (s.type != C.REST || s.rep_nb) {
-                    set_sscale(s.st)
-                    break
-                }
-                case C.GRACE: case C.NOTE: case C.MREST: set_scale(s)
-                    break
-            }
-            anno_stop(s)
-        }
-    }
-    function out_XYAB(str, x, y, a, b) {
-        x = sx(x); y = sy(y); output += str.replace(/X|Y|A|B|F|G/g, function(c) {
-            switch (c) {
-                case 'X': return x.toFixed(1)
-                case 'Y': return y.toFixed(1)
-                case 'A': return a
-                case 'B': return b
-                case 'F': return a.toFixed(1)
-                default: return b.toFixed(1)
-            }
-        })
-    }
-    function g_open(x, y, rot, sx, sy) {
-        glout()
-        out_XYAB('<g transform="translate(X,Y', x, y); if (rot)
-            output += ') rotate(' + rot.toFixed(2)
-        if (sx) {
-            output += ') scale(' + sx
-            if (sy)
-                output += ', ' + sy
-        }
-        output += ')">\n'; stv_g.g++
-    }
-    function g_close() {
-        glout()
-        stv_g.g--; output += '</g>\n'
-    }
-    Abc.prototype.out_svg = function(str) { output += str }
-    function sx(x) {
-        if (stv_g.g)
-            return x
-        return (x + posx) / stv_g.scale
-    }
-    Abc.prototype.sx = sx
-    function sy(y) {
-        if (stv_g.g)
-            return -y
-        if (stv_g.scale == 1)
-            return posy - y
-        if (stv_g.v >= 0)
-            return (stv_g.dy - y) / stv_g.vsc
-        return stv_g.dy - y
-    }
-    Abc.prototype.sy = sy; Abc.prototype.sh = function(h) {
-        if (stv_g.st < 0)
-            return h / stv_g.scale
-        return h
-    }
-    Abc.prototype.ax = function(x) { return x + posx }
-    Abc.prototype.ay = function(y) {
-        if (stv_g.st < 0)
-            return posy - y
-        return posy + (stv_g.dy - y) * stv_g.scale - stv_g.dy
-    }
-    Abc.prototype.ah = function(h) {
-        if (stv_g.st < 0)
-            return h
-        return h * stv_g.scale
-    }
-    function out_sxsy(x, sep, y) { x = sx(x); y = sy(y); output += x.toFixed(1) + sep + y.toFixed(1) }
-    Abc.prototype.out_sxsy = out_sxsy
-    function xypath(x, y, fill) {
-        if (fill)
-            out_XYAB('<path d="mX Y', x, y)
-        else
-            out_XYAB('<path class="stroke" d="mX Y', x, y)
-    }
-    Abc.prototype.xypath = xypath
-    function draw_all_hl() {
-        var st, p_st
-        function hlud(hla, d) {
-            var hl, hll, i, xp, dx2, x2, n = hla.length
-            if (!n)
-                return
-            for (i = 0; i < n; i++) {
-                hll = hla[i]
-                if (!hll || !hll.length)
-                    continue
-                xp = sx(hll[0][0])
-                output += '<path class="stroke" stroke-width="1" d="M' +
-                    xp.toFixed(1) + ' ' +
-                    sy(p_st.y + d * i).toFixed(1)
-                dx2 = 0
-                while (1) {
-                    hl = hll.shift()
-                    if (!hl)
-                        break
-                    x2 = sx(hl[0])
-                    output += 'm' +
-                        (x2 - xp + hl[1] - dx2).toFixed(2) + ' 0h' + (-hl[1] + hl[2]).toFixed(2)
-                    xp = x2
-                    dx2 = hl[2]
-                }
-                output += '"/>\n'
-            }
-        }
-        for (st = 0; st <= nstaff; st++) {
-            p_st = staff_tb[st]
-            if (!p_st.hlu)
-                continue
-            set_sscale(st)
-            hlud(p_st.hlu, 6)
-            hlud(p_st.hld, -6)
-        }
-    }
-    var gla = [[], [], "", [], [], []]
-    function glout() {
-        var e, v = []
-        if (gla[0].length) {
-            while (1) {
-                e = gla[0].shift()
-                if (e == undefined)
-                    break
-                v.push(e.toFixed(1))
-            }
-            output += '<text x="' + v.join(',')
-            v = []
-            while (1) {
-                e = gla[1].shift()
-                if (e == undefined)
-                    break
-                v.push(e.toFixed(1))
-            }
-            output += '"\ny="' + v.join(',')
-            output += '"\n>' + gla[2] + '</text>\n'
-            gla[2] = ""
-        }
-        if (!gla[3].length)
-            return
-        output += '<path class="sW" d="'
-        while (1) {
-            e = gla[3].shift()
-            if (e == undefined)
-                break
-            output += 'M' + e.toFixed(1) + ' ' + gla[3].shift().toFixed(1) + 'v' + gla[3].shift().toFixed(1)
-        }
-        output += '"/>\n'
-    }
-    function xygl(x, y, gl) {
-        if (glyphs[gl]) {
-            def_use(gl)
-            out_XYAB('<use x="X" y="Y" xlink:href="#A"/>\n', x, y, gl)
-        } else {
-            var tgl = tgls[gl]
-            if (tgl) {
-                x += tgl.x * stv_g.scale; y -= tgl.y
-                if (tgl.sc) { out_XYAB('<text transform="translate(X,Y) scale(A)">B</text>\n', x, y, tgl.sc, tgl.c) } else {
-                    gla[0].push(sx(x))
-                    gla[1].push(sy(y))
-                    gla[2] += tgl.c
-                }
-            } else if (gl != 'nil') { error(1, null, 'no definition of $1', gl) }
-        }
-    }
-    function out_acciac(x, y, dx, dy, up) {
-        if (up) { x -= 1; y += 4 } else { x -= 5; y -= 4 }
-        out_XYAB('<path class="stroke" d="mX YlF G"/>\n', x, y, dx, -dy)
-    }
-    function out_brace(x, y, h) {
-        x += posx - 6; y = posy - y; h /= 24; output += '<text transform="translate(' +
-            x.toFixed(1) + ',' + y.toFixed(1) + ') scale(2.5,' + h.toFixed(2) + ')">' + tgls.brace.c + '</text>\n'
-    }
-    function out_bracket(x, y, h) {
-        x += posx - 5; y = posy - y - 3; h += 2; output += '<path d="m' + x.toFixed(1) + ' ' + y.toFixed(1) + '\n\
+\n.box{outline:1px solid black;outline-offset:1px}',font_style='',posx=cfmt.leftmargin/cfmt.scale,posy=0,img={width:cfmt.pagewidth,lm:cfmt.leftmargin,rm:cfmt.rightmargin,wx:0,chg:1},defined_glyph={},defs='',fulldefs='',stv_g={scale:1,stsc:1,vsc:1,dy:0,st:-1,v:-1,g:0},blkdiv=0
+var tgls={"mtr ":{x:0,y:0,c:"\u0020"},brace:{x:0,y:0,c:"\ue000"},lphr:{x:0,y:23,c:"\ue030"},mphr:{x:0,y:23,c:"\ue038"},sphr:{x:0,y:25,c:"\ue039"},short:{x:0,y:32,c:"\ue038"},tick:{x:0,y:25,c:"\ue039"},rdots:{x:0,y:0,c:"\ue043"},rdot:{x:0,y:0,c:"\ue044"},dsgn:{x:-12,y:0,c:"\ue045"},dcap:{x:-12,y:0,c:"\ue046"},sgno:{x:-5,y:0,c:"\ue047"},coda:{x:-10,y:0,c:"\ue048"},tclef:{x:-8,y:0,c:"\ue050"},cclef:{x:-8,y:0,c:"\ue05c"},bclef:{x:-8,y:0,c:"\ue062"},pclef:{x:-6,y:0,c:"\ue069"},spclef:{x:-6,y:0,c:"\ue069"},stclef:{x:-8,y:0,c:"\ue07a"},scclef:{x:-8,y:0,c:"\ue07b"},sbclef:{x:-7,y:0,c:"\ue07c"},oct:{x:0,y:2,c:"\ue07d"},oct2:{x:0,y:2,c:"\ue07e"},mtr0:{x:0,y:0,c:"\ue080"},mtr1:{x:0,y:0,c:"\ue081"},mtr2:{x:0,y:0,c:"\ue082"},mtr3:{x:0,y:0,c:"\ue083"},mtr4:{x:0,y:0,c:"\ue084"},mtr5:{x:0,y:0,c:"\ue085"},mtr6:{x:0,y:0,c:"\ue086"},mtr7:{x:0,y:0,c:"\ue087"},mtr8:{x:0,y:0,c:"\ue088"},mtr9:{x:0,y:0,c:"\ue089"},mtrC:{x:0,y:0,c:"\ue08a"},"mtrC|":{x:0,y:0,c:"\ue08b"},"mtr+":{x:0,y:0,c:"\ue08c"},"mtr(":{x:0,y:0,c:"\ue094"},"mtr)":{x:0,y:0,c:"\ue095"},HDD:{x:-7,y:0,c:"\ue0a0"},breve:{x:-7,y:0,c:"\ue0a1"},HD:{x:-5.2,y:0,c:"\ue0a2"},Hd:{x:-3.8,y:0,c:"\ue0a3"},hd:{x:-3.7,y:0,c:"\ue0a4"},ghd:{x:2,y:0,c:"\ue0a4",sc:.66},pshhd:{x:-3.7,y:0,c:"\ue0a9"},pfthd:{x:-3.7,y:0,c:"\ue0b3"},x:{x:-3.7,y:0,c:"\ue0a9"},"circle-x":{x:-3.7,y:0,c:"\ue0b3"},srep:{x:-5,y:0,c:"\ue101"},"dot+":{x:-5,y:0,sc:.7,c:"\ue101"},diamond:{x:-4,y:0,c:"\ue1b9"},triangle:{x:-4,y:0,c:"\ue1bb"},dot:{x:-1,y:0,c:"\ue1e7"},flu1:{x:-.3,y:0,c:"\ue240"},fld1:{x:-.3,y:0,c:"\ue241"},flu2:{x:-.3,y:0,c:"\ue242"},fld2:{x:-.3,y:0,c:"\ue243"},flu3:{x:-.3,y:3.5,c:"\ue244"},fld3:{x:-.3,y:-4,c:"\ue245"},flu4:{x:-.3,y:8,c:"\ue246"},fld4:{x:-.3,y:-9,c:"\ue247"},flu5:{x:-.3,y:12.5,c:"\ue248"},fld5:{x:-.3,y:-14,c:"\ue249"},"acc-1":{x:-1,y:0,c:"\ue260"},"cacc-1":{x:-18,y:0,c:"\ue26a\ue260\ue26b"},"sacc-1":{x:-1,y:0,sc:.7,c:"\ue260"},acc3:{x:-1,y:0,c:"\ue261"},"cacc3":{x:-18,y:0,c:"\ue26a\ue261\ue26b"},sacc3:{x:-1,y:0,sc:.7,c:"\ue261"},acc1:{x:-2,y:0,c:"\ue262"},"cacc1":{x:-18,y:0,c:"\ue26a\ue262\ue26b"},sacc1:{x:-2,y:0,sc:.7,c:"\ue262"},acc2:{x:-3,y:0,c:"\ue263"},"acc-2":{x:-3,y:0,c:"\ue264"},"acc-1_2":{x:-2,y:0,c:"\ue280"},"acc-3_2":{x:-3,y:0,c:"\ue281"},acc1_2:{x:-1,y:0,c:"\ue282"},acc3_2:{x:-3,y:0,c:"\ue283"},accent:{x:-3,y:2,c:"\ue4a0"},stc:{x:0,y:-2,c:"\ue4a2"},emb:{x:0,y:-2,c:"\ue4a4"},wedge:{x:0,y:0,c:"\ue4a8"},marcato:{x:-3,y:-2,c:"\ue4ac"},hld:{x:-7,y:-2,c:"\ue4c0"},brth:{x:0,y:0,c:"\ue4ce"},caes:{x:0,y:8,c:"\ue4d1"},r00:{x:-1.5,y:0,c:"\ue4e1"},r0:{x:-1.5,y:0,c:"\ue4e2"},r1:{x:-3.5,y:-6,c:"\ue4e3"},r2:{x:-3.2,y:0,c:"\ue4e4"},r4:{x:-3,y:0,c:"\ue4e5"},r8:{x:-3,y:0,c:"\ue4e6"},r16:{x:-4,y:0,c:"\ue4e7"},r32:{x:-4,y:0,c:"\ue4e8"},r64:{x:-4,y:0,c:"\ue4e9"},r128:{x:-4,y:0,c:"\ue4ea"},mrep:{x:-6,y:0,c:"\ue500"},mrep2:{x:-9,y:0,c:"\ue501"},p:{x:-3,y:0,c:"\ue520"},f:{x:-3,y:0,c:"\ue522"},pppp:{x:-15,y:0,c:"\ue529"},ppp:{x:-14,y:0,c:"\ue52a"},pp:{x:-8,y:0,c:"\ue52b"},mp:{x:-8,y:0,c:"\ue52c"},mf:{x:-8,y:0,c:"\ue52d"},ff:{x:-7,y:0,c:"\ue52f"},fff:{x:-10,y:0,c:"\ue530"},ffff:{x:-14,y:0,c:"\ue531"},sfz:{x:-10,y:0,c:"\ue539"},trl:{x:-3,y:-3,c:"\ue566"},turn:{x:-5,y:0,c:"\ue567"},turnx:{x:-5,y:0,c:"\ue569"},umrd:{x:-6,y:2,c:"\ue56c"},lmrd:{x:-6,y:2,c:"\ue56d"},dplus:{x:-3,y:0,c:"\ue582"},sld:{x:-3,y:2,c:"\ue5d0"},grm:{x:-3,y:-2,c:"\ue5e2"},dnb:{x:-3,y:0,c:"\ue610"},upb:{x:-2,y:0,c:"\ue612"},opend:{x:-2,y:-2,c:"\ue614"},roll:{x:0,y:0,c:"\ue618"},thumb:{x:-2,y:-2,c:"\ue624"},snap:{x:-2,y:-2,c:"\ue630"},ped:{x:-10,y:0,c:"\ue650"},pedoff:{x:-5,y:0,c:"\ue655"},"mtro.":{x:0,y:0,c:"\ue910"},mtro:{x:0,y:0,c:"\ue911"},"mtro|":{x:0,y:0,c:"\ue912"},"mtrc.":{x:0,y:0,c:"\ue914"},mtrc:{x:0,y:0,c:"\ue915"},"mtrc|":{x:0,y:0,c:"\ue918"},longa:{x:-4.7,y:0,c:"\ue95d"},custos:{x:-4,y:3,c:"\uea02"},ltr:{x:2,y:6,c:"\ueaa4"}}
+var glyphs={}
+function m_gl(s){return s.replace(/./g,function(e){var m=tgls["mtr"+e]
+return m?m.c:0})}
+function def_use(gl){var i,j,g
+if(defined_glyph[gl])
+return
+defined_glyph[gl]=true;g=glyphs[gl]
+if(!g){error(1,null,"Unknown glyph: '$1'",gl)
+return}
+j=0
+while(1){i=g.indexOf('xlink:href="#',j)
+if(i<0)
+break
+i+=13;j=g.indexOf('"',i);def_use(g.slice(i,j))}
+defs+='\n'+g}
+function defs_add(text){var i,j,gl,tag,is,ie=0
+text=text.replace(/<!--.*?-->/g,'')
+while(1){is=text.indexOf('<',ie);if(is<0)
+break
+i=text.indexOf('id="',is)
+if(i<0)
+break
+i+=4;j=text.indexOf('"',i);if(j<0)
+break
+gl=text.slice(i,j);ie=text.indexOf('>',j);if(ie<0)
+break
+if(text[ie-1]=='/'){ie++}else{i=text.indexOf(' ',is);if(i<0)
+break
+tag=text.slice(is+1,i);ie=text.indexOf('</'+tag+'>',ie)
+if(ie<0)
+break
+ie+=3+tag.length}
+if(text.substr(is,7)=='<filter')
+fulldefs+=text.slice(is,ie)+'\n'
+else
+glyphs[gl]=text.slice(is,ie)}}
+function set_g(){if(stv_g.started){stv_g.started=false;glout()
+output+="</g>\n"}
+if(stv_g.scale==1&&!stv_g.color)
+return
+glout()
+output+='<g '
+if(stv_g.scale!=1){if(stv_g.st<0)
+output+=voice_tb[stv_g.v].scale_str
+else if(stv_g.v<0)
+output+=staff_tb[stv_g.st].scale_str
+else
+output+='transform="translate(0,'+
+(posy-stv_g.dy).toFixed(1)+') scale('+stv_g.scale+')"'}
+if(stv_g.color){if(stv_g.scale!=1)
+output+=' ';output+='color="'+stv_g.color+'"'}
+output+=">\n";stv_g.started=true}
+function set_color(color){if(color==stv_g.color)
+return undefined
+var old_color=stv_g.color;stv_g.color=color;set_g()
+return old_color}
+function set_sscale(st){var new_scale,dy
+if(st!=stv_g.st&&stv_g.scale!=1)
+stv_g.scale=1
+new_scale=st>=0?staff_tb[st].staffscale:1
+if(st>=0&&new_scale!=1)
+dy=staff_tb[st].y
+else
+dy=posy
+if(new_scale==stv_g.scale&&dy==stv_g.dy&&stv_g.st==st&&stv_g.vsc==1)
+return
+stv_g.stsc=stv_g.scale=new_scale
+stv_g.vsc=1
+stv_g.dy=dy;stv_g.st=st;stv_g.v=-1;set_g()}
+function set_scale(s){var new_dy=posy,st=staff_tb[s.st].staffscale==1?-1:s.st,new_scale=s.p_v.scale
+if(st>=0){new_scale*=staff_tb[st].staffscale
+new_dy=staff_tb[st].y}
+if(new_scale==stv_g.scale&&stv_g.dy==new_dy)
+return
+stv_g.scale=new_scale;stv_g.vsc=s.p_v.scale
+stv_g.dy=new_dy;stv_g.st=st
+stv_g.v=s.v;set_g()}
+function set_dscale(st,no_scale){if(output){if(stv_g.started){stv_g.started=false
+glout()
+output+="</g>\n"}
+if(stv_g.st<0){staff_tb[0].output+=output}else if(stv_g.scale==1){staff_tb[stv_g.st].output+=output}else{staff_tb[stv_g.st].sc_out+=output}
+output=""}
+if(st<0)
+stv_g.scale=1
+else
+stv_g.scale=no_scale?1:staff_tb[st].staffscale;stv_g.st=st;stv_g.dy=0}
+function delayed_update(){var st,new_out,text
+for(st=0;st<=nstaff;st++){if(staff_tb[st].sc_out){output+='<g '+staff_tb[st].scale_str+'>\n'+
+staff_tb[st].sc_out+'</g>\n';staff_tb[st].sc_out=""}
+if(!staff_tb[st].output)
+continue
+output+='<g transform="translate(0,'+
+(-staff_tb[st].y).toFixed(1)+')">\n'+
+staff_tb[st].output+'</g>\n';staff_tb[st].output=""}}
+function anno_out(s,t,f){if(s.istart==undefined)
+return
+var type=s.type,h=s.ymx-s.ymn+4,wl=s.wl||2,wr=s.wr||2
+if(s.grace)
+type=C.GRACE
+f(t||abc2svg.sym_name[type],s.istart,s.iend,s.x-wl-2,staff_tb[s.st].y+s.ymn+h-2,wl+wr+4,h,s)}
+function a_start(s,t){anno_out(s,t,user.anno_start)}
+function a_stop(s,t){anno_out(s,t,user.anno_stop)}
+function empty_function(){}
+var anno_start=empty_function,anno_stop=empty_function
+function anno_put(){var s
+while(1){s=anno_a.shift()
+if(!s)
+break
+switch(s.type){case C.CLEF:case C.METER:case C.KEY:case C.REST:if(s.type!=C.REST||s.rep_nb){set_sscale(s.st)
+break}
+case C.GRACE:case C.NOTE:case C.MREST:set_scale(s)
+break}
+anno_stop(s)}}
+function out_XYAB(str,x,y,a,b){x=sx(x);y=sy(y);output+=str.replace(/X|Y|A|B|F|G/g,function(c){switch(c){case'X':return x.toFixed(1)
+case'Y':return y.toFixed(1)
+case'A':return a
+case'B':return b
+case'F':return a.toFixed(1)
+default:return b.toFixed(1)}})}
+function g_open(x,y,rot,sx,sy){glout()
+out_XYAB('<g transform="translate(X,Y',x,y);if(rot)
+output+=') rotate('+rot.toFixed(2)
+if(sx){output+=') scale('+sx
+if(sy)
+output+=', '+sy}
+output+=')">\n';stv_g.g++}
+function g_close(){glout()
+stv_g.g--;output+='</g>\n'}
+Abc.prototype.out_svg=function(str){output+=str}
+function sx(x){if(stv_g.g)
+return x
+return(x+posx)/stv_g.scale}
+Abc.prototype.sx=sx
+function sy(y){if(stv_g.g)
+return-y
+if(stv_g.scale==1)
+return posy-y
+if(stv_g.v>=0)
+return(stv_g.dy-y)/stv_g.vsc
+return stv_g.dy-y}
+Abc.prototype.sy=sy;Abc.prototype.sh=function(h){if(stv_g.st<0)
+return h/stv_g.scale
+return h}
+Abc.prototype.ax=function(x){return x+posx}
+Abc.prototype.ay=function(y){if(stv_g.st<0)
+return posy-y
+return posy+(stv_g.dy-y)*stv_g.scale-stv_g.dy}
+Abc.prototype.ah=function(h){if(stv_g.st<0)
+return h
+return h*stv_g.scale}
+function out_sxsy(x,sep,y){x=sx(x);y=sy(y);output+=x.toFixed(1)+sep+y.toFixed(1)}
+Abc.prototype.out_sxsy=out_sxsy
+function xypath(x,y,fill){if(fill)
+out_XYAB('<path d="mX Y',x,y)
+else
+out_XYAB('<path class="stroke" d="mX Y',x,y)}
+Abc.prototype.xypath=xypath
+function draw_all_hl(){var st,p_st
+function hlud(hla,d){var hl,hll,i,xp,dx2,x2,n=hla.length
+if(!n)
+return
+for(i=0;i<n;i++){hll=hla[i]
+if(!hll||!hll.length)
+continue
+xp=sx(hll[0][0])
+output+='<path class="stroke" stroke-width="1" d="M'+
+xp.toFixed(1)+' '+
+sy(p_st.y+d*i).toFixed(1)
+dx2=0
+while(1){hl=hll.shift()
+if(!hl)
+break
+x2=sx(hl[0])
+output+='m'+
+(x2-xp+hl[1]-dx2).toFixed(2)+' 0h'+(-hl[1]+hl[2]).toFixed(2)
+xp=x2
+dx2=hl[2]}
+output+='"/>\n'}}
+for(st=0;st<=nstaff;st++){p_st=staff_tb[st]
+if(!p_st.hlu)
+continue
+set_sscale(st)
+hlud(p_st.hlu,6)
+hlud(p_st.hld,-6)}}
+var gla=[[],[],"",[],[],[]]
+function glout(){var e,v=[]
+if(gla[0].length){while(1){e=gla[0].shift()
+if(e==undefined)
+break
+v.push(e.toFixed(1))}
+output+='<text x="'+v.join(',')
+v=[]
+while(1){e=gla[1].shift()
+if(e==undefined)
+break
+v.push(e.toFixed(1))}
+output+='"\ny="'+v.join(',')
+output+='"\n>'+gla[2]+'</text>\n'
+gla[2]=""}
+if(!gla[3].length)
+return
+output+='<path class="sW" d="'
+while(1){e=gla[3].shift()
+if(e==undefined)
+break
+output+='M'+e.toFixed(1)+' '+gla[3].shift().toFixed(1)+'v'+gla[3].shift().toFixed(1)}
+output+='"/>\n'}
+function xygl(x,y,gl){if(glyphs[gl]){def_use(gl)
+out_XYAB('<use x="X" y="Y" xlink:href="#A"/>\n',x,y,gl)}else{var tgl=tgls[gl]
+if(tgl){x+=tgl.x*stv_g.scale;y-=tgl.y
+if(tgl.sc){out_XYAB('<text transform="translate(X,Y) scale(A)">B</text>\n',x,y,tgl.sc,tgl.c)}else{gla[0].push(sx(x))
+gla[1].push(sy(y))
+gla[2]+=tgl.c}}else if(gl!='nil'){error(1,null,'no definition of $1',gl)}}}
+function out_acciac(x,y,dx,dy,up){if(up){x-=1;y+=4}else{x-=5;y-=4}
+out_XYAB('<path class="stroke" d="mX YlF G"/>\n',x,y,dx,-dy)}
+function out_brace(x,y,h){x+=posx-6;y=posy-y;h/=24;output+='<text transform="translate('+
+x.toFixed(1)+','+y.toFixed(1)+') scale(2.5,'+h.toFixed(2)+')">'+tgls.brace.c+'</text>\n'}
+function out_bracket(x,y,h){x+=posx-5;y=posy-y-3;h+=2;output+='<path d="m'+x.toFixed(1)+' '+y.toFixed(1)+'\n\
  c10.5 1 12 -4.5 12 -3.5c0 1 -3.5 5.5 -8.5 5.5\n\
- v'+ h.toFixed(1) + '\n\
+ v'+h.toFixed(1)+'\n\
  c5 0 8.5 4.5 8.5 5.5c0 1 -1.5 -4.5 -12 -3.5"/>\n'}
-    function out_hyph(x, y, w) {
-        var n, a_y, d = 25 + ((w / 20) | 0) * 3
-        if (w > 15.)
-            n = ((w - 15) / d) | 0
-        else
-            n = 0; x += (w - d * n - 5) / 2; out_XYAB('<path class="stroke" stroke-width="1.2"\n\
+function out_hyph(x,y,w){var n,a_y,d=25+((w/20)|0)*3
+if(w>15.)
+n=((w-15)/d)|0
+else
+n=0;x+=(w-d*n-5)/2;out_XYAB('<path class="stroke" stroke-width="1.2"\n\
  stroke-dasharray="5,A"\n\
- d="mX YhB"/>\n', x, y + 4, Math.round((d - 5) / stv_g.scale), d * n + 5)
-    }
-    function out_stem(x, y, h, grace, nflags, straight) {
-        var dx = grace ? GSTEM_XOFF : 3.5, slen = -h
-        if (h < 0)
-            dx = -dx; x += dx * stv_g.scale
-        if (stv_g.v >= 0)
-            slen /= voice_tb[stv_g.v].scale; gla[3].push(sx(x))
-        gla[3].push(sy(y))
-        gla[3].push(slen)
-        if (!nflags)
-            return
-        y += h
-        if (h > 0) {
-            if (!straight) {
-                if (!grace) {
-                    xygl(x, y, "flu" + nflags)
-                    return
-                } else {
-                    output += '<path d="'
-                    if (nflags == 1) {
-                        out_XYAB('MX Yc0.6 3.4 5.6 3.8 3 10\n\
- 1.2 -4.4 -1.4 -7 -3 -7\n', x, y)
-                    } else {
-                        while (--nflags >= 0) {
-                            out_XYAB('MX Yc1 3.2 5.6 2.8 3.2 8\n\
- 1.4 -4.8 -2.4 -5.4 -3.2 -5.2\n', x, y); y -= 3.5
-                        }
-                    }
-                }
-            } else {
-                output += '<path d="'
-                if (!grace) { while (--nflags >= 0) { out_XYAB('MX Yl7 3.2 0 3.2 -7 -3.2z\n', x, y); y -= 5.4 } } else { while (--nflags >= 0) { out_XYAB('MX Yl3 1.5 0 2 -3 -1.5z\n', x, y); y -= 3 } }
-            }
-        } else {
-            if (!straight) {
-                if (!grace) {
-                    xygl(x, y, "fld" + nflags)
-                    return
-                } else {
-                    output += '<path d="'
-                    if (nflags == 1) {
-                        out_XYAB('MX Yc0.6 -3.4 5.6 -3.8 3 -10\n\
- 1.2 4.4 -1.4 7 -3 7\n', x, y)
-                    } else {
-                        while (--nflags >= 0) {
-                            out_XYAB('MX Yc1 -3.2 5.6 -2.8 3.2 -8\n\
- 1.4 4.8 -2.4 5.4 -3.2 5.2\n', x, y); y += 3.5
-                        }
-                    }
-                }
-            } else {
-                output += '<path d="'
-                if (!grace) { while (--nflags >= 0) { out_XYAB('MX Yl7 -3.2 0 -3.2 -7 3.2z\n', x, y); y += 5.4 } }
-            }
-        }
-        output += '"/>\n'
-    }
-    function out_trem(x, y, ntrem) {
-        out_XYAB('<path d="mX Y\n\t', x - 4.5, y)
-        while (1) {
-            output += 'l9 -3v3l-9 3z'
-            if (--ntrem <= 0)
-                break
-            output += 'm0 5.4'
-        }
-        output += '"/>\n'
-    }
-    function out_tubr(x, y, dx, dy, up) { var h = up ? -3 : 3; y += h; dx /= stv_g.scale; output += '<path class="stroke" d="m'; out_sxsy(x, ' ', y); output += 'v' + h.toFixed(1) + 'l' + dx.toFixed(1) + ' ' + (-dy).toFixed(1) + 'v' + (-h).toFixed(1) + '"/>\n' }
-    function out_tubrn(x, y, dx, dy, up, str) {
-        var dxx, sw = str.length * 10, h = up ? -3 : 3; set_font("tuplet")
-        xy_str(x + dx / 2, y + dy / 2 - gene.curfont.size * .1, str, 'c')
-        dx /= stv_g.scale
-        if (!up)
-            y += 6; output += '<path class="stroke" d="m'; out_sxsy(x, ' ', y); dxx = dx - sw + 1
-        if (dy > 0)
-            sw += dy / 8
-        else
-            sw -= dy / 8
-        output += 'v' + h.toFixed(1) + 'm' + dx.toFixed(1) + ' ' + (-dy).toFixed(1) + 'v' + (-h).toFixed(1) + '"/>\n' + '<path class="stroke" stroke-dasharray="' +
-            (dxx / 2).toFixed(1) + ' ' + sw.toFixed(1) + '" d="m'; out_sxsy(x, ' ', y - h); output += 'l' + dx.toFixed(1) + ' ' + (-dy).toFixed(1) + '"/>\n'
-    }
-    function out_wln(x, y, w) { out_XYAB('<path class="stroke" stroke-width="0.8" d="mX YhF"/>\n', x, y + 1, w) }
-    var deco_str_style = { crdc: { dx: 0, dy: 5, style: 'font:italic 14px text,serif', anchor: ' text-anchor="middle"' }, dacs: { dx: 0, dy: 3, style: 'font:bold 15px text,serif', anchor: ' text-anchor="middle"' }, pf: { dx: 0, dy: 5, style: 'font:italic bold 16px text,serif', anchor: ' text-anchor="middle"' } }
-    deco_str_style.at = deco_str_style.crdc
-    function out_deco_str(x, y, de) {
-        var name = de.dd.glyph
-        if (name == 'fng') {
-            out_XYAB('\
-<text x="X" y="Y" style="font-size:14px">A</text>\n', x - 2, y + 1, m_gl(de.dd.str))
-            return
-        }
-        if (name == '@') { name = 'at' } else if (!/^[A-Za-z][A-Za-z\-_]*$/.test(name)) {
-            error(1, de.s, "No function for decoration '$1'", de.dd.name)
-            return
-        }
-        var f, a_deco = deco_str_style[name]
-        if (!a_deco)
-            a_deco = deco_str_style.crdc
-        else if (a_deco.style)
-            style += "\n." + name + "{" + a_deco.style + "}", delete a_deco.style
-        x += a_deco.dx; y += a_deco.dy; out_XYAB('<text x="X" y="Y" class="A"B>', x, y, name, a_deco.anchor || ""); set_font("annotation"); out_str(de.dd.str)
-        output += '</text>\n'
-    }
-    function out_arp(x, y, val) {
-        g_open(x, y, 270); x = 0; val = Math.ceil(val / 6)
-        while (--val >= 0) { xygl(x, 6, "ltr"); x += 6 }
-        g_close()
-    }
-    function out_cresc(x, y, val, defl) {
-        x += val * stv_g.scale
-        val = -val; out_XYAB('<path class="stroke"\n\
- d="mX YlF ', x, y, val)
-        if (defl.nost)
-            output += '-2.2m0 -3.6l' + (-val).toFixed(1) + ' -2.2"/>\n'
-        else
-            output += '-4l' + (-val).toFixed(1) + ' -4"/>\n'
-    }
-    function out_dim(x, y, val, defl) {
-        out_XYAB('<path class="stroke"\n\
- d="mX YlF ', x, y, val)
-        if (defl.noen)
-            output += '-2.2m0 -3.6l' + (-val).toFixed(1) + ' -2.2"/>\n'
-        else
-            output += '-4l' + (-val).toFixed(1) + ' -4"/>\n'
-    }
-    function out_ltr(x, y, val) {
-        y += 4; val = Math.ceil(val / 6)
-        while (--val >= 0) { xygl(x, y, "ltr"); x += 6 }
-    }
-    Abc.prototype.out_lped = function(x, y, val, defl) {
-        if (!defl.nost)
-            xygl(x, y, "ped"); if (!defl.noen)
-            xygl(x + val + 6, y, "pedoff")
-    }
-    function out_8va(x, y, val, defl) {
-        if (val < 18) {
-            val = 18
-            x -= 4
-        }
-        if (!defl.nost) {
-            out_XYAB('<text x="X" y="Y" \
+ d="mX YhB"/>\n',x,y+4,Math.round((d-5)/stv_g.scale),d*n+5)}
+function out_stem(x,y,h,grace,nflags,straight){var dx=grace?GSTEM_XOFF:3.5,slen=-h
+if(h<0)
+dx=-dx;x+=dx*stv_g.scale
+if(stv_g.v>=0)
+slen/=voice_tb[stv_g.v].scale;gla[3].push(sx(x))
+gla[3].push(sy(y))
+gla[3].push(slen)
+if(!nflags)
+return
+y+=h
+if(h>0){if(!straight){if(!grace){xygl(x,y,"flu"+nflags)
+return}else{output+='<path d="'
+if(nflags==1){out_XYAB('MX Yc0.6 3.4 5.6 3.8 3 10\n\
+ 1.2 -4.4 -1.4 -7 -3 -7\n',x,y)}else{while(--nflags>=0){out_XYAB('MX Yc1 3.2 5.6 2.8 3.2 8\n\
+ 1.4 -4.8 -2.4 -5.4 -3.2 -5.2\n',x,y);y-=3.5}}}}else{output+='<path d="'
+if(!grace){while(--nflags>=0){out_XYAB('MX Yl7 3.2 0 3.2 -7 -3.2z\n',x,y);y-=5.4}}else{while(--nflags>=0){out_XYAB('MX Yl3 1.5 0 2 -3 -1.5z\n',x,y);y-=3}}}}else{if(!straight){if(!grace){xygl(x,y,"fld"+nflags)
+return}else{output+='<path d="'
+if(nflags==1){out_XYAB('MX Yc0.6 -3.4 5.6 -3.8 3 -10\n\
+ 1.2 4.4 -1.4 7 -3 7\n',x,y)}else{while(--nflags>=0){out_XYAB('MX Yc1 -3.2 5.6 -2.8 3.2 -8\n\
+ 1.4 4.8 -2.4 5.4 -3.2 5.2\n',x,y);y+=3.5}}}}else{output+='<path d="'
+if(!grace){while(--nflags>=0){out_XYAB('MX Yl7 -3.2 0 -3.2 -7 3.2z\n',x,y);y+=5.4}}}}
+output+='"/>\n'}
+function out_trem(x,y,ntrem){out_XYAB('<path d="mX Y\n\t',x-4.5,y)
+while(1){output+='l9 -3v3l-9 3z'
+if(--ntrem<=0)
+break
+output+='m0 5.4'}
+output+='"/>\n'}
+function out_tubr(x,y,dx,dy,up){var h=up?-3:3;y+=h;dx/=stv_g.scale;output+='<path class="stroke" d="m';out_sxsy(x,' ',y);output+='v'+h.toFixed(1)+'l'+dx.toFixed(1)+' '+(-dy).toFixed(1)+'v'+(-h).toFixed(1)+'"/>\n'}
+function out_tubrn(x,y,dx,dy,up,str){var dxx,sw=str.length*10,h=up?-3:3;set_font("tuplet")
+xy_str(x+dx/2,y+dy/2-gene.curfont.size*.1,str,'c')
+dx/=stv_g.scale
+if(!up)
+y+=6;output+='<path class="stroke" d="m';out_sxsy(x,' ',y);dxx=dx-sw+1
+if(dy>0)
+sw+=dy/8
+else
+sw-=dy/8
+output+='v'+h.toFixed(1)+'m'+dx.toFixed(1)+' '+(-dy).toFixed(1)+'v'+(-h).toFixed(1)+'"/>\n'+'<path class="stroke" stroke-dasharray="'+
+(dxx/2).toFixed(1)+' '+sw.toFixed(1)+'" d="m';out_sxsy(x,' ',y-h);output+='l'+dx.toFixed(1)+' '+(-dy).toFixed(1)+'"/>\n'}
+function out_wln(x,y,w){out_XYAB('<path class="stroke" stroke-width="0.8" d="mX YhF"/>\n',x,y+1,w)}
+var deco_str_style={crdc:{dx:0,dy:5,style:'font:italic 14px text,serif',anchor:' text-anchor="middle"'},dacs:{dx:0,dy:3,style:'font:bold 15px text,serif',anchor:' text-anchor="middle"'},pf:{dx:0,dy:5,style:'font:italic bold 16px text,serif',anchor:' text-anchor="middle"'}}
+deco_str_style.at=deco_str_style.crdc
+function out_deco_str(x,y,de){var name=de.dd.glyph
+if(name=='fng'){out_XYAB('\
+<text x="X" y="Y" style="font-size:14px">A</text>\n',x-2,y+1,m_gl(de.dd.str))
+return}
+if(name=='@'){name='at'}else if(!/^[A-Za-z][A-Za-z\-_]*$/.test(name)){error(1,de.s,"No function for decoration '$1'",de.dd.name)
+return}
+var f,a_deco=deco_str_style[name]
+if(!a_deco)
+a_deco=deco_str_style.crdc
+else if(a_deco.style)
+style+="\n."+name+"{"+a_deco.style+"}",delete a_deco.style
+x+=a_deco.dx;y+=a_deco.dy;out_XYAB('<text x="X" y="Y" class="A"B>',x,y,name,a_deco.anchor||"");set_font("annotation");out_str(de.dd.str)
+output+='</text>\n'}
+function out_arp(x,y,val){g_open(x,y,270);x=0;val=Math.ceil(val/6)
+while(--val>=0){xygl(x,6,"ltr");x+=6}
+g_close()}
+function out_cresc(x,y,val,defl){x+=val*stv_g.scale
+val=-val;out_XYAB('<path class="stroke"\n\
+ d="mX YlF ',x,y,val)
+if(defl.nost)
+output+='-2.2m0 -3.6l'+(-val).toFixed(1)+' -2.2"/>\n'
+else
+output+='-4l'+(-val).toFixed(1)+' -4"/>\n'}
+function out_dim(x,y,val,defl){out_XYAB('<path class="stroke"\n\
+ d="mX YlF ',x,y,val)
+if(defl.noen)
+output+='-2.2m0 -3.6l'+(-val).toFixed(1)+' -2.2"/>\n'
+else
+output+='-4l'+(-val).toFixed(1)+' -4"/>\n'}
+function out_ltr(x,y,val){y+=4;val=Math.ceil(val/6)
+while(--val>=0){xygl(x,y,"ltr");x+=6}}
+Abc.prototype.out_lped=function(x,y,val,defl){if(!defl.nost)
+xygl(x,y,"ped");if(!defl.noen)
+xygl(x+val+6,y,"pedoff")}
+function out_8va(x,y,val,defl){if(val<18){val=18
+x-=4}
+if(!defl.nost){out_XYAB('<text x="X" y="Y" \
 style="font:italic bold 12px text,serif">8\
-<tspan dy="-4" style="font-size:10px">va</tspan></text>\n', x - 8, y); x += 12; val -= 12
-        }
-        y += 6; out_XYAB('<path class="stroke" stroke-dasharray="6,6" d="mX YhF"/>\n', x, y, val)
-        if (!defl.noen)
-            out_XYAB('<path class="stroke" d="mX Yv6"/>\n', x + val, y)
-    }
-    function out_8vb(x, y, val, defl) {
-        if (val < 18) {
-            val = 18
-            x -= 4
-        }
-        if (!defl.nost) {
-            out_XYAB('<text x="X" y="Y" \
+<tspan dy="-4" style="font-size:10px">va</tspan></text>\n',x-8,y);x+=12;val-=12}
+y+=6;out_XYAB('<path class="stroke" stroke-dasharray="6,6" d="mX YhF"/>\n',x,y,val)
+if(!defl.noen)
+out_XYAB('<path class="stroke" d="mX Yv6"/>\n',x+val,y)}
+function out_8vb(x,y,val,defl){if(val<18){val=18
+x-=4}
+if(!defl.nost){out_XYAB('<text x="X" y="Y" \
 style="font:italic bold 12px text,serif">8\
-<tspan dy=".5" style="font-size:10px">vb</tspan></text>\n', x - 8, y); x += 10
-            val -= 10
-        }
-        out_XYAB('<path class="stroke" stroke-dasharray="6,6" d="mX YhF"/>\n', x, y, val)
-        if (!defl.noen)
-            out_XYAB('<path class="stroke" d="mX Yv-6"/>\n', x + val, y)
-    }
-    function out_15ma(x, y, val, defl) {
-        if (val < 25) {
-            val = 25
-            x -= 6
-        }
-        if (!defl.nost) {
-            out_XYAB('<text x="X" y="Y" \
+<tspan dy=".5" style="font-size:10px">vb</tspan></text>\n',x-8,y);x+=10
+val-=10}
+out_XYAB('<path class="stroke" stroke-dasharray="6,6" d="mX YhF"/>\n',x,y,val)
+if(!defl.noen)
+out_XYAB('<path class="stroke" d="mX Yv-6"/>\n',x+val,y)}
+function out_15ma(x,y,val,defl){if(val<25){val=25
+x-=6}
+if(!defl.nost){out_XYAB('<text x="X" y="Y" \
 style="font:italic bold 12px text,serif">15\
-<tspan dy="-4" style="font-size:10px">ma</tspan></text>\n', x - 10, y); x += 20; val -= 20
-        }
-        y += 6; out_XYAB('<path class="stroke" stroke-dasharray="6,6" d="mX YhF"/>\n', x, y, val)
-        if (!defl.noen)
-            out_XYAB('<path class="stroke" d="mX Yv6"/>\n', x + val, y)
-    }
-    function out_15mb(x, y, val, defl) {
-        if (val < 24) {
-            val = 24
-            x -= 5
-        }
-        if (!defl.nost) {
-            out_XYAB('<text x="X" y="Y" \
+<tspan dy="-4" style="font-size:10px">ma</tspan></text>\n',x-10,y);x+=20;val-=20}
+y+=6;out_XYAB('<path class="stroke" stroke-dasharray="6,6" d="mX YhF"/>\n',x,y,val)
+if(!defl.noen)
+out_XYAB('<path class="stroke" d="mX Yv6"/>\n',x+val,y)}
+function out_15mb(x,y,val,defl){if(val<24){val=24
+x-=5}
+if(!defl.nost){out_XYAB('<text x="X" y="Y" \
 style="font:italic bold 12px text,serif">15\
-<tspan dy=".5" style="font-size:10px">mb</tspan></text>\n', x - 10, y); x += 18
-            val -= 18
-        }
-        out_XYAB('<path class="stroke" stroke-dasharray="6,6" d="mX YhF"/>\n', x, y, val)
-        if (!defl.noen)
-            out_XYAB('<path class="stroke" d="mX Yv-6"/>\n', x + val, y)
-    }
-    var deco_val_tb = { arp: out_arp, cresc: out_cresc, dim: out_dim, ltr: out_ltr, lped: function(x, y, val, defl) { self.out_lped(x, y, val, defl) }, "8va": out_8va, "8vb": out_8vb, "15ma": out_15ma, "15mb": out_15mb }
-    function out_deco_val(x, y, name, val, defl) {
-        if (deco_val_tb[name])
-            deco_val_tb[name](x, y, val, defl)
-        else
-            error(1, null, "No function for decoration '$1'", name)
-    }
-    function out_glisq(x2, y2, de) {
-        var ar, a, len, de1 = de.start, x1 = de1.x, y1 = de1.y + staff_tb[de1.st].y, dx = x2 - x1, dy = self.sh(y1 - y2)
-        if (!stv_g.g)
-            dx /= stv_g.scale
-        ar = Math.atan2(dy, dx)
-        a = ar / Math.PI * 180
-        len = (dx - (de1.s.dots ? 13 + de1.s.xmx : 8)
-            - 8 - (de.s.notes[0].shac || 0))
-            / Math.cos(ar)
-        g_open(x1, y1, a); x1 = de1.s.dots ? 13 + de1.s.xmx : 8; len = len / 6 | 0
-        if (len < 1)
-            len = 1
-        while (--len >= 0) { xygl(x1, 0, "ltr"); x1 += 6 }
-        g_close()
-    }
-    function out_gliss(x2, y2, de) {
-        var ar, a, len, de1 = de.start, x1 = de1.x, y1 = de1.y + staff_tb[de1.st].y, dx = x2 - x1, dy = self.sh(y1 - y2)
-        if (!stv_g.g)
-            dx /= stv_g.scale
-        ar = Math.atan2(dy, dx)
-        a = ar / Math.PI * 180
-        len = (dx - (de1.s.dots ? 13 + de1.s.xmx : 8)
-            - 8 - (de.s.notes[0].shac || 0))
-            / Math.cos(ar)
-        g_open(x1, y1, a); xypath(de1.s.dots ? 13 + de1.s.xmx : 8, 0)
-        output += 'h' + len.toFixed(1) + '" stroke-width="1"/>\n'; g_close()
-    }
-    var deco_l_tb = { glisq: out_glisq, gliss: out_gliss }
-    function out_deco_long(x, y, de) {
-        var s, p_v, m, nt, i, name = de.dd.glyph, de1 = de.start
-        if (!deco_l_tb[name]) {
-            error(1, null, "No function for decoration '$1'", name)
-            return
-        }
-        p_v = de.s.p_v
-        if (de.defl.noen) {
-            s = p_v.s_next
-            while (s && !s.dur)
-                s = s.next
-            if (s) {
-                for (m = 0; m <= s.nhd; m++) {
-                    nt = s.notes[m]
-                    if (!nt.a_dd)
-                        continue
-                    for (i = 0; i < nt.a_dd.length; i++) {
-                        if (nt.a_dd[i].name == de.dd.name) {
-                            y = 3 * (nt.pit - 18)
-                            + staff_tb[de.s.st].y
-                            break
-                        }
-                    }
-                }
-            }
-            x += 8
-        } else if (de.defl.nost) {
-            s = p_v.s_prev
-            while (s && !s.dur)
-                s = s.prev
-            if (s) {
-                for (m = 0; m <= s.nhd; m++) {
-                    nt = s.notes[m]
-                    if (!nt.a_dd)
-                        continue
-                    for (i = 0; i < nt.a_dd.length; i++) {
-                        if (nt.a_dd[i].name == de1.dd.name) {
-                            de1.y = 3 * (nt.pit - 18)
-                            break
-                        }
-                    }
-                }
-            }
-            de1.x -= 8
-        }
-        deco_l_tb[name](x, y, de)
-    }
-    function tempo_note(str, s, dur, dy) {
-        var p, elts = identify_note(s, dur)
-        switch (elts[0]) {
-            case C.OVAL: p = "\ueca2"
-                break
-            case C.EMPTY: p = "\ueca3"
-                break
-            default: switch (elts[2]) {
-                case 2: p = "\ueca9"
-                    break
-                case 1: p = "\ueca7"
-                    break
-                default: p = "\ueca5"
-                    break
-            }
-                break
-        }
-        str.push('<tspan\nclass="' +
-            font_class(cfmt.musicfont) + '" style="font-size:' +
-            (gene.curfont.size * 1.3).toFixed(1) + 'px"' +
-            dy + '>' +
-            p + '</tspan>'
-            + (elts[1] ? '\u2009.' : ''))
-        return elts[1] ? 2 : 1
-    }
-    function tempo_build(s) {
-        var i, j, bx, p, wh, dy, w = 0, str = []
-        if (s.tempo_str)
-            return
-        if (!cfmt.musicfont.used)
-            get_font("music")
-        set_font("tempo")
-        if (s.tempo_str1) {
-            str.push(s.tempo_str1)
-            w += strwh(s.tempo_str1)[0]
-        }
-        if (s.tempo_notes) {
-            dy = ' dy="-1"'
-            for (i = 0; i < s.tempo_notes.length; i++) {
-                j = tempo_note(str, s, s.tempo_notes[i], dy)
-                w += j * gene.curfont.swfac
-                dy = ''
-            }
-            str.push('<tspan dy="1">=</tspan>')
-            w += cwidf('=')
-            if (s.tempo_ca) {
-                str.push(s.tempo_ca)
-                w += strwh(s.tempo_ca)[0]
-                j = s.tempo_ca.length + 1
-            }
-            if (s.tempo) {
-                str.push(s.tempo)
-                w += strwh(s.tempo.toString())[0]
-            } else {
-                j = tempo_note(str, s, s.new_beat, ' dy="-1"')
-                w += j * gene.curfont.swfac
-                dy = 'y'
-            }
-        }
-        if (s.tempo_str2) {
-            if (dy)
-                str.push('<tspan\n\tdy="1">' +
-                    s.tempo_str2 + '</tspan>')
-            else
-                str.push(s.tempo_str2)
-            w += strwh(s.tempo_str2)[0]
-        }
-        s.tempo_str = str.join(' ')
-        w += cwidf(' ') * (str.length - 1)
-        s.tempo_wh = [w, gene.deffont.size]
-    }
-    function writempo(s, x, y) {
-        var bh
-        set_font("tempo")
-        if (gene.curfont.box) {
-            gene.curfont.box = false
-            bh = gene.curfont.size + 4
-        }
-        output += '<text class="' + font_class(gene.curfont) + '" x="'
-        out_sxsy(x, '" y="', y + gene.curfont.size * .22)
-        output += '">' + s.tempo_str + '</text>\n'
-        if (bh) {
-            gene.curfont.box = true
-            output += '<rect class="stroke" x="'
-            out_sxsy(x - 2, '" y="', y + bh - 1)
-            output += '" width="' + (s.tempo_wh[0] + 4).toFixed(1) + '" height="' + bh.toFixed(1) + '"/>\n'
-        }
-        s.invis = true
-    }
-    function vskip(h) { posy += h }
-    function clr_sty() {
-        font_style = ''
-        if (cfmt.fullsvg) {
-            defined_glyph = {}
-            for (var i = 0; i < abc2svg.font_tb.length; i++)
-                abc2svg.font_tb[i].used = 0
-            ff.used = 0
-        } else { style = fulldefs = '' }
-    }
-    function svg_flush() {
-        if (multicol || !user.img_out || posy == 0)
-            return
-        var i, font, fmt = tsnext ? tsnext.fmt : cfmt, w = Math.ceil((fmt.trimsvg || fmt.singleline == 1) ? (cfmt.leftmargin + img.wx * cfmt.scale + cfmt.rightmargin + 2) : img.width), head = '<svg xmlns="http://www.w3.org/2000/svg" version="1.1"\n\
+<tspan dy=".5" style="font-size:10px">mb</tspan></text>\n',x-10,y);x+=18
+val-=18}
+out_XYAB('<path class="stroke" stroke-dasharray="6,6" d="mX YhF"/>\n',x,y,val)
+if(!defl.noen)
+out_XYAB('<path class="stroke" d="mX Yv-6"/>\n',x+val,y)}
+var deco_val_tb={arp:out_arp,cresc:out_cresc,dim:out_dim,ltr:out_ltr,lped:function(x,y,val,defl){self.out_lped(x,y,val,defl)},"8va":out_8va,"8vb":out_8vb,"15ma":out_15ma,"15mb":out_15mb}
+function out_deco_val(x,y,name,val,defl){if(deco_val_tb[name])
+deco_val_tb[name](x,y,val,defl)
+else
+error(1,null,"No function for decoration '$1'",name)}
+function out_glisq(x2,y2,de){var ar,a,len,de1=de.start,x1=de1.x,y1=de1.y+staff_tb[de1.st].y,dx=x2-x1,dy=self.sh(y1-y2)
+if(!stv_g.g)
+dx/=stv_g.scale
+ar=Math.atan2(dy,dx)
+a=ar/Math.PI*180
+len=(dx-(de1.s.dots?13+de1.s.xmx:8)
+-8-(de.s.notes[0].shac||0))
+/ Math.cos(ar)
+g_open(x1,y1,a);x1=de1.s.dots?13+de1.s.xmx:8;len=len/6|0
+if(len<1)
+len=1
+while(--len>=0){xygl(x1,0,"ltr");x1+=6}
+g_close()}
+function out_gliss(x2,y2,de){var ar,a,len,de1=de.start,x1=de1.x,y1=de1.y+staff_tb[de1.st].y,dx=x2-x1,dy=self.sh(y1-y2)
+if(!stv_g.g)
+dx/=stv_g.scale
+ar=Math.atan2(dy,dx)
+a=ar/Math.PI*180
+len=(dx-(de1.s.dots?13+de1.s.xmx:8)
+-8-(de.s.notes[0].shac||0))
+/ Math.cos(ar)
+g_open(x1,y1,a);xypath(de1.s.dots?13+de1.s.xmx:8,0)
+output+='h'+len.toFixed(1)+'" stroke-width="1"/>\n';g_close()}
+var deco_l_tb={glisq:out_glisq,gliss:out_gliss}
+function out_deco_long(x,y,de){var s,p_v,m,nt,i,name=de.dd.glyph,de1=de.start
+if(!deco_l_tb[name]){error(1,null,"No function for decoration '$1'",name)
+return}
+p_v=de.s.p_v
+if(de.defl.noen){s=p_v.s_next
+while(s&&!s.dur)
+s=s.next
+if(s){for(m=0;m<=s.nhd;m++){nt=s.notes[m]
+if(!nt.a_dd)
+continue
+for(i=0;i<nt.a_dd.length;i++){if(nt.a_dd[i].name==de.dd.name){y=3*(nt.pit-18)
++staff_tb[de.s.st].y
+break}}}}
+x+=8}else if(de.defl.nost){s=p_v.s_prev
+while(s&&!s.dur)
+s=s.prev
+if(s){for(m=0;m<=s.nhd;m++){nt=s.notes[m]
+if(!nt.a_dd)
+continue
+for(i=0;i<nt.a_dd.length;i++){if(nt.a_dd[i].name==de1.dd.name){de1.y=3*(nt.pit-18)
+break}}}}
+de1.x-=8}
+deco_l_tb[name](x,y,de)}
+function tempo_note(str,s,dur,dy){var p,elts=identify_note(s,dur)
+switch(elts[0]){case C.OVAL:p="\ueca2"
+break
+case C.EMPTY:p="\ueca3"
+break
+default:switch(elts[2]){case 2:p="\ueca9"
+break
+case 1:p="\ueca7"
+break
+default:p="\ueca5"
+break}
+break}
+str.push('<tspan\nclass="'+
+font_class(cfmt.musicfont)+'" style="font-size:'+
+(gene.curfont.size*1.3).toFixed(1)+'px"'+
+dy+'>'+
+p+'</tspan>'
++(elts[1]?'\u2009.':''))
+return elts[1]?2:1}
+function tempo_build(s){var i,j,bx,p,wh,dy,w=0,str=[]
+if(s.tempo_str)
+return
+if(!cfmt.musicfont.used)
+get_font("music")
+set_font("tempo")
+if(s.tempo_str1){str.push(s.tempo_str1)
+w+=strwh(s.tempo_str1)[0]}
+if(s.tempo_notes){dy=' dy="-1"'
+for(i=0;i<s.tempo_notes.length;i++){j=tempo_note(str,s,s.tempo_notes[i],dy)
+w+=j*gene.curfont.swfac
+dy=''}
+str.push('<tspan dy="1">=</tspan>')
+w+=cwidf('=')
+if(s.tempo_ca){str.push(s.tempo_ca)
+w+=strwh(s.tempo_ca)[0]
+j=s.tempo_ca.length+1}
+if(s.tempo){str.push(s.tempo)
+w+=strwh(s.tempo.toString())[0]}else{j=tempo_note(str,s,s.new_beat,' dy="-1"')
+w+=j*gene.curfont.swfac
+dy='y'}}
+if(s.tempo_str2){if(dy)
+str.push('<tspan\n\tdy="1">'+
+s.tempo_str2+'</tspan>')
+else
+str.push(s.tempo_str2)
+w+=strwh(s.tempo_str2)[0]}
+s.tempo_str=str.join(' ')
+w+=cwidf(' ')*(str.length-1)
+s.tempo_wh=[w,gene.deffont.size]}
+function writempo(s,x,y){var bh
+set_font("tempo")
+if(gene.curfont.box){gene.curfont.box=false
+bh=gene.curfont.size+4}
+output+='<text class="'+font_class(gene.curfont)+'" x="'
+out_sxsy(x,'" y="',y+gene.curfont.size*.22)
+output+='">'+s.tempo_str+'</text>\n'
+if(bh){gene.curfont.box=true
+output+='<rect class="stroke" x="'
+out_sxsy(x-2,'" y="',y+bh-1)
+output+='" width="'+(s.tempo_wh[0]+4).toFixed(1)+'" height="'+bh.toFixed(1)+'"/>\n'}
+s.invis=true}
+function vskip(h){posy+=h}
+function clr_sty(){font_style=''
+if(cfmt.fullsvg){defined_glyph={}
+for(var i=0;i<abc2svg.font_tb.length;i++)
+abc2svg.font_tb[i].used=0
+ff.used=0}else{style=fulldefs=''}}
+function svg_flush(){if(multicol||!user.img_out||posy==0)
+return
+var i,font,fmt=tsnext?tsnext.fmt:cfmt,w=Math.ceil((fmt.trimsvg||fmt.singleline==1)?(cfmt.leftmargin+img.wx*cfmt.scale+cfmt.rightmargin+2):img.width),head='<svg xmlns="http://www.w3.org/2000/svg" version="1.1"\n\
  xmlns:xlink="http://www.w3.org/1999/xlink"\n\
- fill="currentColor" stroke-width=".7"', g = ''
-        glout()
-        if (cfmt.fgcolor)
-            head += ' color="' + cfmt.fgcolor + '"'
-        font = get_font("music")
-        head += ' class="' + font_class(font) + ' tune' + tunes.length + '"\n'
-        posy *= cfmt.scale
-        if (user.imagesize != undefined)
-            head += user.imagesize
-        else
-            head += ' width="' + w
-                + 'px" height="' + posy.toFixed(2) + 'px"'
-        head += ' viewBox="0 0 ' + w + ' '
-            + posy.toFixed(2) + '">\n'
-        head += fulldefs
-        if (cfmt.bgcolor)
-            head += '<rect width="100%" height="100%" fill="'
-                + cfmt.bgcolor + '"/>\n'
-        if (style || font_style)
-            head += '<style>' + font_style + style + '\n</style>\n'
-        if (defs)
-            head += '<defs>' + defs + '\n</defs>\n'
-        if (cfmt.scale != 1) {
-            head += '<g class="g" transform="scale(' +
-            cfmt.scale + ')">\n'; g = '</g>\n'
-        }
-        if (psvg)
-            psvg.ps_flush(true); if (parse.state == 1 && user.page_format && !blkdiv)
-            blkdiv = 1
-        if (blkdiv > 0) {
-            user.img_out(blkdiv == 1 ? '<div class="nobrk">' : '<div class="nobrk newpage">')
-            blkdiv = -1
-        } else if (blkdiv < 0 && cfmt.splittune) {
-            i = 1
-            blkdiv = 0
-        }
-        user.img_out(head + output + g + "</svg>"); if (i)
-            user.img_out("</div>")
-        output = ""
-        clr_sty()
-        defs = ''; posy = 0
-        img.wx = 0
-    }
-    function blk_flush() {
-        svg_flush()
-        if (blkdiv < 0 && !parse.state) {
-            user.img_out('</div>')
-            blkdiv = 0
-        }
-    }
-    Abc.prototype.blk_flush = blk_flush
-    var par_sy, cur_sy, voice_tb, curvoice, staves_found, vover, tsfirst
-    function voice_filter() {
-        var opt
-        function vfilt(opts, opt) {
-            var i, sel = new RegExp(opt)
-            if (sel.test(curvoice.id) || sel.test(curvoice.nm)) {
-                for (i = 0; i < opts.length; i++)
-                    self.do_pscom(opts[i])
-            }
-        }
-        if (parse.voice_opts)
-            for (opt in parse.voice_opts) {
-                if (parse.voice_opts.hasOwnProperty(opt))
-                    vfilt(parse.voice_opts[opt], opt)
-            }
-        if (parse.tune_v_opts)
-            for (opt in parse.tune_v_opts) {
-                if (parse.tune_v_opts.hasOwnProperty(opt))
-                    vfilt(parse.tune_v_opts[opt], opt)
-            }
-    }
-    function sym_link(s) {
-        var tim = curvoice.time
-        if (!s.fname)
-            set_ref(s)
-        if (!curvoice.ignore) {
-            s.prev = curvoice.last_sym
-            if (curvoice.last_sym)
-                curvoice.last_sym.next = s
-            else
-                curvoice.sym = s
-        } else if (s.bar_type) { curvoice.last_bar = s }
-        curvoice.last_sym = s
-        s.v = curvoice.v; s.p_v = curvoice; s.st = curvoice.cst; s.time = tim
-        if (s.dur && !s.grace)
-            curvoice.time += s.dur; parse.ufmt = true
-        s.fmt = cfmt
-        s.pos = curvoice.pos
-        if (curvoice.second)
-            s.second = true
-        if (curvoice.floating)
-            s.floating = true
-        if (curvoice.eoln) {
-            s.soln = true
-            curvoice.eoln = false
-        }
-    }
-    function sym_add(p_voice, type) {
-        var s = { type: type, dur: 0 }, s2, p_voice2 = curvoice; curvoice = p_voice; sym_link(s); curvoice = p_voice2; s2 = s.prev
-        if (!s2)
-            s2 = s.next
-        if (s2) { s.fname = s2.fname; s.istart = s2.istart; s.iend = s2.iend }
-        return s
-    }
-    var w_tb = new Uint8Array([6, 2, 8, 6, 7, 3, 4, 9, 9, 0, 9, 5, 0, 1, 0, 0, 0, 0])
-    function sort_all() {
-        var s, s2, time, w, wmin, ir, fmt, v, p_voice, prev, fl, new_sy, nv = voice_tb.length, vtb = [], vn = [], sy = cur_sy
-        function b_chk() {
-            var bt, s, s2, v, t, ir = 0
-            while (1) {
-                v = vn[ir++]
-                if (v == undefined)
-                    break
-                s = vtb[v]
-                if (!s || !s.bar_type || s.invis || s.time != time)
-                    continue
-                if (!bt) {
-                    bt = s.bar_type
-                    if (s.text && bt == '|')
-                        t = s.text
-                    continue
-                }
-                if (s.bar_type != bt)
-                    break
-                if (s.text && !t && bt == '|') {
-                    t = s.text
-                    break
-                }
-            }
-            if (v == undefined)
-                return
-            if (bt == "::" || bt == ":|" || t) {
-                ir = 0
-                bt = t ? '|' : "::"
-                while (1) {
-                    v = vn[ir++]
-                    if (v == undefined)
-                        break
-                    s = vtb[v]
-                    if (!s || s.invis || s.bar_type != bt || (bt == '|' && !s.text))
-                        continue
-                    s2 = clone(s)
-                    if (bt == "::") {
-                        s.bar_type = ":|"
-                        s2.bar_type = "|:"
-                    } else {
-                        delete s.text
-                        delete s.rbstart
-                        s2.bar_type = '['
-                        s2.invis = 1
-                        s2.xsh = 0
-                    }
-                    s2.next = s.next
-                    if (s2.next)
-                        s2.next.prev = s2
-                    s2.prev = s
-                    s.next = s2
-                }
-            } else { error(1, s, "Different bars $1 and $2", (bt + (t || '')), (s.bar_type + (s.text || ''))) }
-        }
-        for (v = 0; v < nv; v++) {
-            s = voice_tb[v].sym
-            vtb[v] = s
-            if (sy.voices[v]) {
-                vn[sy.voices[v].range] = v
-                if (!prev && s) {
-                    fmt = s.fmt
-                    p_voice = voice_tb[v]
-                    prev = { type: C.STAVES, fname: parse.fname, dur: 0, v: v, p_v: p_voice, time: 0, st: 0, sy: sy, next: s, fmt: fmt, seqst: true }
-                }
-            }
-        }
-        if (!prev)
-            return
-        p_voice.sym = tsfirst = s = prev
-        if (s.next)
-            s.next.prev = s
-        else
-            p_voice.last_sym = s
-        s = glovar.tempo
-        if (s) {
-            s.v = v = p_voice.v
-            s.p_v = p_voice
-            s.st = 0
-            s.time = 0
-            s.prev = prev
-            s.next = prev.next
-            if (s.next)
-                s.next.prev = s
-            else
-                p_voice.last_sym = s
-            s.prev.next = s
-            s.fmt = fmt
-            glovar.tempo = null
-            vtb[v] = s
-        }
-        if (nv == 1) {
-            s = tsfirst
-            s.ts_next = s.next
-            while (1) {
-                s = s.next
-                if (!s)
-                    return
-                if (s.time != s.prev.time || w_tb[s.prev.type])
-                    s.seqst = 1
-                if (s.type == C.PART) {
-                    s.prev.next = s.prev.ts_next = s.next
-                    if (s.next) {
-                        s.next.part = s
-                        s.next.prev = s.prev
-                        if (s.soln)
-                            s.next.soln = 1
-                        if (s.seqst)
-                            s.next.seqst = 1
-                    }
-                    continue
-                }
-                s.ts_prev = s.prev
-                s.ts_next = s.next
-            }
-        }
-        while (1) {
-            if (new_sy) {
-                sy = new_sy; new_sy = null; vn.length = 0
-                for (v = 0; v < nv; v++) {
-                    if (!sy.voices[v])
-                        continue
-                    vn[sy.voices[v].range] = v
-                }
-            }
-            wmin = time = 10000000
-            ir = 0
-            while (1) {
-                v = vn[ir++]
-                if (v == undefined)
-                    break
-                s = vtb[v]
-                if (!s || s.time > time)
-                    continue
-                w = w_tb[s.type]
-                if (s.type == C.GRACE && s.next && s.next.type == C.BAR)
-                    w = 5
-                if (s.time < time) { time = s.time; wmin = w } else if (w < wmin) { wmin = w }
-            }
-            if (wmin > 127)
-                break
-            if (wmin == 6)
-                b_chk()
-            ir = 0
-            while (1) {
-                v = vn[ir++]
-                if (v == undefined)
-                    break
-                s = vtb[v]
-                if (!s || s.time != time)
-                    continue
-                w = w_tb[s.type]
-                if (s.type == C.GRACE && s.next && s.next.type == C.BAR)
-                    w = 5
-                if (w != wmin)
-                    continue
-                if (!w && s.type == C.PART) {
-                    if (s.prev)
-                        s.prev.next = s.next
-                    else
-                        s.p_v.sym = s.next
-                    vtb[v] = s.next
-                    if (s.next) {
-                        s.next.part = s
-                        s.next.prev = s.prev
-                        if (s.soln)
-                            s.next.soln = 1
-                    }
-                    continue
-                }
-                if (s.type == C.STAVES)
-                    new_sy = s.sy
-                if (fl) { fl = 0; s.seqst = true }
-                s.ts_prev = prev
-                prev.ts_next = s
-                prev = s
-                vtb[v] = s.next
-            }
-            if (wmin)
-                fl = 1
-        }
-    }
-    Abc.prototype.voice_adj = function(sys_chg) {
-        var p_voice, s, s2, v, sl
-        function ins_pq() {
-            var s, s2, p_v = voice_tb[par_sy.top_voice]
-            while (1) {
-                s = parse.pq_d.shift()
-                if (!s)
-                    break
-                for (s2 = p_v.sym; ; s2 = s2.next) {
-                    if (s2.time >= s.time && s2.dur) {
-                        s.next = s2
-                        s.prev = s2.prev
-                        s.prev.next = s2.prev = s
-                        s.v = s2.v
-                        s.p_v = p_v
-                        s.st = s2.st
-                        break
-                    }
-                }
-            }
-        }
-        function set_feathered_beam(s1) {
-            var s, s2, t, d, b, i, a, d = s1.dur, n = 1
-            for (s = s1; s; s = s.next) {
-                if (s.beam_end || !s.next)
-                    break
-                n++
-            }
-            if (n <= 1) {
-                delete s1.feathered_beam
-                return
-            }
-            s2 = s; b = d / 2; a = d / (n - 1); t = s1.time
-            if (s1.feathered_beam > 0) { for (s = s1, i = n - 1; s != s2; s = s.next, i--) { d = ((a * i) | 0) + b; s.dur = d; s.time = t; t += d } } else { for (s = s1, i = 0; s != s2; s = s.next, i++) { d = ((a * i) | 0) + b; s.dur = d; s.time = t; t += d } }
-            s.dur = s.time + s.dur - t; s.time = t
-        }
-        if (curvoice && curvoice.clone) {
-            parse.istart = parse.eol
-            do_cloning()
-        }
-        if (par_sy.one_v)
-            fill_mr_ba(voice_tb[par_sy.top_voice])
-        if (parse.pq_d)
-            ins_pq()
-        for (v = 0; v < voice_tb.length; v++) {
-            p_voice = voice_tb[v]
-            if (!sys_chg) {
-                delete p_voice.eoln
-                while (1) {
-                    sl = p_voice.sls.shift()
-                    if (!sl)
-                        break
-                    s = sl.ss
-                    if (!s.sls)
-                        s.sls = []
-                    sl.loc = 'o'
-                    s.sls.push(sl)
-                }
-            }
-            for (s = p_voice.sym; s; s = s.next) {
-                if (s.time >= staves_found)
-                    break
-            }
-            for (; s; s = s.next) {
-                if (w_tb[s.type] < 5 && s.type != C.STAVES && s.type != C.CLEF && s.time && (!s.prev || s.time > s.prev.time + s.prev.dur)) {
-                    s2 = { type: C.BAR, bar_type: "[]", v: s.v, p_v: s.p_v, st: s.st, time: s.time, dur: 0, next: s, prev: s.prev, fmt: s.fmt, invis: 1 }
-                    if (s.prev)
-                        s.prev.next = s2
-                    else
-                        voice_tb[s.v].sym = s2
-                    s.prev = s2
-                }
-                switch (s.type) {
-                    case C.GRACE: if (!cfmt.graceword)
-                        continue
-                        for (s2 = s.next; s2; s2 = s2.next) {
-                            switch (s2.type) {
-                                case C.SPACE: continue
-                                case C.NOTE: if (!s2.a_ly)
-                                    break
-                                    s.a_ly = s2.a_ly; s2.a_ly = null
-                                    break
-                            }
-                            break
-                        }
-                        continue
-                    case C.NOTE: if (s.feathered_beam)
-                        set_feathered_beam(s)
-                        break
-                }
-            }
-        }
-    }
-    function new_syst(init) {
-        var st, v, sy_staff, p_voice, sy_new = { voices: [], staves: [], top_voice: 0 }
-        if (init) {
-            cur_sy = par_sy = sy_new
-            return
-        }
-        for (v = 0; v < voice_tb.length; v++) {
-            if (par_sy.voices[v]) {
-                st = par_sy.voices[v].st
-                sy_staff = par_sy.staves[st]
-                p_voice = voice_tb[v]
-                sy_staff.staffnonote = p_voice.staffnonote
-                if (p_voice.staffscale)
-                    sy_staff.staffscale = p_voice.staffscale
-            }
-        }
-        for (st = 0; st < par_sy.staves.length; st++) { sy_new.staves[st] = clone(par_sy.staves[st]); sy_new.staves[st].flags = 0 }
-        par_sy.next = sy_new; par_sy = sy_new
-    }
-    Abc.prototype.set_bar_num = function() {
-        var s, s2, rep_tim, k, n, nu, txt, tim = 0, bar_num = gene.nbar, bar_tim = 0, ptim = 0, wmeasure = voice_tb[cur_sy.top_voice].meter.wmeasure
-        function check_meas() {
-            var s3
-            if (tim > ptim + wmeasure && s.prev.type != C.MREST)
-                return 1
-            for (s3 = s.next; s3 && s3.time == s.time; s3 = s3.next); for (; s3 && !s3.bar_type; s3 = s3.next); return s3 && (s3.time - bar_tim) % wmeasure
-        }
-        for (s = tsfirst; ; s = s.ts_next) {
-            if (!s)
-                return
-            switch (s.type) {
-                case C.METER: wmeasure = s.wmeasure
-                case C.CLEF: case C.KEY: case C.STBRK: continue
-                case C.BAR: if (s.bar_num)
-                    bar_num = s.bar_num
-                    break
-            }
-            break
-        }
-        for (s2 = s.ts_next; s2; s2 = s2.ts_next) {
-            if (s2.type == C.BAR && s2.time && !s2.invis && !s2.bar_dotted) {
-                if (s2.time < wmeasure) {
-                    s = s2
-                    bar_tim = s.time
-                }
-                break
-            }
-        }
-        for (; s; s = s.ts_next) {
-            switch (s.type) {
-                case C.METER: if (wmeasure != 1)
-                    bar_num += (s.time - bar_tim) / wmeasure
-                    bar_tim = s.time
-                    wmeasure = s.wmeasure
-                    while (s.ts_next && s.ts_next.wmeasure)
-                        s = s.ts_next
-                    break
-                case C.BAR: if (s.time <= tim)
-                    break
-                    tim = s.time
-                    nu = 1
-                    txt = ""
-                    for (s2 = s; s2; s2 = s2.next) {
-                        if (s2.time > tim)
-                            break
-                        if (!s2.bar_type)
-                            continue
-                        if (s2.bar_type != '[')
-                            nu = 0
-                        if (s2.text)
-                            txt = s2.text
-                    }
-                    if (s.bar_num) {
-                        bar_num = s.bar_num
-                        ptim = bar_tim = tim
-                        break
-                    }
-                    if (wmeasure == 1) {
-                        if (s.bar_dotted)
-                            break
-                        if (txt) {
-                            if (!cfmt.contbarnb) {
-                                if (txt[0] == '1')
-                                    rep_tim = bar_num
-                                else
-                                    bar_num = rep_tim
-                            }
-                        }
-                        if (!nu)
-                            s.bar_num = ++bar_num
-                        break
-                    }
-                    n = bar_num + (tim - bar_tim) / wmeasure
-                    k = n - (n | 0)
-                    if (cfmt.checkbars && k && check_meas())
-                        error(0, s, "Bad measure duration")
-                    if (tim > ptim + wmeasure) {
-                        n |= 0
-                        k = 0
-                        bar_tim = tim
-                        bar_num = n
-                    }
-                    if (txt) {
-                        if (txt[0] == '1') {
-                            if (!cfmt.contbarnb)
-                                rep_tim = tim - bar_tim
-                            if (!nu)
-                                s.bar_num = n
-                        } else {
-                            if (!cfmt.contbarnb)
-                                bar_tim = tim - rep_tim
-                            n = bar_num + (tim - bar_tim) / wmeasure
-                            if (n == (n | 0))
-                                s.bar_num = n
-                        }
-                    } else if (n == (n | 0)) { s.bar_num = n }
-                    if (!k)
-                        ptim = tim
-                    break
-            }
-        }
-    }
-    function not2abc(pit, acc) {
-        var i, nn = ''
-        if (acc) {
-            if (typeof acc != "object") { nn = ['__', '_', '', '^', '^^', '='][acc + 2] } else {
-                i = acc[0]
-                if (i > 0) { nn += '^' } else {
-                    nn += '_'
-                    i = -i
-                }
-                nn += i + '/' + acc[1]
-            }
-        }
-        nn += ntb[(pit + 75) % 7]
-        for (i = pit; i >= 23; i -= 7)
-            nn += "'"
-        for (i = pit; i < 16; i += 7)
-            nn += ","
-        return nn
-    }
-    function get_map(text) {
-        if (!text)
-            return
-        var i, note, notes, map, tmp, ns, ty = '', a = text.split(/\s+/)
-        if (a.length < 3) {
-            syntax(1, errs.not_enough_p)
-            return
-        }
-        ns = a[1]
-        if (ns != '*') {
-            if (ns.indexOf("octave,") == 0 || ns.indexOf("key,") == 0 || !ns.indexOf("tonic,")) {
-                ty = ns[0]
-                ns = ns.split(',')[1].toUpperCase()
-            }
-            tmp = new scanBuf
-            tmp.buffer = ns
-            note = parse_acc_pit(tmp)
-            if (!note) {
-                syntax(1, "Bad note in %%map")
-                return
-            }
-            ns = ty + not2abc(note.pit, note.acc)
-        }
-        notes = maps[a[0]]
-        if (!notes)
-            maps[a[0]] = notes = {}
-        map = notes[ns]
-        if (!map)
-            notes[ns] = map = []
-        a.shift()
-        a.shift()
-        if (!a.length)
-            return
-        a = info_split(a.join(' '))
-        i = 0
-        if (a[0].indexOf('=') < 0) {
-            if (a[0][0] != '*') { tmp = new scanBuf; tmp.buffer = a[0]; map[1] = parse_acc_pit(tmp) }
-            if (!a[1])
-                return
-            i++
-            if (a[1].indexOf('=') < 0) {
-                map[0] = a[1].split(',')
-                i++
-            }
-        }
-        for (; i < a.length; i++) {
-            switch (a[i]) {
-                case "heads=": if (!a[++i]) {
-                    syntax(1, errs.not_enough_p)
-                    break
-                }
-                    map[0] = a[i].split(',')
-                    break
-                case "print=": case "play=": case "print_notrp=": if (!a[++i]) {
-                    syntax(1, errs.not_enough_p)
-                    break
-                }
-                    tmp = new scanBuf; tmp.buffer = a[i]; note = parse_acc_pit(tmp)
-                    if (a[i - 1][5] == '_')
-                        note.notrp = 1
-                    if (a[i - 1][1] == 'r')
-                        map[1] = note
-                    else
-                        map[3] = note
-                    break
-                case "color=": if (!a[++i]) {
-                    syntax(1, errs.not_enough_p)
-                    break
-                }
-                    map[2] = a[i]
-                    break
-            }
-        }
-    }
-    function get_transp(param) {
-        if (param[0] == '0')
-            return 0
-        if ("123456789-+".indexOf(param[0]) >= 0) {
-            var val = parseInt(param)
-            if (isNaN(val) || val < -36 || val > 36) {
-                syntax(1, errs.bad_transp)
-                return
-            }
-            val += 36
-            val = ((val / 12 | 0) - 3) * 40 + abc2svg.isb40[val % 12]
-            if (param.slice(-1) == 'b')
-                val += 4
-            return val
-        }
-    }
-    Abc.prototype.do_pscom = function(text) {
-        var h1, val, s, cmd, param, n, k, b
-        cmd = text.match(/[^\s]+/)
-        if (!cmd)
-            return
-        cmd = cmd[0]; if (curvoice && curvoice.ignore) {
-            switch (cmd) {
-                case "staves": case "score": break
-                default: return
-            }
-        }
-        param = text.replace(cmd, '').trim()
-        if (param.slice(-5) == ' lock') { fmt_lock[cmd] = true; param = param.slice(0, -5).trim() } else if (fmt_lock[cmd]) { return }
-        switch (cmd) {
-            case "clef": if (parse.state >= 2) {
-                s = new_clef(param)
-                if (s)
-                    get_clef(s)
-            }
-                return
-            case "deco": deco_add(param)
-                return
-            case "linebreak": set_linebreak(param)
-                return
-            case "map": get_map(param)
-                return
-            case "maxsysstaffsep": case "sysstaffsep": if (parse.state == 3) {
-                val = get_unit(param)
-                if (isNaN(val)) {
-                    syntax(1, errs.bad_val, "%%" + cmd)
-                    return
-                }
-                par_sy.voices[curvoice.v][cmd[0] == 'm' ? "maxsep" : "sep"] = val
-                return
-            }
-                break
-            case "multicol": switch (param) {
-                case "start": case "new": case "end": break
-                default: syntax(1, "Unknown keyword '$1' in %%multicol", param)
-                    return
-            }
-                s = { type: C.BLOCK, subtype: "mc_" + param, dur: 0 }
-                if (parse.state >= 2) {
-                    if (curvoice.clone)
-                        do_cloning()
-                    curvoice = voice_tb[0]
-                    curvoice.eoln = 1
-                    sym_link(s)
-                    return
-                }
-                set_ref(s)
-                self.block_gen(s)
-                return
-            case "ottava": if (parse.state != 3)
-                return
-                n = parseInt(param)
-                if (isNaN(n) || n < -2 || n > 2 || (!n && !curvoice.ottava)) {
-                    syntax(1, errs.bad_val, "%%ottava")
-                    return
-                }
-                k = n
-                if (n) { curvoice.ottava = n } else {
-                    n = curvoice.ottava
-                    curvoice.ottava = 0
-                }
-                a_dcn.push(["15mb", "8vb", "", "8va", "15ma"][n + 2]
-                    + (k ? '(' : ')'))
-                return
-            case "repbra": if (curvoice)
-                curvoice.norepbra = !get_bool(param)
-                return
-            case "repeat": if (parse.state != 3)
-                return
-                if (!curvoice.last_sym) {
-                    syntax(1, "%%repeat cannot start a tune")
-                    return
-                }
-                if (!param.length) { n = 1; k = 1 } else {
-                    b = param.split(/\s+/); n = parseInt(b[0]); k = parseInt(b[1])
-                    if (isNaN(n) || n < 1 || (curvoice.last_sym.type == C.BAR && n > 2)) {
-                        syntax(1, "Incorrect 1st value in %%repeat")
-                        return
-                    }
-                    if (isNaN(k)) { k = 1 } else {
-                        if (k < 1) {
-                            syntax(1, "Incorrect 2nd value in %%repeat")
-                            return
-                        }
-                    }
-                }
-                parse.repeat_n = curvoice.last_sym.type == C.BAR ? n : -n; parse.repeat_k = k
-                return
-            case "sep": var h2, len, values, lwidth; set_page(); lwidth = img.width - img.lm - img.rm; h1 = h2 = len = 0
-                if (param) {
-                    values = param.split(/\s+/); h1 = get_unit(values[0])
-                    if (values[1]) {
-                        h2 = get_unit(values[1])
-                        if (values[2])
-                            len = get_unit(values[2])
-                    }
-                    if (isNaN(h1) || isNaN(h2) || isNaN(len)) {
-                        syntax(1, errs.bad_val, "%%sep")
-                        return
-                    }
-                }
-                if (h1 < 1)
-                    h1 = 14
-                if (h2 < 1)
-                    h2 = h1
-                if (len < 1)
-                    len = 90
-                if (parse.state >= 2) {
-                    if (curvoice.clone)
-                        do_cloning()
-                    s = new_block(cmd); s.x = (lwidth - len) / 2 / cfmt.scale; s.l = len / cfmt.scale; s.sk1 = h1; s.sk2 = h2
-                    return
-                }
-                vskip(h1); output += '<path class="stroke"\n\td="M'; out_sxsy((lwidth - len) / 2 / cfmt.scale, ' ', 0); output += 'h' + (len / cfmt.scale).toFixed(1) + '"/>\n'; vskip(h2); blk_flush()
-                return
-            case "setbarnb": val = parseInt(param)
-                if (isNaN(val) || val < 1) {
-                    syntax(1, "Bad %%setbarnb value")
-                    break
-                }
-                glovar.new_nbar = val
-                return
-            case "staff": if (parse.state != 3)
-                return
-                if (curvoice.clone)
-                    do_cloning()
-                val = parseInt(param)
-                if (isNaN(val)) {
-                    syntax(1, "Bad %%staff value '$1'", param)
-                    return
-                }
-                var st
-                if (param[0] == '+' || param[0] == '-')
-                    st = curvoice.cst + val
-                else
-                    st = val - 1
-                if (st < 0 || st > nstaff) {
-                    syntax(1, "Bad %%staff number $1 (cur $2, max $3)", st, curvoice.cst, nstaff)
-                    return
-                }
-                delete curvoice.floating; curvoice.cst = st
-                return
-            case "staffbreak": if (parse.state != 3)
-                return
-                if (curvoice.clone)
-                    do_cloning()
-                s = { type: C.STBRK, dur: 0 }
-                if (param.slice(-1) == 'f') {
-                    s.stbrk_forced = true
-                    param = param.replace(/\sf$/, '')
-                }
-                if (param) {
-                    val = get_unit(param)
-                    if (isNaN(val)) {
-                        syntax(1, errs.bad_val, "%%staffbreak")
-                        return
-                    }
-                    s.xmx = val
-                } else { s.xmx = 14 }
-                sym_link(s)
-                return
-            case "tacet": if (param[0] == '"')
-                param = param.slice(1, -1)
-            case "stafflines": case "staffscale": case "staffnonote": set_v_param(cmd, param)
-                return
-            case "staves": case "score": if (!parse.state)
-                return
-                if (parse.scores && parse.scores.length > 0) {
-                    text = parse.scores.shift(); cmd = text.match(/([^\s]+)\s*(.*)/); param = cmd[2]
-                    cmd = cmd[1]
-                }
-                get_staves(cmd, param)
-                return
-            case "center": case "text": k = cmd[0] == 'c' ? 'c' : cfmt.textoption
-                set_font("text")
-                if (parse.state >= 2) {
-                    if (curvoice.clone)
-                        do_cloning()
-                    s = new_block("text")
-                    s.text = param
-                    s.opt = k
-                    s.font = cfmt.textfont
-                    return
-                }
-                write_text(param, k)
-                return
-            case "transpose": if (cfmt.sound)
-                return
-                val = get_transp(param)
-                if (val == undefined) {
-                    val = get_interval(param)
-                    if (val == undefined)
-                        return
-                }
-                switch (parse.state) {
-                    case 0: cfmt.transp = 0
-                    case 1: cfmt.transp = (cfmt.transp || 0) + val
-                        return
-                }
-                curvoice.shift = val
-                key_trans()
-                return
-            case "tune": return
-            case "user": set_user(param)
-                return
-            case "voicecolor": if (curvoice)
-                curvoice.color = param
-                return
-            case "vskip": val = get_unit(param)
-                if (isNaN(val)) {
-                    syntax(1, errs.bad_val, "%%vskip")
-                    return
-                }
-                if (val < 0) {
-                    syntax(1, "%%vskip cannot be negative")
-                    return
-                }
-                if (parse.state >= 2) {
-                    if (curvoice.clone)
-                        do_cloning()
-                    s = new_block(cmd); s.sk = val
-                    return
-                }
-                vskip(val); return
-            case "newpage": case "leftmargin": case "rightmargin": case "pagescale": case "pagewidth": case "printmargin": case "scale": case "staffwidth": if (parse.state >= 2) {
-                if (curvoice.clone)
-                    do_cloning()
-                s = new_block(cmd); s.param = param
-                return
-            }
-                if (cmd == "newpage") {
-                    blk_flush()
-                    if (user.page_format)
-                        blkdiv = 2
-                    return
-                }
-                break
-        }
-        self.set_format(cmd, param)
-    }
-    Abc.prototype.do_begin_end = function(type, opt, text) {
-        var i, j, action, s
-        if (curvoice && curvoice.clone)
-            do_cloning()
-        switch (type) {
-            case "js": js_inject(text)
-                break
-            case "ml": if (cfmt.pageheight) {
-                syntax(1, "Cannot have %%beginml with %%pageheight")
-                break
-            }
-                if (parse.state >= 2) { s = new_block(type); s.text = text } else {
-                    blk_flush()
-                    if (user.img_out)
-                        user.img_out(text)
-                }
-                break
-            case "svg": j = 0
-                while (1) {
-                    i = text.indexOf('<style', j)
-                    if (i < 0)
-                        break
-                    i = text.indexOf('>', i)
-                    j = text.indexOf('</style>', i)
-                    if (j < 0) {
-                        syntax(1, "No </style> in %%beginsvg sequence")
-                        break
-                    }
-                    s = text.slice(i + 1, j).replace(/\s+$/gm, '')
-                    if (cfmt.fullsvg) {
-                        i = s.match(/@font-face[^}]*}/)
-                        if (i && i[0].indexOf("text") > 0) {
-                            ff.text = "\n"
-                                + i[0]
-                            s = s.replace(i[0], '')
-                        }
-                    }
-                    if (s && s != "\n")
-                        style += s
-                }
-                j = 0
-                while (1) {
-                    i = text.indexOf('<defs>\n', j)
-                    if (i < 0)
-                        break
-                    j = text.indexOf('</defs>', i)
-                    if (j < 0) {
-                        syntax(1, "No </defs> in %%beginsvg sequence")
-                        break
-                    }
-                    defs_add(text.slice(i + 6, j))
-                }
-                break
-            case "text": action = get_textopt(opt); if (!action)
-                action = cfmt.textoption
-                set_font("text")
-                if (text.indexOf('\\') >= 0)
-                    text = cnv_escape(text)
-                if (parse.state > 1) {
-                    s = new_block(type); s.text = text
-                    s.opt = action
-                    s.font = cfmt.textfont
-                    break
-                }
-                write_text(text, action)
-                break
-        }
-    }
-    function generate() {
-        var s, v, p_voice; if (a_dcn.length) {
-            syntax(1, "Decoration(s) without symbol: $1", a_dcn)
-            a_dcn = []
-        }
-        if (parse.tp) {
-            syntax(1, "No end of tuplet")
-            s = parse.tps
-            if (s)
-                delete s.tp
-            delete parse.tp
-        }
-        if (vover) { syntax(1, "No end of voice overlay"); get_vover(vover.bar ? '|' : ')') }
-        self.voice_adj()
-        sort_all()
-        if (tsfirst) {
-            for (v = 0; v < voice_tb.length; v++) {
-                if (!voice_tb[v].key)
-                    voice_tb[v].key = parse.ckey
-            }
-            if (user.anno_start)
-                anno_start = a_start
-            if (user.anno_stop)
-                anno_stop = a_stop
-            self.set_bar_num()
-            if (info.P)
-                tsfirst.parts = info.P
-            if (user.get_abcmodel)
-                user.get_abcmodel(tsfirst, voice_tb, abc2svg.sym_name, info)
-            if (user.img_out)
-                self.output_music()
-        }
-        set_page()
-        if (info.W)
-            put_words(info.W)
-        put_history()
-        parse.state = 0
-        blk_flush()
-        if (tsfirst) {
-            tunes.push([tsfirst, voice_tb, info, cfmt])
-            tsfirst = null
-        }
-    }
-    function key_trans() {
-        var i, n, a_acc, b40, d, s = curvoice.ckey, ti = s.time || 0
-        if (s.k_bagpipe || s.k_drum)
-            return
-        n = (curvoice.score | 0)
-            + (curvoice.shift | 0)
-            + (cfmt.transp | 0)
-        if ((curvoice.tr_sco | 0) == n) {
-            s.k_sf = curvoice.ckey.k_sf
-            return
-        }
-        if (is_voice_sig()) { curvoice.key = s } else if (curvoice.time != ti) {
-            s = clone(s.orig || s)
-            if (!curvoice.new)
-                s.k_old_sf = curvoice.ckey.k_sf
-            sym_link(s)
-        }
-        curvoice.ckey = s
-        if (cfmt.transp && curvoice.shift)
-            syntax(0, "Mix of old and new transposition syntaxes"); curvoice.tr_sco = n
-        n = abc2svg.b40l5[(n + 202) % 40]
-            + s.orig.k_sf
-        if (n < -7) {
-            n += 12
-            curvoice.tr_sco -= 4
-        } else if (n > 7) {
-            n -= 12
-            curvoice.tr_sco += 4
-        }
-        if (!s.k_none)
-            s.k_sf = n
-        for (b40 = 0; b40 < 40; b40++) {
-            if (abc2svg.b40l5[b40] == n)
-                break
-        }
-        s.k_b40 = b40
-        if (!s.k_a_acc)
-            return
-        d = b40 - s.orig.k_b40
-        a_acc = []
-        for (i = 0; i < s.k_a_acc.length; i++) {
-            b40 = abc2svg.pab40(s.k_a_acc[i].pit, s.k_a_acc[i].acc) + d
-            a_acc[i] = { pit: abc2svg.b40p(b40), acc: abc2svg.b40a(b40) || 3 }
-        }
-        s.k_a_acc = a_acc
-    }
-    function fill_mr_ba(p_v) {
-        var v, p_v2, mxt = 0
-        for (v = 0; v < voice_tb.length; v++) {
-            if (voice_tb[v].time > mxt) {
-                p_v2 = voice_tb[v]
-                mxt = p_v2.time
-            }
-        }
-        if (p_v.time >= mxt)
-            return
-        var p_v_sav = curvoice, dur = mxt - p_v.time, s = { type: C.MREST, stem: 0, multi: 0, nhd: 0, xmx: 0, frm: 1, dur: dur, dur_orig: dur, nmes: dur / p_v.wmeasure, notes: [{ pit: 18, dur: dur }], tacet: p_v.tacet }, s2 = { type: C.BAR, bar_type: '|', dur: 0, multi: 0 }
-        if (p_v2.last_sym.bar_type)
-            s2.bar_type = p_v2.last_sym.bar_type
-        glovar.mrest_p = 1
-        curvoice = p_v
-        sym_link(s)
-        sym_link(s2)
-        curvoice = p_v_sav
-    }
-    function get_staves(cmd, parm) {
-        var s, p_voice, p_voice2, i, flags, v, vid, a_vf, eoln, st, range, nv = voice_tb.length, maxtime = 0
-        if (curvoice && curvoice.clone) { do_cloning() }
-        if (parm) {
-            a_vf = parse_staves(parm)
-            if (!a_vf)
-                return
-        } else if (staves_found < 0) {
-            syntax(1, errs.bad_val, '%%' + cmd)
-            return
-        }
-        for (v = 0; v < nv; v++) {
-            p_voice = voice_tb[v]
-            if (p_voice.eoln) {
-                eoln = 1
-                delete p_voice.eoln
-            }
-            if (p_voice.time > maxtime)
-                maxtime = p_voice.time
-        }
-        if (!maxtime) {
-            par_sy.staves = []
-            par_sy.voices = []
-        } else {
-            self.voice_adj(1)
-            for (v = 0; v < nv; v++) {
-                p_voice = voice_tb[v]
-                if (maxtime - p_voice.time >= p_voice.meter.wmeasure)
-                    p_voice.acc = []
-                p_voice.time = maxtime
-                p_voice.lyric_restart = p_voice.last_sym
-                p_voice.sym_restart = p_voice.last_sym
-            }
-            if (!par_sy.voices[curvoice.v])
-                for (v = 0; v < par_sy.voices.length; v++) {
-                    if (par_sy.voices[v]) {
-                        curvoice = voice_tb[v]
-                        break
-                    }
-                }
-            curvoice.eoln = eoln
-            s = { type: C.STAVES, dur: 0 }
-            sym_link(s); par_sy.nstaff = nstaff; if (!parm) {
-                s.sy = clone(par_sy, 2)
-                par_sy.next = s.sy
-                par_sy = s.sy
-                staves_found = maxtime
-                curvoice = voice_tb[par_sy.top_voice]
-                return
-            }
-            new_syst(); s.sy = par_sy
-        }
-        staves_found = maxtime
-        for (v = 0; v < nv; v++) {
-            p_voice = voice_tb[v]
-            delete p_voice.second
-            delete p_voice.floating
-            if (p_voice.ignore) {
-                p_voice.ignore = 0
-                s = p_voice.sym
-                if (s) {
-                    while (s.next)
-                        s = s.next
-                }
-                p_voice.last_sym = s
-            }
-        }
-        range = 0
-        for (i = 0; i < a_vf.length; i++) {
-            vid = a_vf[i][0]; p_voice = new_voice(vid); v = p_voice.v
-            a_vf[i][0] = p_voice; while (1) {
-                par_sy.voices[v] = { range: range++ }
-                p_voice = p_voice.voice_down
-                if (!p_voice)
-                    break
-                v = p_voice.v
-            }
-        }
-        par_sy.top_voice = a_vf[0][0].v
-        if (a_vf.length == 1)
-            par_sy.one_v = 1
-        if (cmd[1] == 't') {
-            for (i = 0; i < a_vf.length; i++) {
-                flags = a_vf[i][1]
-                if (!(flags & (OPEN_BRACE | OPEN_BRACE2)))
-                    continue
-                if ((flags & (OPEN_BRACE | CLOSE_BRACE)) == (OPEN_BRACE | CLOSE_BRACE) || (flags & (OPEN_BRACE2 | CLOSE_BRACE2)) == (OPEN_BRACE2 | CLOSE_BRACE2))
-                    continue
-                if (a_vf[i + 1][1] != 0)
-                    continue
-                if ((flags & OPEN_PARENTH) || (a_vf[i + 2][1] & OPEN_PARENTH))
-                    continue
-                if (a_vf[i + 2][1] & (CLOSE_BRACE | CLOSE_BRACE2)) { a_vf[i + 1][1] |= FL_VOICE } else if (a_vf[i + 2][1] == 0 && (a_vf[i + 3][1] & (CLOSE_BRACE | CLOSE_BRACE2))) { a_vf[i][1] |= OPEN_PARENTH; a_vf[i + 1][1] |= CLOSE_PARENTH; a_vf[i + 2][1] |= OPEN_PARENTH; a_vf[i + 3][1] |= CLOSE_PARENTH }
-            }
-        }
-        st = -1
-        for (i = 0; i < a_vf.length; i++) {
-            flags = a_vf[i][1]
-            if ((flags & (OPEN_PARENTH | CLOSE_PARENTH)) == (OPEN_PARENTH | CLOSE_PARENTH)) { flags &= ~(OPEN_PARENTH | CLOSE_PARENTH); a_vf[i][1] = flags }
-            p_voice = a_vf[i][0]
-            if (flags & FL_VOICE) { p_voice.floating = true; p_voice.second = true } else {
-                st++; if (!par_sy.staves[st]) { par_sy.staves[st] = { staffscale: 1 } }
-                par_sy.staves[st].stafflines = p_voice.stafflines || "|||||", par_sy.staves[st].flags = 0
-            }
-            v = p_voice.v; p_voice.st = p_voice.cst = par_sy.voices[v].st = st; par_sy.staves[st].flags |= flags
-            if (flags & OPEN_PARENTH) {
-                p_voice2 = p_voice
-                while (i < a_vf.length - 1) {
-                    p_voice = a_vf[++i][0]; v = p_voice.v
-                    if (a_vf[i][1] & MASTER_VOICE) {
-                        p_voice2.second = true
-                        p_voice2 = p_voice
-                    } else { p_voice.second = true }
-                    p_voice.st = p_voice.cst = par_sy.voices[v].st = st
-                    if (a_vf[i][1] & CLOSE_PARENTH)
-                        break
-                }
-                par_sy.staves[st].flags |= a_vf[i][1]
-            }
-        }
-        if (st < 0)
-            st = 0
-        par_sy.nstaff = nstaff = st
-        if (cmd[1] == 'c') {
-            for (st = 0; st < nstaff; st++)
-                par_sy.staves[st].flags ^= STOP_BAR
-        }
-        nv = voice_tb.length
-        st = 0
-        for (v = 0; v < nv; v++) {
-            p_voice = voice_tb[v]
-            if (par_sy.voices[v])
-                st = p_voice.st
-            else
-                p_voice.st = st
-            if (!maxtime) {
-                for (s = p_voice.sym; s; s = s.next)
-                    s.st = st
-            }
-            if (!par_sy.voices[v])
-                continue
-            p_voice2 = p_voice.voice_down
-            while (p_voice2) {
-                p_voice2.second = 1
-                i = p_voice2.v
-                p_voice2.st = p_voice2.cst = par_sy.voices[i].st = st
-                p_voice2 = p_voice2.voice_down
-            }
-            par_sy.voices[v].second = p_voice.second; st = p_voice.st
-            if (st > 0 && p_voice.norepbra == undefined && !(par_sy.staves[st - 1].flags & STOP_BAR))
-                p_voice.norepbra = true
-        }
-        curvoice = parse.state >= 2 ? voice_tb[par_sy.top_voice] : null
-    }
-    function clone_voice(id) {
-        var v, p_voice
-        for (v = 0; v < voice_tb.length; v++) {
-            p_voice = voice_tb[v]
-            if (p_voice.id == id)
-                return p_voice
-        }
-        p_voice = clone(curvoice); p_voice.v = voice_tb.length; p_voice.id = id; p_voice.sym = p_voice.last_sym = null; p_voice.key = clone(curvoice.key)
-        p_voice.sls = []
-        delete p_voice.nm
-        delete p_voice.snm
-        delete p_voice.new_name
-        delete p_voice.lyric_restart
-        delete p_voice.lyric_cont
-        delete p_voice.sym_restart
-        delete p_voice.sym_cont
-        delete p_voice.have_ly
-        delete p_voice.tie_s
-        voice_tb.push(p_voice)
-        return p_voice
-    }
-    function get_vover(type) {
-        var p_voice2, p_voice3, range, s, time, v, v2, v3, s2
-        if (type == '|' || type == ')') {
-            if (!curvoice.last_note) {
-                syntax(1, errs.nonote_vo)
-                if (vover) {
-                    curvoice = vover.p_voice
-                    vover = null
-                }
-                return
-            }
-            curvoice.last_note.beam_end = true
-            if (!vover) {
-                syntax(1, "Erroneous end of voice overlay")
-                return
-            }
-            if (curvoice.time != vover.p_voice.time) {
-                if (!curvoice.ignore)
-                    syntax(1, "Wrong duration in voice overlay"); if (curvoice.time > vover.p_voice.time)
-                    vover.p_voice.time = curvoice.time
-            }
-            curvoice.acc = []
-            p_voice2 = vover.p_voice
-            s = curvoice.last_sym
-            if (s.type == C.SPACE && p_voice2.last_sym.type != C.SPACE) {
-                s.p_v = p_voice2
-                s.v = s.p_v.v
-                while (s.prev.type == C.SPACE) {
-                    s = s.prev
-                    s.p_v = p_voice2
-                    s.v = s.p_v.v
-                }
-                s2 = s.prev
-                s2.next = null
-                s.prev = p_voice2.last_sym
-                s.prev.next = s
-                p_voice2.last_sym = curvoice.last_sym
-                curvoice.last_sym = s2
-            }
-            curvoice = p_voice2
-            vover = null
-            return
-        }
-        if (type == '(') {
-            if (vover) {
-                syntax(1, "Voice overlay already started")
-                return
-            }
-            vover = { p_voice: curvoice, time: curvoice.time }
-            return
-        }
-        if (!curvoice.last_note) {
-            syntax(1, errs.nonote_vo)
-            return
-        }
-        curvoice.last_note.beam_end = true; p_voice2 = curvoice.voice_down
-        if (!p_voice2) {
-            p_voice2 = clone_voice(curvoice.id + 'o'); curvoice.voice_down = p_voice2; p_voice2.time = 0; p_voice2.second = true; p_voice2.last_note = null
-            v2 = p_voice2.v; if (par_sy.voices[curvoice.v]) {
-                par_sy.voices[v2] = { st: curvoice.st, second: true }
-                range = par_sy.voices[curvoice.v].range
-                for (v = 0; v < par_sy.voices.length; v++) {
-                    if (par_sy.voices[v] && par_sy.voices[v].range > range)
-                        par_sy.voices[v].range++
-                }
-                par_sy.voices[v2].range = range + 1
-            }
-        }
-        p_voice2.ulen = curvoice.ulen
-        p_voice2.dur_fact = curvoice.dur_fact
-        p_voice2.acc = []
-        if (!vover) {
-            time = p_voice2.time
-            if (curvoice.ignore)
-                s = curvoice.last_bar
-            else
-                for (s = curvoice.last_sym; s; s = s.prev) {
-                    if (s.type == C.BAR || s.time <= time)
-                        break
-                }
-            vover = { bar: (s && s.bar_type) ? s.bar_type : '|', p_voice: curvoice, time: s ? s.time : curvoice.time }
-        } else {
-            if (curvoice != vover.p_voice && curvoice.time != vover.p_voice.time) {
-                syntax(1, "Wrong duration in voice overlay")
-                if (curvoice.time > vover.p_voice.time)
-                    vover.p_voice.time = curvoice.time
-            }
-        }
-        p_voice2.time = vover.time; curvoice = p_voice2
-    }
-    function is_voice_sig() {
-        var s
-        if (curvoice.time)
-            return false
-        if (!curvoice.last_sym)
-            return true
-        for (s = curvoice.last_sym; s; s = s.prev)
-            if (w_tb[s.type])
-                return false
-        return true
-    }
-    function get_clef(s) {
-        var s2, s3
-        if (s.clef_type == 'p') {
-            s2 = curvoice.ckey
-            s2.k_drum = 1
-            s2.k_sf = 0
-            s2.k_b40 = 2
-            s2.k_map = abc2svg.keys[7]
-            if (!curvoice.key)
-                curvoice.key = s2
-        }
-        if (!curvoice.time && is_voice_sig()) {
-            curvoice.clef = s
-            s.fmt = cfmt
-            return
-        }
-        if (s.clef_none)
-            s2 = null
-        else
-            for (s2 = curvoice.last_sym; s2 && s2.time == curvoice.time; s2 = s2.prev) {
-                if (w_tb[s2.type])
-                    break
-            }
-        if (s2 && s2.time == curvoice.time && s2.k_sf != undefined) {
-            s3 = s2
-            s2 = s2.prev
-        }
-        if (s2 && s2.time == curvoice.time && s2.bar_type && s2.bar_type[0] != ':')
-            s3 = s2
-        if (s3) {
-            s2 = curvoice.last_sym
-            curvoice.last_sym = s3.prev
-            sym_link(s)
-            s.next = s3
-            s3.prev = s
-            curvoice.last_sym = s2
-            if (s.soln) {
-                delete s.soln
-                curvoice.eoln = true
-            }
-        } else { sym_link(s) }
-        if (s.prev)
-            s.clef_small = 1
-    }
-    function get_key(parm) {
-        var v, p_voice, a = new_key(parm), s_key = a[0], s = s_key, empty = s.k_sf == undefined && !s.k_a_acc
-        a = a[1]
-        if (empty)
-            s.invis = 1
-        else
-            s.orig = s
-        if (parse.state == 1) {
-            parse.ckey = s
-            if (empty) {
-                s_key.k_sf = 0; s_key.k_none = true
-                s_key.k_map = abc2svg.keys[7]
-            }
-            for (v = 0; v < voice_tb.length; v++) { p_voice = voice_tb[v]; p_voice.ckey = clone(s_key) }
-            if (a.length) {
-                memo_kv_parm('*', a)
-                a = []
-            }
-            if (!glovar.ulen)
-                glovar.ulen = C.BLEN / 8; goto_tune()
-        } else if (!empty) {
-            if (curvoice.tr_sco)
-                curvoice.tr_sco = undefined
-            s.k_old_sf = curvoice.ckey.k_sf
-            curvoice.ckey = s
-            sym_link(s)
-        }
-        if (!curvoice) {
-            if (!voice_tb.length) {
-                curvoice = new_voice("1")
-                var def = 1
-            } else { curvoice = voice_tb[staves_found < 0 ? 0 : par_sy.top_voice] }
-        }
-        p_voice = curvoice.clone
-        if (p_voice)
-            curvoice.clone = null
-        get_voice(curvoice.id + ' ' + a.join(' '))
-        if (p_voice)
-            curvoice.clone = p_voice
-        if (def)
-            curvoice.default = 1
-    }
-    function new_voice(id) {
-        var v, p_v_sav, p_voice = voice_tb[0], n = voice_tb.length
-        if (n == 1 && p_voice.default) {
-            delete p_voice.default
-            if (!p_voice.time) {
-                p_voice.id = id
-                p_voice.init = 0
-                return p_voice
-            }
-        }
-        for (v = 0; v < n; v++) {
-            p_voice = voice_tb[v]
-            if (p_voice.id == id)
-                return p_voice
-        }
-        p_voice = { v: v, id: id, time: staves_found >= 0 ? staves_found : 0, new: true, pos: {}, scale: 1, ulen: glovar.ulen, dur_fact: 1, meter: clone(glovar.meter), wmeasure: glovar.meter.wmeasure, staffnonote: 1, clef: { type: C.CLEF, clef_auto: true, clef_type: "a", time: 0 }, acc: [], sls: [], hy_st: 0 }
-        voice_tb.push(p_voice); if (parse.state == 3) {
-            p_voice.ckey = clone(parse.ckey)
-            if (p_voice.ckey.k_bagpipe && !p_voice.pos.stm) {
-                p_voice.pos = clone(p_voice.pos)
-                p_voice.pos.stm &= ~0x07
-                p_voice.pos.stm |= C.SL_BELOW
-            }
-        }
-        return p_voice
-    }
-    function init_tune() {
-        nstaff = -1; voice_tb = []; curvoice = null; new_syst(true); staves_found = -1; gene = {}
-        a_de = []
-        cross = {}
-    }
-    function do_cloning() {
-        var i, clone = curvoice.clone, vs = clone.vs, a = clone.a, bol = clone.bol, eol = parse.bol, parse_sav = parse, file = parse.file
-        delete curvoice.clone
-        if (file[eol - 1] == '[')
-            eol--
-        include++; for (i = 0; i < vs.length; i++) {
-            parse = Object.create(parse_sav)
-            parse.line = Object.create(parse_sav.line)
-            get_voice(vs[i] + ' ' + a.join(' '))
-            tosvg(parse.fname, file, bol, eol)
-        }
-        include--
-        parse = parse_sav
-    }
-    function get_voice(parm) {
-        var v, vs, a = info_split(parm), vid = a.shift()
-        if (!vid)
-            return
-        if (curvoice && curvoice.clone)
-            do_cloning()
-        if (vid.indexOf(',') > 0)
-            vs = vid.split(',')
-        else
-            vs = [vid]
-        if (parse.state < 2) {
-            while (1) {
-                vid = vs.shift()
-                if (!vid)
-                    break
-                if (a.length)
-                    memo_kv_parm(vid, a)
-                if (vid != '*' && parse.state == 1)
-                    curvoice = new_voice(vid)
-            }
-            return
-        }
-        if (vid == '*') {
-            syntax(1, "Cannot have V:* in tune body")
-            return
-        }
-        curvoice = new_voice(vs[0])
-        if (vs.length > 1) {
-            vs.shift()
-            curvoice.clone = { vs: vs, a: a.slice(0), bol: parse.iend }
-            if (parse.file[curvoice.clone.bol - 1] != ']')
-                curvoice.clone.bol++
-        }
-        set_kv_parm(a)
-        key_trans()
-        v = curvoice.v
-        if (curvoice.new) {
-            delete curvoice.new
-            if (staves_found < 0) {
-                curvoice.st = curvoice.cst = ++nstaff; par_sy.nstaff = nstaff; par_sy.voices[v] = { st: nstaff, range: v }
-                par_sy.staves[nstaff] = { stafflines: curvoice.stafflines || "|||||", staffscale: 1 }
-            } else if (!par_sy.voices[v]) {
-                curvoice.ignore = 1
-                return
-            }
-        }
-        if (!curvoice.filtered && par_sy.voices[v] && (parse.voice_opts || parse.tune_v_opts)) { curvoice.filtered = true; voice_filter() }
-    }
-    function goto_tune() {
-        var v, p_voice
-        set_page(); write_heading(); blk_flush()
-        if (glovar.new_nbar) {
-            gene.nbar = glovar.new_nbar
-            glovar.new_nbar = 0
-        } else { gene.nbar = 1 }
-        parse.state = 3
-        for (v = 0; v < voice_tb.length; v++) {
-            p_voice = voice_tb[v]; p_voice.ulen = glovar.ulen
-            if (parse.ckey.k_bagpipe && !p_voice.pos.stm) {
-                p_voice.pos = clone(p_voice.pos)
-                p_voice.pos.stm &= ~0x07
-                p_voice.pos.stm |= C.SL_BELOW
-            }
-        }
-        if (staves_found < 0) {
-            v = voice_tb.length
-            par_sy.nstaff = nstaff = v - 1
-            while (--v >= 0) {
-                p_voice = voice_tb[v]; delete p_voice.new; p_voice.st = p_voice.cst = v; par_sy.voices[v] = { st: v, range: v }
-                par_sy.staves[v] = { stafflines: p_voice.stafflines || "|||||", staffscale: 1 }
-            }
-        }
-    }
-    function get_sym(p, cont) {
-        var s, c, i, j, d
-        if (curvoice.ignore)
-            return
-        if (cont) {
-            s = curvoice.sym_cont
-            if (!s) {
-                syntax(1, "+: symbol line without music")
-                return
-            }
-        } else {
-            if (curvoice.sym_restart) { curvoice.sym_start = curvoice.sym_restart; curvoice.sym_restart = null }
-            s = curvoice.sym_start
-            if (!s)
-                s = curvoice.sym
-            if (!s) {
-                syntax(1, "s: without music")
-                return
-            }
-        }
-        i = 0
-        while (1) {
-            while (p[i] == ' ' || p[i] == '\t')
-                i++; c = p[i]
-            if (!c)
-                break
-            switch (c) {
-                case '|': while (s && s.type != C.BAR)
-                    s = s.next
-                    if (!s) {
-                        syntax(1, "Not enough measure bars for symbol line")
-                        return
-                    }
-                    s = s.next; i++
-                    continue
-                case '!': case '"': j = ++i
-                    i = p.indexOf(c, j)
-                    if (i < 0) {
-                        syntax(1, c == '!' ? "No end of decoration" : "No end of chord symbol/annotation"); i = p.length
-                        continue
-                    }
-                    d = p.slice(j - 1, i + 1)
-                    break
-                case '*': break
-                default: d = c.charCodeAt(0)
-                    if (d < 128) {
-                        d = char_tb[d]
-                        if (d.length > 1 && (d[0] == '!' || d[0] == '"')) {
-                            c = d[0]
-                            break
-                        }
-                    }
-                    syntax(1, errs.bad_char, c)
-                    break
-            }
-            while (s && s.type != C.NOTE)
-                s = s.next
-            if (!s) {
-                syntax(1, "Too many elements in symbol line")
-                return
-            }
-            switch (c) {
-                default: break
-                case '!': a_dcn.push(d.slice(1, -1))
-                    deco_cnv(s, s.prev)
-                    break
-                case '"': parse.line.index = j + 2
-                    parse_gchord(d)
-                    if (a_gch)
-                        csan_add(s)
-                    break
-            }
-            s = s.next; i++
-        }
-        curvoice.sym_cont = s
-    }
-    function get_lyrics(p, cont) {
-        var s, word, i, j, ly, dfnt, ln, c, cf
-        if (curvoice.ignore)
-            return
-        if ((curvoice.pos.voc & 0x07) != C.SL_HIDDEN)
-            curvoice.have_ly = true
-        if (cont) {
-            s = curvoice.lyric_cont
-            if (!s) {
-                syntax(1, "+: lyric without music")
-                return
-            }
-            if (p[0] == '~') {
-                while (!s.a_ly)
-                    s = s.prev
-                ly = s.a_ly[curvoice.lyric_line]
-                p = ly.t.replace(/ /g, '~') + p
-            }
-            dfnt = get_font("vocal")
-            if (gene.deffont != dfnt) {
-                if (gene.curfont == gene.deffont)
-                    gene.curfont = dfnt
-                gene.deffont = dfnt
-            }
-        } else {
-            set_font("vocal")
-            if (curvoice.lyric_restart) { curvoice.lyric_start = s = curvoice.lyric_restart; curvoice.lyric_restart = null; curvoice.lyric_line = 0 } else { curvoice.lyric_line++; s = curvoice.lyric_start }
-            if (!s)
-                s = curvoice.sym
-            if (!s) {
-                syntax(1, "w: without music")
-                return
-            }
-        }
-        i = 0
-        cf = gene.curfont
-        while (1) {
-            while (p[i] == ' ' || p[i] == '\t')
-                i++
-            if (!p[i])
-                break
-            ln = 0
-            j = parse.istart + i + 2
-            switch (p[i]) {
-                case '|': while (s && s.type != C.BAR)
-                    s = s.next
-                    if (!s) {
-                        syntax(1, "Not enough measure bars for lyric line")
-                        return
-                    }
-                    s = s.next; i++
-                    continue
-                case '-': case '_': word = p[i]
-                    ln = p[i] == '-' ? 2 : 3
-                    break
-                case '*': word = ""
-                    break
-                default: word = ""; while (1) {
-                    if (!p[i])
-                        break
-                    switch (p[i]) {
-                        case '_': case '*': case '|': i--
-                        case ' ': case '\t': break
-                        case '~': word += ' '
-                            i++
-                            continue
-                        case '-': ln = 1
-                            break
-                        case '\\': if (!p[++i])
-                            continue
-                            word += p[i++]
-                            continue
-                        case '$': word += p[i++]
-                            c = p[i]
-                            if (c == '0')
-                                gene.curfont = gene.deffont
-                            else if (c >= '1' && c <= '9')
-                                gene.curfont = get_font("u" + c)
-                        default: word += p[i++]
-                            continue
-                    }
-                    break
-                }
-                    break
-            }
-            while (s && s.type != C.NOTE)
-                s = s.next
-            if (!s) {
-                syntax(1, "Too many words in lyric line")
-                return
-            }
-            if (word && (s.pos.voc & 0x07) != C.SL_HIDDEN) {
-                ly = { t: word, font: cf, istart: j, iend: j + word.length }
-                if (ln)
-                    ly.ln = ln
-                if (!s.a_ly)
-                    s.a_ly = []
-                s.a_ly[curvoice.lyric_line] = ly
-                cf = gene.curfont
-            }
-            s = s.next; i++
-        }
-        curvoice.lyric_cont = s
-    }
-    function ly_set(s) {
-        var i, j, ly, d, s1, s2, p, w, spw, xx, sz, shift, dw, r, s3 = s, wx = 0, wl = 0, n = 0, dx = 0, a_ly = s.a_ly, align = 0
-        for (s2 = s.ts_next; s2; s2 = s2.ts_next) {
-            if (s2.seqst) {
-                dx += s2.shrink
-                n++
-            }
-            if (s2.bar_type) {
-                dx += 3
-                break
-            }
-            if (!s2.a_ly)
-                continue
-            i = s2.a_ly.length
-            while (--i >= 0) {
-                ly = s2.a_ly[i]
-                if (!ly)
-                    continue
-                if (!ly.ln || ly.ln < 2)
-                    break
-            }
-            if (i >= 0)
-                break
-        }
-        for (i = 0; i < a_ly.length; i++) {
-            ly = a_ly[i]
-            if (!ly)
-                continue
-            gene.curfont = ly.font
-            ly.t = str2svg(ly.t)
-            p = ly.t.replace(/<[^>]*>/g, '')
-            if (ly.ln >= 2) {
-                ly.shift = 0
-                continue
-            }
-            spw = cwid(' ') * ly.font.swfac
-            w = ly.t.wh[0]
-            r = abc2svg.lypre.exec(p)
-            if (s.type == C.GRACE) { shift = s.wl } else if (r) {
-                r = r[0]
-                if (p[0] == '(') { sz = spw } else {
-                    set_font(ly.font)
-                    if (p[r.length] == ' ' || r.slice(-1) == ':')
-                        sz = strwh(p.slice(0, r.length))[0]
-                    else
-                        sz = w * .2
-                }
-                shift = (w - sz) * .4
-                if (shift > 14)
-                    shift = 14
-                shift += sz
-                if (p[0] >= '0' && p[0] <= '9') {
-                    if (shift > align)
-                        align = shift
-                }
-            } else {
-                shift = w * .4
-                if (shift > 14)
-                    shift = 14
-            }
-            ly.shift = shift
-            if (shift > wl)
-                wl = shift
-            w += spw * 1.5
-            w -= shift
-            if (w > wx)
-                wx = w
-        }
-        while (!s3.seqst)
-            s3 = s3.ts_prev
-        if (s3.ts_prev && s3.ts_prev.bar_type)
-            wl -= 4
-        if (s3.wl < wl) {
-            s3.shrink += wl - s3.wl
-            s3.wl = wl
-        }
-        dx -= 6
-        if (dx < wx && s2) {
-            dx = (wx - dx) / n
-            s1 = s.ts_next
-            while (1) {
-                if (s1.seqst) {
-                    s1.shrink += dx
-                    s3.wr += dx
-                    s3 = s1
-                }
-                if (s1 == s2)
-                    break
-                s1 = s1.ts_next
-            }
-        }
-        if (align > 0) {
-            for (i = 0; i < a_ly.length; i++) {
-                ly = a_ly[i]
-                if (ly && ly.t[0] >= '0' && ly.t[0] <= '9')
-                    ly.shift = align
-            }
-        }
-    }
-    function draw_lyric_line(p_voice, j, y) {
-        var p, lastx, w, s, s2, ly, lyl, ln, hyflag, lflag, x0, shift
-        if (p_voice.hy_st & (1 << j)) { hyflag = true; p_voice.hy_st &= ~(1 << j) }
-        for (s = p_voice.sym; ; s = s.next)
-            if (s.type != C.CLEF && s.type != C.KEY && s.type != C.METER)
-                break
-        lastx = s.prev ? s.prev.x : tsfirst.x; x0 = 0
-        for (; s; s = s.next) {
-            if (s.a_ly)
-                ly = s.a_ly[j]
-            else
-                ly = null
-            if (!ly) {
-                switch (s.type) { case C.REST: case C.MREST: if (lflag) { out_wln(lastx + 3, y, x0 - lastx); lflag = false; lastx = s.x + s.wr } }
-                continue
-            }
-            if (ly.font != gene.curfont)
-                gene.curfont = ly.font
-            p = ly.t; ln = ly.ln || 0
-            w = p.wh[0]
-            shift = ly.shift
-            if (hyflag) { if (ln == 3) { ln = 2 } else if (ln < 2) { out_hyph(lastx, y, s.x - shift - lastx); hyflag = false; lastx = s.x + s.wr } }
-            if (lflag && ln != 3) { out_wln(lastx + 3, y, x0 - lastx + 3); lflag = false; lastx = s.x + s.wr }
-            if (ln >= 2) {
-                if (x0 == 0 && lastx > s.x - 18)
-                    lastx = s.x - 18
-                if (ln == 2)
-                    hyflag = true
-                else
-                    lflag = true; x0 = s.x - shift
-                continue
-            }
-            x0 = s.x - shift; if (ln)
-                hyflag = true
-            if (user.anno_start || user.anno_stop) {
-                s2 = { p_v: s.p_v, st: s.st, istart: ly.istart, iend: ly.iend, ts_prev: s, ts_next: s.ts_next, x: x0, y: y, ymn: y, ymx: y + gene.curfont.size, wl: 0, wr: w }
-                anno_start(s2, 'lyrics')
-            }
-            xy_str(x0, y, p)
-            anno_stop(s2, 'lyrics')
-            lastx = x0 + w
-        }
-        if (hyflag) {
-            hyflag = false; x0 = realwidth - 10
-            if (x0 < lastx + 10)
-                x0 = lastx + 10; out_hyph(lastx, y, x0 - lastx)
-            if (p_voice.s_next && p_voice.s_next.fmt.hyphencont)
-                p_voice.hy_st |= (1 << j)
-        }
-        for (p_voice.s_next; s; s = s.next) {
-            if (s.type == C.NOTE) {
-                if (!s.a_ly)
-                    break
-                ly = s.a_ly[j]
-                if (ly && ly.ln == 3) {
-                    lflag = true; x0 = realwidth - 15
-                    if (x0 < lastx + 12)
-                        x0 = lastx + 12
-                }
-                break
-            }
-        }
-        if (lflag) { out_wln(lastx + 3, y, x0 - lastx + 3); lflag = false }
-    }
-    function draw_lyrics(p_voice, nly, a_h, y, incr) {
-        var j, top, sc = staff_tb[p_voice.st].staffscale; set_font("vocal")
-        if (incr > 0) {
-            if (y > -tsfirst.fmt.vocalspace)
-                y = -tsfirst.fmt.vocalspace; y *= sc
-            for (j = 0; j < nly; j++) { y -= a_h[j] * 1.1; draw_lyric_line(p_voice, j, y + a_h[j] * .22) }
-            return y / sc
-        }
-        top = staff_tb[p_voice.st].topbar + tsfirst.fmt.vocalspace
-        if (y < top)
-            y = top; y *= sc
-        for (j = nly; --j >= 0;) {
-            draw_lyric_line(p_voice, j, y + a_h[j] * .22)
-            y += a_h[j] * 1.1
-        }
-        return y / sc
-    }
-    function draw_all_lyrics() {
-        var p_voice, s, v, nly, i, x, y, w, a_ly, ly, lyst_tb = new Array(nstaff + 1), nv = voice_tb.length, h_tb = new Array(nv), nly_tb = new Array(nv), above_tb = new Array(nv), rv_tb = new Array(nv), top = 0, bot = 0, st = -1
-        for (v = 0; v < nv; v++) {
-            p_voice = voice_tb[v]
-            if (!p_voice.sym)
-                continue
-            if (p_voice.st != st) { top = 0; bot = 0; st = p_voice.st }
-            nly = 0
-            if (p_voice.have_ly) {
-                if (!h_tb[v])
-                    h_tb[v] = []
-                for (s = p_voice.sym; s; s = s.next) {
-                    a_ly = s.a_ly
-                    if (!a_ly)
-                        continue
-                    x = s.x; w = 10
-                    for (i = 0; i < a_ly.length; i++) {
-                        ly = a_ly[i]
-                        if (ly) {
-                            x -= ly.shift; w = ly.t.wh[0]
-                            break
-                        }
-                    }
-                    y = y_get(p_voice.st, 1, x, w)
-                    if (top < y)
-                        top = y; y = y_get(p_voice.st, 0, x, w)
-                    if (bot > y)
-                        bot = y
-                    while (nly < a_ly.length)
-                        h_tb[v][nly++] = 0
-                    for (i = 0; i < a_ly.length; i++) {
-                        ly = a_ly[i]
-                        if (!ly)
-                            continue
-                        if (!h_tb[v][i] || ly.t.wh[1] > h_tb[v][i])
-                            h_tb[v][i] = ly.t.wh[1]
-                    }
-                }
-            } else {
-                y = y_get(p_voice.st, 1, 0, realwidth)
-                if (top < y)
-                    top = y; y = y_get(p_voice.st, 0, 0, realwidth)
-                if (bot > y)
-                    bot = y
-            }
-            if (!lyst_tb[st])
-                lyst_tb[st] = {}
-            lyst_tb[st].top = top; lyst_tb[st].bot = bot; nly_tb[v] = nly
-            if (nly == 0)
-                continue
-            if (p_voice.pos.voc)
-                above_tb[v] = (p_voice.pos.voc & 0x07) == C.SL_ABOVE
-            else if (voice_tb[v + 1] && voice_tb[v + 1].st == st && voice_tb[v + 1].have_ly)
-                above_tb[v] = true
-            else
-                above_tb[v] = false
-            if (above_tb[v])
-                lyst_tb[st].a = true
-            else
-                lyst_tb[st].b = true
-        }
-        i = 0
-        for (v = 0; v < nv; v++) {
-            p_voice = voice_tb[v]
-            if (!p_voice.sym)
-                continue
-            if (!p_voice.have_ly)
-                continue
-            if (above_tb[v]) {
-                rv_tb[i++] = v
-                continue
-            }
-            st = p_voice.st; set_dscale(st, true)
-            if (nly_tb[v] > 0)
-                lyst_tb[st].bot = draw_lyrics(p_voice, nly_tb[v], h_tb[v], lyst_tb[st].bot, 1)
-        }
-        while (--i >= 0) { v = rv_tb[i]; p_voice = voice_tb[v]; st = p_voice.st; set_dscale(st, true); lyst_tb[st].top = draw_lyrics(p_voice, nly_tb[v], h_tb[v], lyst_tb[st].top, -1) }
-        for (v = 0; v < nv; v++) {
-            p_voice = voice_tb[v]
-            if (!p_voice.sym)
-                continue
-            st = p_voice.st; if (lyst_tb[st].a) {
-                top = lyst_tb[st].top + 2
-                for (s = p_voice.sym; s; s = s.next) { if (s.a_ly) { y_set(st, 1, s.x - 2, 10, top) } }
-            }
-            if (lyst_tb[st].b) {
-                bot = lyst_tb[st].bot - 2
-                if (nly_tb[p_voice.v] > 0) { for (s = p_voice.sym; s; s = s.next) { if (s.a_ly) { y_set(st, 0, s.x - 2, 10, bot) } } } else { y_set(st, 0, 0, realwidth, bot) }
-            }
-        }
-    }
-    function parse_gchord(type) {
-        var c, text, gch, x_abs, y_abs, i, j, istart, iend, ann_font = get_font("annotation"), h_ann = ann_font.size, line = parse.line
-        function get_float() {
-            var txt = ''
-            while (1) {
-                c = text[i++]
-                if ("1234567890.-".indexOf(c) < 0)
-                    return parseFloat(txt)
-                txt += c
-            }
-        }
-        istart = parse.bol + line.index
-        if (type.length > 1) { text = type.slice(1, -1); iend = istart + 1 } else {
-            i = ++line.index
-            while (1) {
-                j = line.buffer.indexOf('"', i)
-                if (j < 0) {
-                    syntax(1, "No end of chord symbol/annotation")
-                    return
-                }
-                if (line.buffer[j - 1] != '\\' || line.buffer[j - 2] == '\\')
-                    break
-                i = j + 1
-            }
-            text = cnv_escape(line.buffer.slice(line.index, j))
-            line.index = j
-            iend = parse.bol + line.index + 1
-        }
-        if (ann_font.pad)
-            h_ann += ann_font.pad
-        i = 0; type = 'g'
-        while (1) {
-            c = text[i]
-            if (!c)
-                break
-            gch = { text: "", istart: istart, iend: iend, font: ann_font }
-            switch (c) {
-                case '@': type = c; i++; x_abs = get_float()
-                    if (c != ',') { syntax(1, "',' lacking in annotation '@x,y'"); y_abs = 0 } else {
-                        y_abs = get_float()
-                        if (c != ' ')
-                            i--
-                    }
-                    gch.x = x_abs; gch.y = y_abs
-                    break
-                case '^': gch.pos = C.SL_ABOVE
-                case '_': if (c == '_')
-                    gch.pos = C.SL_BELOW
-                case '<': case '>': i++; type = c
-                    break
-                default: switch (type) {
-                    case 'g': gch.font = get_font("gchord")
-                        gch.pos = curvoice.pos.gch || C.SL_ABOVE
-                        break
-                    case '^': gch.pos = C.SL_ABOVE
-                        break
-                    case '_': gch.pos = C.SL_BELOW
-                        break
-                    case '@': gch.x = x_abs; y_abs -= h_ann; gch.y = y_abs
-                        break
-                }
-                    break
-            }
-            gch.type = type
-            while (1) {
-                c = text[i]
-                if (!c)
-                    break
-                switch (c) {
-                    default: gch.text += c; i++
-                        continue
-                    case '&': while (1) {
-                        gch.text += c; c = text[++i]
-                        switch (c) {
-                            default: continue
-                            case ';': case undefined: case '\\': break
-                        }
-                        break
-                    }
-                        if (c == ';') {
-                            i++; gch.text += c
-                            continue
-                        }
-                        break
-                    case '\n': case ';': break
-                }
-                i++
-                break
-            }
-            gch.otext = gch.text
-            if (!a_gch)
-                a_gch = []
-            a_gch.push(gch)
-        }
-    }
-    function gch_tr1(p, tr) {
-        var i, o, n, ip, csa = p.split('/')
-        tr = abc2svg.b40l5[(tr + 202) % 40]
-        for (i = 0; i < csa.length; i++) {
-            p = csa[i]; o = p.search(/[A-G]/)
-            if (o < 0)
-                continue
-            ip = o + 1
-            n = "FCGDAEB".indexOf(p[o]) - 1
-            if (p[ip] == '#' || p[ip] == '\u266f') {
-                n += 7
-                ip++
-            } else if (p[ip] == 'b' || p[ip] == '\u266d') {
-                n -= 7
-                ip++
-            }
-            n += tr
-            csa[i] = p.slice(0, o)
-                + "FCGDAEB"[(n + 22) % 7]
-                + (n >= 13 ? '##' : n >= 6 ? '#' : n <= -9 ? 'bb' : n <= -2 ? 'b' : '')
-                + p.slice(ip)
-        }
-        return csa.join('/')
-    }
-    function csan_add(s) {
-        var i, gch
-        if (s.type == C.BAR) {
-            for (i = 0; i < a_gch.length; i++) {
-                if (a_gch[i].type == 'g') {
-                    error(1, s, "There cannot be chord symbols on measure bars")
-                    a_gch.splice(i)
-                }
-            }
-        }
-        if (curvoice.tr_sco || curvoice.tr_snd) {
-            for (i = 0; i < a_gch.length; i++) {
-                gch = a_gch[i]
-                if (gch.type == 'g') {
-                    if (curvoice.tr_snd40)
-                        gch.otext = gch_tr1(gch.text, curvoice.tr_snd40)
-                    if (curvoice.tr_sco)
-                        gch.text = gch_tr1(gch.text, curvoice.tr_sco)
-                }
-            }
-        }
-        if (s.a_gch)
-            s.a_gch = s.a_gch.concat(a_gch)
-        else
-            s.a_gch = a_gch
-        a_gch = null
-    }
-    Abc.prototype.gch_build = function(s) {
-        var gch, wh, xspc, ix, y_left = 0, y_right = 0, GCHPRE = .4; for (ix = 0; ix < s.a_gch.length; ix++) {
-            gch = s.a_gch[ix]
-            if (gch.type == 'g') {
-                gch.text = gch.text.replace(/##|#|=|bb|b/g, function(x) {
-                    switch (x) {
-                        case '##': return "&#x1d12a;"
-                        case '#': return "\u266f"
-                        case '=': return "\u266e"
-                        case 'b': return "\u266d"
-                    }
-                    return "&#x1d12b;"
-                })
-            } else {
-                if (gch.type == '@' && !user.anno_start && !user.anno_stop) {
-                    set_font(gch.font)
-                    gch.text = str2svg(gch.text)
-                    continue
-                }
-            }
-            set_font(gch.font); gch.text = str2svg(gch.text)
-            wh = gch.text.wh
-            switch (gch.type) {
-                case '@': break
-                default: xspc = wh[0] * GCHPRE
-                    if (xspc > 8)
-                        xspc = 8; gch.x = -xspc; break
-                case '<': gch.x = -(wh[0] + 6); y_left -= wh[1]; gch.y = y_left + wh[1] / 2
-                    break
-                case '>': gch.x = 6; y_right -= wh[1]; gch.y = y_right + wh[1] / 2
-                    break
-            }
-        }
-        y_left /= 2; y_right /= 2
-        for (ix = 0; ix < s.a_gch.length; ix++) {
-            gch = s.a_gch[ix]
-            switch (gch.type) {
-                case '<': gch.y -= y_left
-                    break
-                case '>': gch.y -= y_right
-                    break
-            }
-        }
-    }
-    Abc.prototype.draw_gchord = function(i, s, x, y) {
-        if (s.invis && s.play)
-            return
-        var y2, an = s.a_gch[i], h = an.text.wh[1], pad = an.font.pad, w = an.text.wh[0] + pad * 2, dy = h * .22
-        if (an.font.figb) {
-            h *= 2.4
-            dy += an.font.size * 1.3
-        }
-        switch (an.type) {
-            case '_': y -= h + pad
-                break
-            case '^': y += pad
-                break
-            case '<': case '>': if (an.type == '<') {
-                if (s.notes[0].acc)
-                    x -= s.notes[0].shac
-                x -= pad
-            } else {
-                if (s.xmx)
-                    x += s.xmx
-                if (s.dots)
-                    x += 1.5 + 3.5 * s.dots
-                x += pad
-            }
-                y += (s.type == C.NOTE ? (((s.notes[s.nhd].pit + s.notes[0].pit) >> 1) -
-                    18) * 3 : 12)
-                    - h / 2
-                break
-            default: if (y >= 0)
-                y += pad
-            else
-                y -= h + pad
-                break
-            case '@': y += (s.type == C.NOTE ? (((s.notes[s.nhd].pit + s.notes[0].pit) >> 1) -
-                18) * 3 : 12)
-                - h / 2
-                if (y > 0) {
-                    y2 = y + h + pad + 2
-                    if (y2 > staff_tb[s.st].ann_top)
-                        staff_tb[s.st].ann_top = y2
-                } else {
-                    y2 = y - 2
-                    if (y2 < staff_tb[s.st].ann_bot)
-                        staff_tb[s.st].ann_bot = y2
-                }
-                break
-        }
-        if (an.type != '@') {
-            if (y >= 0)
-                y_set(s.st, 1, x, w, y + h + pad + 2)
-            else
-                y_set(s.st, 0, x, w, y - pad)
-        }
-        use_font(an.font)
-        set_font(an.font)
-        set_dscale(s.st)
-        if (user.anno_start)
-            user.anno_start("annot", an.istart, an.iend, x - 2, y + h + 2, w + 4, h + 4, s)
-        xy_str(x, y + dy, an.text)
-        if (user.anno_stop)
-            user.anno_stop("annot", an.istart, an.iend, x - 2, y + h + 2, w + 4, h + 4, s)
-    }
-    function draw_all_chsy() {
-        var s, san1, an, i, x, y, w, n_an = 0, minmax = new Array(nstaff + 1)
-        function set_an_yu(j) {
-            var an, i, s, x, y, w
-            for (s = san1; s; s = s.ts_next) {
-                an = s.a_gch
-                if (!an)
-                    continue
-                i = an.length - j - 1
-                an = an[i]
-                if (!an)
-                    continue
-                if (an.pos == C.SL_ABOVE) {
-                    x = s.x + an.x
-                    w = an.text.wh[0]
-                    if (w && x + w > realwidth)
-                        x = realwidth - w
-                    y = y_get(s.st, 1, x, w)
-                    if (an.type == 'g' && y < minmax[s.st].yup)
-                        y = minmax[s.st].yup
-                } else if (an.pos == C.SL_BELOW || an.pos == C.SL_HIDDEN) { continue } else {
-                    x = s.x + an.x
-                    y = an.y
-                }
-                self.draw_gchord(i, s, x, y)
-            }
-        }
-        function set_an_yl(i) {
-            var an, x, y, w
-            for (var s = san1; s; s = s.ts_next) {
-                an = s.a_gch
-                if (!an)
-                    continue
-                an = an[i]
-                if (!an || an.pos != C.SL_BELOW)
-                    continue
-                x = s.x + an.x
-                w = an.text.wh[0]
-                if (w && x + w > realwidth)
-                    x = realwidth - w
-                y = y_get(s.st, 0, x, w) - 2
-                if (an.type == 'g' && y > minmax[s.st].ydn)
-                    y = minmax[s.st].ydn
-                self.draw_gchord(i, s, x, y)
-            }
-        }
-        for (i = 0; i <= nstaff; i++)
-            minmax[i] = { ydn: staff_tb[i].botbar - 3, yup: staff_tb[i].topbar + 4 }
-        for (s = tsfirst; s; s = s.ts_next) {
-            an = s.a_gch
-            if (!an)
-                continue
-            if (!san1)
-                san1 = s
-            i = an.length
-            if (i > n_an)
-                n_an = i
-            while (--i >= 0) {
-                if (an[i].type == 'g') {
-                    an = an[i]
-                    x = s.x + an.x
-                    w = an.text.wh[0]
-                    if (w && x + w > realwidth)
-                        x = realwidth - w
-                    if (an.pos == C.SL_ABOVE) {
-                        y = y_get(s.st, true, x, w)
-                        if (y > minmax[s.st].yup)
-                            minmax[s.st].yup = y
-                    } else if (an.pos == C.SL_BELOW) {
-                        y = y_get(s.st, false, x, w) - 2
-                        if (y < minmax[s.st].ydn)
-                            minmax[s.st].ydn = y
-                    }
-                    break
-                }
-            }
-        }
-        if (!san1)
-            return
-        set_dscale(-1)
-        for (i = 0; i < n_an; i++) {
-            set_an_yu(i)
-            set_an_yl(i)
-        }
-    }
-    init_tune()
-    Abc.prototype.a_de = function() { return a_de }
-    Abc.prototype.add_style = function(s) { style += s }; Abc.prototype.anno_a = anno_a
-    Abc.prototype.cfmt = function() { return cfmt }; Abc.prototype.clone = clone; Abc.prototype.clr_sty = clr_sty
-    Abc.prototype.deco_put = function(nm, s) {
-        a_dcn.push(nm)
-        deco_cnv(s)
-    }
-    Abc.prototype.defs_add = defs_add
-    Abc.prototype.dh_put = function(nm, s, nt) {
-        a_dcn.push(nm)
-        dh_cnv(s, nt)
-    }
-    Abc.prototype.draw_meter = draw_meter
-    Abc.prototype.draw_note = draw_note; Abc.prototype.errs = errs; Abc.prototype.font_class = font_class; Abc.prototype.gch_tr1 = gch_tr1; Abc.prototype.get_bool = get_bool; Abc.prototype.get_cur_sy = function() { return cur_sy }; Abc.prototype.get_curvoice = function() { return curvoice }; Abc.prototype.get_delta_tb = function() { return delta_tb }; Abc.prototype.get_decos = function() { return decos }; Abc.prototype.get_font = get_font; Abc.prototype.get_font_style = function() { return font_style }; Abc.prototype.get_glyphs = function() { return glyphs }; Abc.prototype.get_img = function() { return img }; Abc.prototype.get_lwidth = get_lwidth
-    Abc.prototype.get_maps = function() { return maps }; Abc.prototype.get_multi = function() { return multicol }; Abc.prototype.get_newpage = function() { if (block.newpage) { block.newpage = false; return true } }; Abc.prototype.get_parse = function() { return parse }
-    Abc.prototype.get_posy = function() { return posy }
-    Abc.prototype.get_staff_tb = function() { return staff_tb }; Abc.prototype.get_top_v = function() { return par_sy.top_voice }; Abc.prototype.get_tsfirst = function() { return tsfirst }; Abc.prototype.get_unit = get_unit; Abc.prototype.get_user = function() { return user }
-    Abc.prototype.get_voice_tb = function() { return voice_tb }; Abc.prototype.glout = glout
-    Abc.prototype.glovar = function() { return glovar }
-    Abc.prototype.info = function() { return info }; Abc.prototype.new_block = new_block; Abc.prototype.out_arp = out_arp; Abc.prototype.out_deco_str = out_deco_str; Abc.prototype.out_deco_val = out_deco_val; Abc.prototype.out_ltr = out_ltr; Abc.prototype.param_set_font = param_set_font; Abc.prototype.part_seq = part_seq
-    Abc.prototype.psdeco = empty_function; Abc.prototype.psxygl = empty_function; Abc.prototype.set_cur_sy = function(sy) { cur_sy = sy }; Abc.prototype.set_curvoice = function(p_v) { curvoice = p_v }
-    Abc.prototype.set_dscale = set_dscale; Abc.prototype.set_font = set_font; Abc.prototype.set_a_gch = function(s, a) { a_gch = a; csan_add(s) }
-    Abc.prototype.set_hl = set_hl
-    Abc.prototype.set_map = set_map
-    Abc.prototype.set_page = set_page
-    Abc.prototype.set_pagef = function() { blkdiv = 1 }
-    Abc.prototype.set_realwidth = function(v) { realwidth = v }
-    Abc.prototype.set_scale = set_scale; Abc.prototype.set_sscale = set_sscale
-    Abc.prototype.set_tsfirst = function(s) { tsfirst = s }; Abc.prototype.set_v_param = set_v_param; Abc.prototype.str2svg = str2svg
-    Abc.prototype.strwh = strwh; Abc.prototype.stv_g = function() { return stv_g }; Abc.prototype.svg_flush = svg_flush; Abc.prototype.syntax = syntax; Abc.prototype.tunes = tunes
-    Abc.prototype.unlksym = unlksym; Abc.prototype.use_font = use_font; Abc.prototype.vskip = vskip
-    Abc.prototype.xy_str = xy_str; Abc.prototype.xygl = xygl; Abc.prototype.y_get = y_get
-    Abc.prototype.y_set = y_set
-}
-var Abc = abc2svg.Abc
-if (typeof module == 'object' && typeof exports == 'object') { exports.abc2svg = abc2svg; exports.Abc = Abc }
-if (!abc2svg.loadjs) {
-    abc2svg.loadjs = function(fn, onsuccess, onerror) {
-        if (onerror)
-            onerror(fn)
-    }
-}
-abc2svg.modules = {
-    ambitus: {}, begingrid: { fn: 'grid3' }, beginps: { fn: 'psvg' }, break: {}, capo: {}, chordnames: {}, clip: {}, clairnote: { fn: 'clair' }, voicecombine: { fn: 'combine' }, diagram: { fn: 'diag' }, equalbars: {}, fit2box: {}, gamelan: {}, grid: {}, grid2: {}, jazzchord: {}, jianpu: {}, mdnn: {}, MIDI: {}, nns: {}, pageheight: { fn: 'page' }, pedline: {}, percmap: { fn: 'perc' }, playswing: { fn: 'swing' }, roman: {}, soloffs: {}, sth: {}, strtab: {}, temperament: { fn: 'temper' }, temponame: { fn: 'tempo' }, tropt: {}, titleformat: { fn: 'tunhd' }, nreq: 0, load: function(file, relay, errmsg) {
-        function get_errmsg() {
-            if (typeof user == 'object' && user.errmsg)
-                return user.errmsg
-            if (typeof abc2svg.printErr == 'function')
-                return abc2svg.printErr
-            if (typeof alert == 'function')
-                return function(m) { alert(m) }
-            if (typeof console == 'object')
-                return console.log
-            return function() { }
-        }
-        function load_end() {
-            if (--abc2svg.modules.nreq == 0)
-                abc2svg.modules.cbf()
-        }
-        var m, i, fn, nreq_i = this.nreq, ls = file.match(/(%%|I:).+?\b/g)
-        if (!ls)
-            return true
-        this.cbf = relay || function() { }
-        this.errmsg = errmsg || get_errmsg()
-        for (i = 0; i < ls.length; i++) {
-            fn = ls[i].replace(/\n?(%%|I:)/, '')
-            m = abc2svg.modules[fn]
-            if (!m || m.loaded)
-                continue
-            m.loaded = true
-            if (m.fn)
-                fn = m.fn
-            this.nreq++
-            abc2svg.loadjs(fn + "-1.js", load_end, function() {
-                abc2svg.modules.errmsg('Error loading the module ' + fn)
-                load_end()
-            })
-        }
-        return this.nreq == nreq_i
-    }
-}
-abc2svg.version = "v1.22.33"; abc2svg.vdate = "2025-11-04"
+ fill="currentColor" stroke-width=".7"',g=''
+glout()
+if(cfmt.fgcolor)
+head+=' color="'+cfmt.fgcolor+'"'
+font=get_font("music")
+head+=' class="'+font_class(font)+' tune'+tunes.length+'"\n'
+posy*=cfmt.scale
+if(user.imagesize!=undefined)
+head+=user.imagesize
+else
+head+=' width="'+w
++'px" height="'+posy.toFixed(2)+'px"'
+head+=' viewBox="0 0 '+w+' '
++posy.toFixed(2)+'">\n'
+head+=fulldefs
+if(cfmt.bgcolor)
+head+='<rect width="100%" height="100%" fill="'
++cfmt.bgcolor+'"/>\n'
+if(style||font_style)
+head+='<style>'+font_style+style+'\n</style>\n'
+if(defs)
+head+='<defs>'+defs+'\n</defs>\n'
+if(cfmt.scale!=1){head+='<g class="g" transform="scale('+
+cfmt.scale+')">\n';g='</g>\n'}
+if(psvg)
+psvg.ps_flush(true);if(parse.state==1&&user.page_format&&!blkdiv)
+blkdiv=1
+if(blkdiv>0){user.img_out(blkdiv==1?'<div class="nobrk">':'<div class="nobrk newpage">')
+blkdiv=-1}else if(blkdiv<0&&cfmt.splittune){i=1
+blkdiv=0}
+user.img_out(head+output+g+"</svg>");if(i)
+user.img_out("</div>")
+output=""
+clr_sty()
+defs='';posy=0
+img.wx=0}
+function blk_flush(){svg_flush()
+if(blkdiv<0&&!parse.state){user.img_out('</div>')
+blkdiv=0}}
+Abc.prototype.blk_flush=blk_flush
+var par_sy,cur_sy,voice_tb,curvoice,staves_found,vover,tsfirst
+function voice_filter(){var opt
+function vfilt(opts,opt){var i,sel=new RegExp(opt)
+if(sel.test(curvoice.id)||sel.test(curvoice.nm)){for(i=0;i<opts.length;i++)
+self.do_pscom(opts[i])}}
+if(parse.voice_opts)
+for(opt in parse.voice_opts){if(parse.voice_opts.hasOwnProperty(opt))
+vfilt(parse.voice_opts[opt],opt)}
+if(parse.tune_v_opts)
+for(opt in parse.tune_v_opts){if(parse.tune_v_opts.hasOwnProperty(opt))
+vfilt(parse.tune_v_opts[opt],opt)}}
+function sym_link(s){var tim=curvoice.time
+if(!s.fname)
+set_ref(s)
+if(!curvoice.ignore){s.prev=curvoice.last_sym
+if(curvoice.last_sym)
+curvoice.last_sym.next=s
+else
+curvoice.sym=s}else if(s.bar_type){curvoice.last_bar=s}
+curvoice.last_sym=s
+s.v=curvoice.v;s.p_v=curvoice;s.st=curvoice.cst;s.time=tim
+if(s.dur&&!s.grace)
+curvoice.time+=s.dur;parse.ufmt=true
+s.fmt=cfmt
+s.pos=curvoice.pos
+if(curvoice.second)
+s.second=true
+if(curvoice.floating)
+s.floating=true
+if(curvoice.eoln){s.soln=true
+curvoice.eoln=false}}
+function sym_add(p_voice,type){var s={type:type,dur:0},s2,p_voice2=curvoice;curvoice=p_voice;sym_link(s);curvoice=p_voice2;s2=s.prev
+if(!s2)
+s2=s.next
+if(s2){s.fname=s2.fname;s.istart=s2.istart;s.iend=s2.iend}
+return s}
+var w_tb=new Uint8Array([6,2,8,6,7,3,4,9,9,0,9,5,0,1,0,0,0,0])
+function sort_all(){var s,s2,time,w,wmin,ir,fmt,v,p_voice,prev,fl,new_sy,nv=voice_tb.length,vtb=[],vn=[],sy=cur_sy
+function b_chk(){var bt,s,s2,v,t,ir=0
+while(1){v=vn[ir++]
+if(v==undefined)
+break
+s=vtb[v]
+if(!s||!s.bar_type||s.invis||s.time!=time)
+continue
+if(!bt){bt=s.bar_type
+if(s.text&&bt=='|')
+t=s.text
+continue}
+if(s.bar_type!=bt)
+break
+if(s.text&&!t&&bt=='|'){t=s.text
+break}}
+if(v==undefined)
+return
+if(bt=="::"||bt==":|"||t){ir=0
+bt=t?'|':"::"
+while(1){v=vn[ir++]
+if(v==undefined)
+break
+s=vtb[v]
+if(!s||s.invis||s.bar_type!=bt||(bt=='|'&&!s.text))
+continue
+s2=clone(s)
+if(bt=="::"){s.bar_type=":|"
+s2.bar_type="|:"}else{delete s.text
+delete s.rbstart
+s2.bar_type='['
+s2.invis=1
+s2.xsh=0}
+s2.next=s.next
+if(s2.next)
+s2.next.prev=s2
+s2.prev=s
+s.next=s2}}else{error(1,s,"Different bars $1 and $2",(bt+(t||'')),(s.bar_type+(s.text||'')))}}
+for(v=0;v<nv;v++){s=voice_tb[v].sym
+vtb[v]=s
+if(sy.voices[v]){vn[sy.voices[v].range]=v
+if(!prev&&s){fmt=s.fmt
+p_voice=voice_tb[v]
+prev={type:C.STAVES,fname:parse.fname,dur:0,v:v,p_v:p_voice,time:0,st:0,sy:sy,next:s,fmt:fmt,seqst:true}}}}
+if(!prev)
+return
+p_voice.sym=tsfirst=s=prev
+if(s.next)
+s.next.prev=s
+else
+p_voice.last_sym=s
+s=glovar.tempo
+if(s){s.v=v=p_voice.v
+s.p_v=p_voice
+s.st=0
+s.time=0
+s.prev=prev
+s.next=prev.next
+if(s.next)
+s.next.prev=s
+else
+p_voice.last_sym=s
+s.prev.next=s
+s.fmt=fmt
+glovar.tempo=null
+vtb[v]=s}
+if(nv==1){s=tsfirst
+s.ts_next=s.next
+while(1){s=s.next
+if(!s)
+return
+if(s.time!=s.prev.time||w_tb[s.prev.type])
+s.seqst=1
+if(s.type==C.PART){s.prev.next=s.prev.ts_next=s.next
+if(s.next){s.next.part=s
+s.next.prev=s.prev
+if(s.soln)
+s.next.soln=1
+if(s.seqst)
+s.next.seqst=1}
+continue}
+s.ts_prev=s.prev
+s.ts_next=s.next}}
+while(1){if(new_sy){sy=new_sy;new_sy=null;vn.length=0
+for(v=0;v<nv;v++){if(!sy.voices[v])
+continue
+vn[sy.voices[v].range]=v}}
+wmin=time=10000000
+ir=0
+while(1){v=vn[ir++]
+if(v==undefined)
+break
+s=vtb[v]
+if(!s||s.time>time)
+continue
+w=w_tb[s.type]
+if(s.type==C.GRACE&&s.next&&s.next.type==C.BAR)
+w=5
+if(s.time<time){time=s.time;wmin=w}else if(w<wmin){wmin=w}}
+if(wmin>127)
+break
+if(wmin==6)
+b_chk()
+ir=0
+while(1){v=vn[ir++]
+if(v==undefined)
+break
+s=vtb[v]
+if(!s||s.time!=time)
+continue
+w=w_tb[s.type]
+if(s.type==C.GRACE&&s.next&&s.next.type==C.BAR)
+w=5
+if(w!=wmin)
+continue
+if(!w&&s.type==C.PART){if(s.prev)
+s.prev.next=s.next
+else
+s.p_v.sym=s.next
+vtb[v]=s.next
+if(s.next){s.next.part=s
+s.next.prev=s.prev
+if(s.soln)
+s.next.soln=1}
+continue}
+if(s.type==C.STAVES)
+new_sy=s.sy
+if(fl){fl=0;s.seqst=true}
+s.ts_prev=prev
+prev.ts_next=s
+prev=s
+vtb[v]=s.next}
+if(wmin)
+fl=1}}
+Abc.prototype.voice_adj=function(sys_chg){var p_voice,s,s2,v,sl
+function ins_pq(){var s,s2,p_v=voice_tb[par_sy.top_voice]
+while(1){s=parse.pq_d.shift()
+if(!s)
+break
+for(s2=p_v.sym;;s2=s2.next){if(s2.time>=s.time&&s2.dur){s.next=s2
+s.prev=s2.prev
+s.prev.next=s2.prev=s
+s.v=s2.v
+s.p_v=p_v
+s.st=s2.st
+break}}}}
+function set_feathered_beam(s1){var s,s2,t,d,b,i,a,d=s1.dur,n=1
+for(s=s1;s;s=s.next){if(s.beam_end||!s.next)
+break
+n++}
+if(n<=1){delete s1.feathered_beam
+return}
+s2=s;b=d/2;a=d/(n-1);t=s1.time
+if(s1.feathered_beam>0){for(s=s1,i=n-1;s!=s2;s=s.next,i--){d=((a*i)|0)+b;s.dur=d;s.time=t;t+=d}}else{for(s=s1,i=0;s!=s2;s=s.next,i++){d=((a*i)|0)+b;s.dur=d;s.time=t;t+=d}}
+s.dur=s.time+s.dur-t;s.time=t}
+if(curvoice&&curvoice.clone){parse.istart=parse.eol
+do_cloning()}
+if(par_sy.one_v)
+fill_mr_ba(voice_tb[par_sy.top_voice])
+if(parse.pq_d)
+ins_pq()
+for(v=0;v<voice_tb.length;v++){p_voice=voice_tb[v]
+if(!sys_chg){delete p_voice.eoln
+while(1){sl=p_voice.sls.shift()
+if(!sl)
+break
+s=sl.ss
+if(!s.sls)
+s.sls=[]
+sl.loc='o'
+s.sls.push(sl)}}
+for(s=p_voice.sym;s;s=s.next){if(s.time>=staves_found)
+break}
+for(;s;s=s.next){if(w_tb[s.type]<5&&s.type!=C.STAVES&&s.type!=C.CLEF&&s.time&&(!s.prev||s.time>s.prev.time+s.prev.dur)){s2={type:C.BAR,bar_type:"[]",v:s.v,p_v:s.p_v,st:s.st,time:s.time,dur:0,next:s,prev:s.prev,fmt:s.fmt,invis:1}
+if(s.prev)
+s.prev.next=s2
+else
+voice_tb[s.v].sym=s2
+s.prev=s2}
+switch(s.type){case C.GRACE:if(!cfmt.graceword)
+continue
+for(s2=s.next;s2;s2=s2.next){switch(s2.type){case C.SPACE:continue
+case C.NOTE:if(!s2.a_ly)
+break
+s.a_ly=s2.a_ly;s2.a_ly=null
+break}
+break}
+continue
+case C.NOTE:if(s.feathered_beam)
+set_feathered_beam(s)
+break}}}}
+function new_syst(init){var st,v,sy_staff,p_voice,sy_new={voices:[],staves:[],top_voice:0}
+if(init){cur_sy=par_sy=sy_new
+return}
+for(v=0;v<voice_tb.length;v++){if(par_sy.voices[v]){st=par_sy.voices[v].st
+sy_staff=par_sy.staves[st]
+p_voice=voice_tb[v]
+sy_staff.staffnonote=p_voice.staffnonote
+if(p_voice.staffscale)
+sy_staff.staffscale=p_voice.staffscale}}
+for(st=0;st<par_sy.staves.length;st++){sy_new.staves[st]=clone(par_sy.staves[st]);sy_new.staves[st].flags=0}
+par_sy.next=sy_new;par_sy=sy_new}
+Abc.prototype.set_bar_num=function(){var s,s2,rep_tim,k,n,nu,txt,tim=0,bar_num=gene.nbar,bar_tim=0,ptim=0,wmeasure=voice_tb[cur_sy.top_voice].meter.wmeasure
+function check_meas(){var s3
+if(tim>ptim+wmeasure&&s.prev.type!=C.MREST)
+return 1
+for(s3=s.next;s3&&s3.time==s.time;s3=s3.next);for(;s3&&!s3.bar_type;s3=s3.next);return s3&&(s3.time-bar_tim)%wmeasure}
+for(s=tsfirst;;s=s.ts_next){if(!s)
+return
+switch(s.type){case C.METER:wmeasure=s.wmeasure
+case C.CLEF:case C.KEY:case C.STBRK:continue
+case C.BAR:if(s.bar_num)
+bar_num=s.bar_num
+break}
+break}
+for(s2=s.ts_next;s2;s2=s2.ts_next){if(s2.type==C.BAR&&s2.time&&!s2.invis&&!s2.bar_dotted){if(s2.time<wmeasure){s=s2
+bar_tim=s.time}
+break}}
+for(;s;s=s.ts_next){switch(s.type){case C.METER:if(wmeasure!=1)
+bar_num+=(s.time-bar_tim)/wmeasure
+bar_tim=s.time
+wmeasure=s.wmeasure
+while(s.ts_next&&s.ts_next.wmeasure)
+s=s.ts_next
+break
+case C.BAR:if(s.time<=tim)
+break
+tim=s.time
+nu=1
+txt=""
+for(s2=s;s2;s2=s2.next){if(s2.time>tim)
+break
+if(!s2.bar_type)
+continue
+if(s2.bar_type!='[')
+nu=0
+if(s2.text)
+txt=s2.text}
+if(s.bar_num){bar_num=s.bar_num
+ptim=bar_tim=tim
+break}
+if(wmeasure==1){if(s.bar_dotted)
+break
+if(txt){if(!cfmt.contbarnb){if(txt[0]=='1')
+rep_tim=bar_num
+else
+bar_num=rep_tim}}
+if(!nu)
+s.bar_num=++bar_num
+break}
+n=bar_num+(tim-bar_tim)/wmeasure
+k=n-(n|0)
+if(cfmt.checkbars&&k&&check_meas())
+error(0,s,"Bad measure duration")
+if(tim>ptim+wmeasure){n|=0
+k=0
+bar_tim=tim
+bar_num=n}
+if(txt){if(txt[0]=='1'){if(!cfmt.contbarnb)
+rep_tim=tim-bar_tim
+if(!nu)
+s.bar_num=n}else{if(!cfmt.contbarnb)
+bar_tim=tim-rep_tim
+n=bar_num+(tim-bar_tim)/wmeasure
+if(n==(n|0))
+s.bar_num=n}}else if(n==(n|0)){s.bar_num=n}
+if(!k)
+ptim=tim
+break}}}
+function not2abc(pit,acc){var i,nn=''
+if(acc){if(typeof acc!="object"){nn=['__','_','','^','^^','='][acc+2]}else{i=acc[0]
+if(i>0){nn+='^'}else{nn+='_'
+i=-i}
+nn+=i+'/'+acc[1]}}
+nn+=ntb[(pit+75)%7]
+for(i=pit;i>=23;i-=7)
+nn+="'"
+for(i=pit;i<16;i+=7)
+nn+=","
+return nn}
+function get_map(text){if(!text)
+return
+var i,note,notes,map,tmp,ns,ty='',a=text.split(/\s+/)
+if(a.length<3){syntax(1,errs.not_enough_p)
+return}
+ns=a[1]
+if(ns!='*'){if(ns.indexOf("octave,")==0||ns.indexOf("key,")==0||!ns.indexOf("tonic,")){ty=ns[0]
+ns=ns.split(',')[1].toUpperCase()}
+tmp=new scanBuf
+tmp.buffer=ns
+note=parse_acc_pit(tmp)
+if(!note){syntax(1,"Bad note in %%map")
+return}
+ns=ty+not2abc(note.pit,note.acc)}
+notes=maps[a[0]]
+if(!notes)
+maps[a[0]]=notes={}
+map=notes[ns]
+if(!map)
+notes[ns]=map=[]
+a.shift()
+a.shift()
+if(!a.length)
+return
+a=info_split(a.join(' '))
+i=0
+if(a[0].indexOf('=')<0){if(a[0][0]!='*'){tmp=new scanBuf;tmp.buffer=a[0];map[1]=parse_acc_pit(tmp)}
+if(!a[1])
+return
+i++
+if(a[1].indexOf('=')<0){map[0]=a[1].split(',')
+i++}}
+for(;i<a.length;i++){switch(a[i]){case"heads=":if(!a[++i]){syntax(1,errs.not_enough_p)
+break}
+map[0]=a[i].split(',')
+break
+case"print=":case"play=":case"print_notrp=":if(!a[++i]){syntax(1,errs.not_enough_p)
+break}
+tmp=new scanBuf;tmp.buffer=a[i];note=parse_acc_pit(tmp)
+if(a[i-1][5]=='_')
+note.notrp=1
+if(a[i-1][1]=='r')
+map[1]=note
+else
+map[3]=note
+break
+case"color=":if(!a[++i]){syntax(1,errs.not_enough_p)
+break}
+map[2]=a[i]
+break}}}
+function get_transp(param){if(param[0]=='0')
+return 0
+if("123456789-+".indexOf(param[0])>=0){var val=parseInt(param)
+if(isNaN(val)||val<-36||val>36){syntax(1,errs.bad_transp)
+return}
+val+=36
+val=((val/12|0)-3)*40+abc2svg.isb40[val%12]
+if(param.slice(-1)=='b')
+val+=4
+return val}}
+Abc.prototype.do_pscom=function(text){var h1,val,s,cmd,param,n,k,b
+cmd=text.match(/[^\s]+/)
+if(!cmd)
+return
+cmd=cmd[0];if(curvoice&&curvoice.ignore){switch(cmd){case"staves":case"score":break
+default:return}}
+param=text.replace(cmd,'').trim()
+if(param.slice(-5)==' lock'){fmt_lock[cmd]=true;param=param.slice(0,-5).trim()}else if(fmt_lock[cmd]){return}
+switch(cmd){case"clef":if(parse.state>=2){s=new_clef(param)
+if(s)
+get_clef(s)}
+return
+case"deco":deco_add(param)
+return
+case"linebreak":set_linebreak(param)
+return
+case"map":get_map(param)
+return
+case"maxsysstaffsep":case"sysstaffsep":if(parse.state==3){val=get_unit(param)
+if(isNaN(val)){syntax(1,errs.bad_val,"%%"+cmd)
+return}
+par_sy.voices[curvoice.v][cmd[0]=='m'?"maxsep":"sep"]=val
+return}
+break
+case"multicol":switch(param){case"start":case"new":case"end":break
+default:syntax(1,"Unknown keyword '$1' in %%multicol",param)
+return}
+s={type:C.BLOCK,subtype:"mc_"+param,dur:0}
+if(parse.state>=2){if(curvoice.clone)
+do_cloning()
+curvoice=voice_tb[0]
+curvoice.eoln=1
+sym_link(s)
+return}
+set_ref(s)
+self.block_gen(s)
+return
+case"ottava":if(parse.state!=3)
+return
+n=parseInt(param)
+if(isNaN(n)||n<-2||n>2||(!n&&!curvoice.ottava)){syntax(1,errs.bad_val,"%%ottava")
+return}
+k=n
+if(n){curvoice.ottava=n}else{n=curvoice.ottava
+curvoice.ottava=0}
+a_dcn.push(["15mb","8vb","","8va","15ma"][n+2]
++(k?'(':')'))
+return
+case"repbra":if(curvoice)
+curvoice.norepbra=!get_bool(param)
+return
+case"repeat":if(parse.state!=3)
+return
+if(!curvoice.last_sym){syntax(1,"%%repeat cannot start a tune")
+return}
+if(!param.length){n=1;k=1}else{b=param.split(/\s+/);n=parseInt(b[0]);k=parseInt(b[1])
+if(isNaN(n)||n<1||(curvoice.last_sym.type==C.BAR&&n>2)){syntax(1,"Incorrect 1st value in %%repeat")
+return}
+if(isNaN(k)){k=1}else{if(k<1){syntax(1,"Incorrect 2nd value in %%repeat")
+return}}}
+parse.repeat_n=curvoice.last_sym.type==C.BAR?n:-n;parse.repeat_k=k
+return
+case"sep":var h2,len,values,lwidth;set_page();lwidth=img.width-img.lm-img.rm;h1=h2=len=0
+if(param){values=param.split(/\s+/);h1=get_unit(values[0])
+if(values[1]){h2=get_unit(values[1])
+if(values[2])
+len=get_unit(values[2])}
+if(isNaN(h1)||isNaN(h2)||isNaN(len)){syntax(1,errs.bad_val,"%%sep")
+return}}
+if(h1<1)
+h1=14
+if(h2<1)
+h2=h1
+if(len<1)
+len=90
+if(parse.state>=2){if(curvoice.clone)
+do_cloning()
+s=new_block(cmd);s.x=(lwidth-len)/2/cfmt.scale;s.l=len/cfmt.scale;s.sk1=h1;s.sk2=h2
+return}
+vskip(h1);output+='<path class="stroke"\n\td="M';out_sxsy((lwidth-len)/2/cfmt.scale,' ',0);output+='h'+(len/cfmt.scale).toFixed(1)+'"/>\n';vskip(h2);blk_flush()
+return
+case"setbarnb":val=parseInt(param)
+if(isNaN(val)||val<1){syntax(1,"Bad %%setbarnb value")
+break}
+glovar.new_nbar=val
+return
+case"staff":if(parse.state!=3)
+return
+if(curvoice.clone)
+do_cloning()
+val=parseInt(param)
+if(isNaN(val)){syntax(1,"Bad %%staff value '$1'",param)
+return}
+var st
+if(param[0]=='+'||param[0]=='-')
+st=curvoice.cst+val
+else
+st=val-1
+if(st<0||st>nstaff){syntax(1,"Bad %%staff number $1 (cur $2, max $3)",st,curvoice.cst,nstaff)
+return}
+delete curvoice.floating;curvoice.cst=st
+return
+case"staffbreak":if(parse.state!=3)
+return
+if(curvoice.clone)
+do_cloning()
+s={type:C.STBRK,dur:0}
+if(param.slice(-1)=='f'){s.stbrk_forced=true
+param=param.replace(/\sf$/,'')}
+if(param){val=get_unit(param)
+if(isNaN(val)){syntax(1,errs.bad_val,"%%staffbreak")
+return}
+s.xmx=val}else{s.xmx=14}
+sym_link(s)
+return
+case"tacet":if(param[0]=='"')
+param=param.slice(1,-1)
+case"stafflines":case"staffscale":case"staffnonote":set_v_param(cmd,param)
+return
+case"staves":case"score":if(!parse.state)
+return
+if(parse.scores&&parse.scores.length>0){text=parse.scores.shift();cmd=text.match(/([^\s]+)\s*(.*)/);param=cmd[2]
+cmd=cmd[1]}
+get_staves(cmd,param)
+return
+case"center":case"text":k=cmd[0]=='c'?'c':cfmt.textoption
+set_font("text")
+if(parse.state>=2){if(curvoice.clone)
+do_cloning()
+s=new_block("text")
+s.text=param
+s.opt=k
+s.font=cfmt.textfont
+return}
+write_text(param,k)
+return
+case"transpose":if(cfmt.sound)
+return
+val=get_transp(param)
+if(val==undefined){val=get_interval(param)
+if(val==undefined)
+return}
+switch(parse.state){case 0:cfmt.transp=0
+case 1:cfmt.transp=(cfmt.transp||0)+val
+return}
+curvoice.shift=val
+key_trans()
+return
+case"tune":return
+case"user":set_user(param)
+return
+case"voicecolor":if(curvoice)
+curvoice.color=param
+return
+case"vskip":val=get_unit(param)
+if(isNaN(val)){syntax(1,errs.bad_val,"%%vskip")
+return}
+if(val<0){syntax(1,"%%vskip cannot be negative")
+return}
+if(parse.state>=2){if(curvoice.clone)
+do_cloning()
+s=new_block(cmd);s.sk=val
+return}
+vskip(val);return
+case"newpage":case"leftmargin":case"rightmargin":case"pagescale":case"pagewidth":case"printmargin":case"scale":case"staffwidth":if(parse.state>=2){if(curvoice.clone)
+do_cloning()
+s=new_block(cmd);s.param=param
+return}
+if(cmd=="newpage"){blk_flush()
+if(user.page_format)
+blkdiv=2
+return}
+break}
+self.set_format(cmd,param)}
+Abc.prototype.do_begin_end=function(type,opt,text){var i,j,action,s
+if(curvoice&&curvoice.clone)
+do_cloning()
+switch(type){case"js":js_inject(text)
+break
+case"ml":if(cfmt.pageheight){syntax(1,"Cannot have %%beginml with %%pageheight")
+break}
+if(parse.state>=2){s=new_block(type);s.text=text}else{blk_flush()
+if(user.img_out)
+user.img_out(text)}
+break
+case"svg":j=0
+while(1){i=text.indexOf('<style',j)
+if(i<0)
+break
+i=text.indexOf('>',i)
+j=text.indexOf('</style>',i)
+if(j<0){syntax(1,"No </style> in %%beginsvg sequence")
+break}
+s=text.slice(i+1,j).replace(/\s+$/gm,'')
+if(cfmt.fullsvg){i=s.match(/@font-face[^}]*}/)
+if(i&&i[0].indexOf("text")>0){ff.text="\n"
++i[0]
+s=s.replace(i[0],'')}}
+if(s&&s!="\n")
+style+=s}
+j=0
+while(1){i=text.indexOf('<defs>\n',j)
+if(i<0)
+break
+j=text.indexOf('</defs>',i)
+if(j<0){syntax(1,"No </defs> in %%beginsvg sequence")
+break}
+defs_add(text.slice(i+6,j))}
+break
+case"text":action=get_textopt(opt);if(!action)
+action=cfmt.textoption
+set_font("text")
+if(text.indexOf('\\')>=0)
+text=cnv_escape(text)
+if(parse.state>1){s=new_block(type);s.text=text
+s.opt=action
+s.font=cfmt.textfont
+break}
+write_text(text,action)
+break}}
+function generate(){var s,v,p_voice;if(a_dcn.length){syntax(1,"Decoration(s) without symbol: $1",a_dcn)
+a_dcn=[]}
+if(parse.tp){syntax(1,"No end of tuplet")
+s=parse.tps
+if(s)
+delete s.tp
+delete parse.tp}
+if(vover){syntax(1,"No end of voice overlay");get_vover(vover.bar?'|':')')}
+self.voice_adj()
+sort_all()
+if(tsfirst){for(v=0;v<voice_tb.length;v++){if(!voice_tb[v].key)
+voice_tb[v].key=parse.ckey}
+if(user.anno_start)
+anno_start=a_start
+if(user.anno_stop)
+anno_stop=a_stop
+self.set_bar_num()
+if(info.P)
+tsfirst.parts=info.P
+if(user.get_abcmodel)
+user.get_abcmodel(tsfirst,voice_tb,abc2svg.sym_name,info)
+if(user.img_out)
+self.output_music()}
+set_page()
+if(info.W)
+put_words(info.W)
+put_history()
+parse.state=0
+blk_flush()
+if(tsfirst){tunes.push([tsfirst,voice_tb,info,cfmt])
+tsfirst=null}}
+function key_trans(){var i,n,a_acc,b40,d,s=curvoice.ckey,ti=s.time||0
+if(s.k_bagpipe||s.k_drum)
+return
+n=(curvoice.score|0)
++(curvoice.shift|0)
++(cfmt.transp|0)
+if((curvoice.tr_sco|0)==n){s.k_sf=curvoice.ckey.k_sf
+return}
+if(is_voice_sig()){curvoice.key=s}else if(curvoice.time!=ti){s=clone(s.orig||s)
+if(!curvoice.new)
+s.k_old_sf=curvoice.ckey.k_sf
+sym_link(s)}
+curvoice.ckey=s
+if(cfmt.transp&&curvoice.shift)
+syntax(0,"Mix of old and new transposition syntaxes");curvoice.tr_sco=n
+n=abc2svg.b40l5[(n+202)%40]
++s.orig.k_sf
+if(n<-7){n+=12
+curvoice.tr_sco-=4}else if(n>7){n-=12
+curvoice.tr_sco+=4}
+if(!s.k_none)
+s.k_sf=n
+for(b40=0;b40<40;b40++){if(abc2svg.b40l5[b40]==n)
+break}
+s.k_b40=b40
+if(!s.k_a_acc)
+return
+d=b40-s.orig.k_b40
+a_acc=[]
+for(i=0;i<s.k_a_acc.length;i++){b40=abc2svg.pab40(s.k_a_acc[i].pit,s.k_a_acc[i].acc)+d
+a_acc[i]={pit:abc2svg.b40p(b40),acc:abc2svg.b40a(b40)||3}}
+s.k_a_acc=a_acc}
+function fill_mr_ba(p_v){var v,p_v2,mxt=0
+for(v=0;v<voice_tb.length;v++){if(voice_tb[v].time>mxt){p_v2=voice_tb[v]
+mxt=p_v2.time}}
+if(p_v.time>=mxt)
+return
+var p_v_sav=curvoice,dur=mxt-p_v.time,s={type:C.MREST,stem:0,multi:0,nhd:0,xmx:0,frm:1,dur:dur,dur_orig:dur,nmes:dur/p_v.wmeasure,notes:[{pit:18,dur:dur}],tacet:p_v.tacet},s2={type:C.BAR,bar_type:'|',dur:0,multi:0}
+if(p_v2.last_sym.bar_type)
+s2.bar_type=p_v2.last_sym.bar_type
+glovar.mrest_p=1
+curvoice=p_v
+sym_link(s)
+sym_link(s2)
+curvoice=p_v_sav}
+function get_staves(cmd,parm){var s,p_voice,p_voice2,i,flags,v,vid,a_vf,eoln,st,range,nv=voice_tb.length,maxtime=0
+if(curvoice&&curvoice.clone){do_cloning()}
+if(parm){a_vf=parse_staves(parm)
+if(!a_vf)
+return}else if(staves_found<0){syntax(1,errs.bad_val,'%%'+cmd)
+return}
+for(v=0;v<nv;v++){p_voice=voice_tb[v]
+if(p_voice.eoln){eoln=1
+delete p_voice.eoln}
+if(p_voice.time>maxtime)
+maxtime=p_voice.time}
+if(!maxtime){par_sy.staves=[]
+par_sy.voices=[]}else{self.voice_adj(1)
+for(v=0;v<nv;v++){p_voice=voice_tb[v]
+if(maxtime-p_voice.time>=p_voice.meter.wmeasure)
+p_voice.acc=[]
+p_voice.time=maxtime
+p_voice.lyric_restart=p_voice.last_sym
+p_voice.sym_restart=p_voice.last_sym}
+if(!par_sy.voices[curvoice.v])
+for(v=0;v<par_sy.voices.length;v++){if(par_sy.voices[v]){curvoice=voice_tb[v]
+break}}
+curvoice.eoln=eoln
+s={type:C.STAVES,dur:0}
+sym_link(s);par_sy.nstaff=nstaff;if(!parm){s.sy=clone(par_sy,2)
+par_sy.next=s.sy
+par_sy=s.sy
+staves_found=maxtime
+curvoice=voice_tb[par_sy.top_voice]
+return}
+new_syst();s.sy=par_sy}
+staves_found=maxtime
+for(v=0;v<nv;v++){p_voice=voice_tb[v]
+delete p_voice.second
+delete p_voice.floating
+if(p_voice.ignore){p_voice.ignore=0
+s=p_voice.sym
+if(s){while(s.next)
+s=s.next}
+p_voice.last_sym=s}}
+range=0
+for(i=0;i<a_vf.length;i++){vid=a_vf[i][0];p_voice=new_voice(vid);v=p_voice.v
+a_vf[i][0]=p_voice;while(1){par_sy.voices[v]={range:range++}
+p_voice=p_voice.voice_down
+if(!p_voice)
+break
+v=p_voice.v}}
+par_sy.top_voice=a_vf[0][0].v
+if(a_vf.length==1)
+par_sy.one_v=1
+if(cmd[1]=='t'){for(i=0;i<a_vf.length;i++){flags=a_vf[i][1]
+if(!(flags&(OPEN_BRACE|OPEN_BRACE2)))
+continue
+if((flags&(OPEN_BRACE|CLOSE_BRACE))==(OPEN_BRACE|CLOSE_BRACE)||(flags&(OPEN_BRACE2|CLOSE_BRACE2))==(OPEN_BRACE2|CLOSE_BRACE2))
+continue
+if(a_vf[i+1][1]!=0)
+continue
+if((flags&OPEN_PARENTH)||(a_vf[i+2][1]&OPEN_PARENTH))
+continue
+if(a_vf[i+2][1]&(CLOSE_BRACE|CLOSE_BRACE2)){a_vf[i+1][1]|=FL_VOICE}else if(a_vf[i+2][1]==0&&(a_vf[i+3][1]&(CLOSE_BRACE|CLOSE_BRACE2))){a_vf[i][1]|=OPEN_PARENTH;a_vf[i+1][1]|=CLOSE_PARENTH;a_vf[i+2][1]|=OPEN_PARENTH;a_vf[i+3][1]|=CLOSE_PARENTH}}}
+st=-1
+for(i=0;i<a_vf.length;i++){flags=a_vf[i][1]
+if((flags&(OPEN_PARENTH|CLOSE_PARENTH))==(OPEN_PARENTH|CLOSE_PARENTH)){flags&=~(OPEN_PARENTH|CLOSE_PARENTH);a_vf[i][1]=flags}
+p_voice=a_vf[i][0]
+if(flags&FL_VOICE){p_voice.floating=true;p_voice.second=true}else{st++;if(!par_sy.staves[st]){par_sy.staves[st]={staffscale:1}}
+par_sy.staves[st].stafflines=p_voice.stafflines||"|||||",par_sy.staves[st].flags=0}
+v=p_voice.v;p_voice.st=p_voice.cst=par_sy.voices[v].st=st;par_sy.staves[st].flags|=flags
+if(flags&OPEN_PARENTH){p_voice2=p_voice
+while(i<a_vf.length-1){p_voice=a_vf[++i][0];v=p_voice.v
+if(a_vf[i][1]&MASTER_VOICE){p_voice2.second=true
+p_voice2=p_voice}else{p_voice.second=true}
+p_voice.st=p_voice.cst=par_sy.voices[v].st=st
+if(a_vf[i][1]&CLOSE_PARENTH)
+break}
+par_sy.staves[st].flags|=a_vf[i][1]}}
+if(st<0)
+st=0
+par_sy.nstaff=nstaff=st
+if(cmd[1]=='c'){for(st=0;st<nstaff;st++)
+par_sy.staves[st].flags^=STOP_BAR}
+nv=voice_tb.length
+st=0
+for(v=0;v<nv;v++){p_voice=voice_tb[v]
+if(par_sy.voices[v])
+st=p_voice.st
+else
+p_voice.st=st
+if(!maxtime){for(s=p_voice.sym;s;s=s.next)
+s.st=st}
+if(!par_sy.voices[v])
+continue
+p_voice2=p_voice.voice_down
+while(p_voice2){p_voice2.second=1
+i=p_voice2.v
+p_voice2.st=p_voice2.cst=par_sy.voices[i].st=st
+p_voice2=p_voice2.voice_down}
+par_sy.voices[v].second=p_voice.second;st=p_voice.st
+if(st>0&&p_voice.norepbra==undefined&&!(par_sy.staves[st-1].flags&STOP_BAR))
+p_voice.norepbra=true}
+curvoice=parse.state>=2?voice_tb[par_sy.top_voice]:null}
+function clone_voice(id){var v,p_voice
+for(v=0;v<voice_tb.length;v++){p_voice=voice_tb[v]
+if(p_voice.id==id)
+return p_voice}
+p_voice=clone(curvoice);p_voice.v=voice_tb.length;p_voice.id=id;p_voice.sym=p_voice.last_sym=null;p_voice.key=clone(curvoice.key)
+p_voice.sls=[]
+delete p_voice.nm
+delete p_voice.snm
+delete p_voice.new_name
+delete p_voice.lyric_restart
+delete p_voice.lyric_cont
+delete p_voice.sym_restart
+delete p_voice.sym_cont
+delete p_voice.have_ly
+delete p_voice.tie_s
+voice_tb.push(p_voice)
+return p_voice}
+function get_vover(type){var p_voice2,p_voice3,range,s,time,v,v2,v3,s2
+if(type=='|'||type==')'){if(!curvoice.last_note){syntax(1,errs.nonote_vo)
+if(vover){curvoice=vover.p_voice
+vover=null}
+return}
+curvoice.last_note.beam_end=true
+if(!vover){syntax(1,"Erroneous end of voice overlay")
+return}
+if(curvoice.time!=vover.p_voice.time){if(!curvoice.ignore)
+syntax(1,"Wrong duration in voice overlay");if(curvoice.time>vover.p_voice.time)
+vover.p_voice.time=curvoice.time}
+curvoice.acc=[]
+p_voice2=vover.p_voice
+s=curvoice.last_sym
+if(s.type==C.SPACE&&p_voice2.last_sym.type!=C.SPACE){s.p_v=p_voice2
+s.v=s.p_v.v
+while(s.prev.type==C.SPACE){s=s.prev
+s.p_v=p_voice2
+s.v=s.p_v.v}
+s2=s.prev
+s2.next=null
+s.prev=p_voice2.last_sym
+s.prev.next=s
+p_voice2.last_sym=curvoice.last_sym
+curvoice.last_sym=s2}
+curvoice=p_voice2
+vover=null
+return}
+if(type=='('){if(vover){syntax(1,"Voice overlay already started")
+return}
+vover={p_voice:curvoice,time:curvoice.time}
+return}
+if(!curvoice.last_note){syntax(1,errs.nonote_vo)
+return}
+curvoice.last_note.beam_end=true;p_voice2=curvoice.voice_down
+if(!p_voice2){p_voice2=clone_voice(curvoice.id+'o');curvoice.voice_down=p_voice2;p_voice2.time=0;p_voice2.second=true;p_voice2.last_note=null
+v2=p_voice2.v;if(par_sy.voices[curvoice.v]){par_sy.voices[v2]={st:curvoice.st,second:true}
+range=par_sy.voices[curvoice.v].range
+for(v=0;v<par_sy.voices.length;v++){if(par_sy.voices[v]&&par_sy.voices[v].range>range)
+par_sy.voices[v].range++}
+par_sy.voices[v2].range=range+1}}
+p_voice2.ulen=curvoice.ulen
+p_voice2.dur_fact=curvoice.dur_fact
+p_voice2.acc=[]
+if(!vover){time=p_voice2.time
+if(curvoice.ignore)
+s=curvoice.last_bar
+else
+for(s=curvoice.last_sym;s;s=s.prev){if(s.type==C.BAR||s.time<=time)
+break}
+vover={bar:(s&&s.bar_type)?s.bar_type:'|',p_voice:curvoice,time:s?s.time:curvoice.time}}else{if(curvoice!=vover.p_voice&&curvoice.time!=vover.p_voice.time){syntax(1,"Wrong duration in voice overlay")
+if(curvoice.time>vover.p_voice.time)
+vover.p_voice.time=curvoice.time}}
+p_voice2.time=vover.time;curvoice=p_voice2}
+function is_voice_sig(){var s
+if(curvoice.time)
+return false
+if(!curvoice.last_sym)
+return true
+for(s=curvoice.last_sym;s;s=s.prev)
+if(w_tb[s.type])
+return false
+return true}
+function get_clef(s){var s2,s3
+if(s.clef_type=='p'){s2=curvoice.ckey
+s2.k_drum=1
+s2.k_sf=0
+s2.k_b40=2
+s2.k_map=abc2svg.keys[7]
+if(!curvoice.key)
+curvoice.key=s2}
+if(!curvoice.time&&is_voice_sig()){curvoice.clef=s
+s.fmt=cfmt
+return}
+if(s.clef_none)
+s2=null
+else
+for(s2=curvoice.last_sym;s2&&s2.time==curvoice.time;s2=s2.prev){if(w_tb[s2.type])
+break}
+if(s2&&s2.time==curvoice.time&&s2.k_sf!=undefined){s3=s2
+s2=s2.prev}
+if(s2&&s2.time==curvoice.time&&s2.bar_type&&s2.bar_type[0]!=':')
+s3=s2
+if(s3){s2=curvoice.last_sym
+curvoice.last_sym=s3.prev
+sym_link(s)
+s.next=s3
+s3.prev=s
+curvoice.last_sym=s2
+if(s.soln){delete s.soln
+curvoice.eoln=true}}else{sym_link(s)}
+if(s.prev)
+s.clef_small=1}
+function get_key(parm){var v,p_voice,a=new_key(parm),s_key=a[0],s=s_key,empty=s.k_sf==undefined&&!s.k_a_acc
+a=a[1]
+if(empty)
+s.invis=1
+else
+s.orig=s
+if(parse.state==1){parse.ckey=s
+if(empty){s_key.k_sf=0;s_key.k_none=true
+s_key.k_map=abc2svg.keys[7]}
+for(v=0;v<voice_tb.length;v++){p_voice=voice_tb[v];p_voice.ckey=clone(s_key)}
+if(a.length){memo_kv_parm('*',a)
+a=[]}
+if(!glovar.ulen)
+glovar.ulen=C.BLEN/8;goto_tune()}else if(!empty){if(curvoice.tr_sco)
+curvoice.tr_sco=undefined
+s.k_old_sf=curvoice.ckey.k_sf
+curvoice.ckey=s
+sym_link(s)}
+if(!curvoice){if(!voice_tb.length){curvoice=new_voice("1")
+var def=1}else{curvoice=voice_tb[staves_found<0?0:par_sy.top_voice]}}
+p_voice=curvoice.clone
+if(p_voice)
+curvoice.clone=null
+get_voice(curvoice.id+' '+a.join(' '))
+if(p_voice)
+curvoice.clone=p_voice
+if(def)
+curvoice.default=1}
+function new_voice(id){var v,p_v_sav,p_voice=voice_tb[0],n=voice_tb.length
+if(n==1&&p_voice.default){delete p_voice.default
+if(!p_voice.time){p_voice.id=id
+p_voice.init=0
+return p_voice}}
+for(v=0;v<n;v++){p_voice=voice_tb[v]
+if(p_voice.id==id)
+return p_voice}
+p_voice={v:v,id:id,time:staves_found>=0?staves_found:0,new:true,pos:{},scale:1,ulen:glovar.ulen,dur_fact:1,meter:clone(glovar.meter),wmeasure:glovar.meter.wmeasure,staffnonote:1,clef:{type:C.CLEF,clef_auto:true,clef_type:"a",time:0},acc:[],sls:[],hy_st:0}
+voice_tb.push(p_voice);if(parse.state==3){p_voice.ckey=clone(parse.ckey)
+if(p_voice.ckey.k_bagpipe&&!p_voice.pos.stm){p_voice.pos=clone(p_voice.pos)
+p_voice.pos.stm&=~0x07
+p_voice.pos.stm|=C.SL_BELOW}}
+return p_voice}
+function init_tune(){nstaff=-1;voice_tb=[];curvoice=null;new_syst(true);staves_found=-1;gene={}
+a_de=[]
+cross={}}
+function do_cloning(){var i,clone=curvoice.clone,vs=clone.vs,a=clone.a,bol=clone.bol,eol=parse.bol,parse_sav=parse,file=parse.file
+delete curvoice.clone
+if(file[eol-1]=='[')
+eol--
+include++;for(i=0;i<vs.length;i++){parse=Object.create(parse_sav)
+parse.line=Object.create(parse_sav.line)
+get_voice(vs[i]+' '+a.join(' '))
+tosvg(parse.fname,file,bol,eol)}
+include--
+parse=parse_sav}
+function get_voice(parm){var v,vs,a=info_split(parm),vid=a.shift()
+if(!vid)
+return
+if(curvoice&&curvoice.clone)
+do_cloning()
+if(vid.indexOf(',')>0)
+vs=vid.split(',')
+else
+vs=[vid]
+if(parse.state<2){while(1){vid=vs.shift()
+if(!vid)
+break
+if(a.length)
+memo_kv_parm(vid,a)
+if(vid!='*'&&parse.state==1)
+curvoice=new_voice(vid)}
+return}
+if(vid=='*'){syntax(1,"Cannot have V:* in tune body")
+return}
+curvoice=new_voice(vs[0])
+if(vs.length>1){vs.shift()
+curvoice.clone={vs:vs,a:a.slice(0),bol:parse.iend}
+if(parse.file[curvoice.clone.bol-1]!=']')
+curvoice.clone.bol++}
+set_kv_parm(a)
+key_trans()
+v=curvoice.v
+if(curvoice.new){delete curvoice.new
+if(staves_found<0){curvoice.st=curvoice.cst=++nstaff;par_sy.nstaff=nstaff;par_sy.voices[v]={st:nstaff,range:v}
+par_sy.staves[nstaff]={stafflines:curvoice.stafflines||"|||||",staffscale:1}}else if(!par_sy.voices[v]){curvoice.ignore=1
+return}}
+if(!curvoice.filtered&&par_sy.voices[v]&&(parse.voice_opts||parse.tune_v_opts)){curvoice.filtered=true;voice_filter()}}
+function goto_tune(){var v,p_voice
+set_page();write_heading();blk_flush()
+if(glovar.new_nbar){gene.nbar=glovar.new_nbar
+glovar.new_nbar=0}else{gene.nbar=1}
+parse.state=3
+for(v=0;v<voice_tb.length;v++){p_voice=voice_tb[v];p_voice.ulen=glovar.ulen
+if(parse.ckey.k_bagpipe&&!p_voice.pos.stm){p_voice.pos=clone(p_voice.pos)
+p_voice.pos.stm&=~0x07
+p_voice.pos.stm|=C.SL_BELOW}}
+if(staves_found<0){v=voice_tb.length
+par_sy.nstaff=nstaff=v-1
+while(--v>=0){p_voice=voice_tb[v];delete p_voice.new;p_voice.st=p_voice.cst=v;par_sy.voices[v]={st:v,range:v}
+par_sy.staves[v]={stafflines:p_voice.stafflines||"|||||",staffscale:1}}}}
+function get_sym(p,cont){var s,c,i,j,d
+if(curvoice.ignore)
+return
+if(cont){s=curvoice.sym_cont
+if(!s){syntax(1,"+: symbol line without music")
+return}}else{if(curvoice.sym_restart){curvoice.sym_start=curvoice.sym_restart;curvoice.sym_restart=null}
+s=curvoice.sym_start
+if(!s)
+s=curvoice.sym
+if(!s){syntax(1,"s: without music")
+return}}
+i=0
+while(1){while(p[i]==' '||p[i]=='\t')
+i++;c=p[i]
+if(!c)
+break
+switch(c){case'|':while(s&&s.type!=C.BAR)
+s=s.next
+if(!s){syntax(1,"Not enough measure bars for symbol line")
+return}
+s=s.next;i++
+continue
+case'!':case'"':j=++i
+i=p.indexOf(c,j)
+if(i<0){syntax(1,c=='!'?"No end of decoration":"No end of chord symbol/annotation");i=p.length
+continue}
+d=p.slice(j-1,i+1)
+break
+case'*':break
+default:d=c.charCodeAt(0)
+if(d<128){d=char_tb[d]
+if(d.length>1&&(d[0]=='!'||d[0]=='"')){c=d[0]
+break}}
+syntax(1,errs.bad_char,c)
+break}
+while(s&&s.type!=C.NOTE)
+s=s.next
+if(!s){syntax(1,"Too many elements in symbol line")
+return}
+switch(c){default:break
+case'!':a_dcn.push(d.slice(1,-1))
+deco_cnv(s,s.prev)
+break
+case'"':parse.line.index=j+2
+parse_gchord(d)
+if(a_gch)
+csan_add(s)
+break}
+s=s.next;i++}
+curvoice.sym_cont=s}
+function get_lyrics(p,cont){var s,word,i,j,ly,dfnt,ln,c,cf
+if(curvoice.ignore)
+return
+if((curvoice.pos.voc&0x07)!=C.SL_HIDDEN)
+curvoice.have_ly=true
+if(cont){s=curvoice.lyric_cont
+if(!s){syntax(1,"+: lyric without music")
+return}
+if(p[0]=='~'){while(!s.a_ly)
+s=s.prev
+ly=s.a_ly[curvoice.lyric_line]
+p=ly.t.replace(/ /g,'~')+p}
+dfnt=get_font("vocal")
+if(gene.deffont!=dfnt){if(gene.curfont==gene.deffont)
+gene.curfont=dfnt
+gene.deffont=dfnt}}else{set_font("vocal")
+if(curvoice.lyric_restart){curvoice.lyric_start=s=curvoice.lyric_restart;curvoice.lyric_restart=null;curvoice.lyric_line=0}else{curvoice.lyric_line++;s=curvoice.lyric_start}
+if(!s)
+s=curvoice.sym
+if(!s){syntax(1,"w: without music")
+return}}
+i=0
+cf=gene.curfont
+while(1){while(p[i]==' '||p[i]=='\t')
+i++
+if(!p[i])
+break
+ln=0
+j=parse.istart+i+2
+switch(p[i]){case'|':while(s&&s.type!=C.BAR)
+s=s.next
+if(!s){syntax(1,"Not enough measure bars for lyric line")
+return}
+s=s.next;i++
+continue
+case'-':case'_':word=p[i]
+ln=p[i]=='-'?2:3
+break
+case'*':word=""
+break
+default:word="";while(1){if(!p[i])
+break
+switch(p[i]){case'_':case'*':case'|':i--
+case' ':case'\t':break
+case'~':word+=' '
+i++
+continue
+case'-':ln=1
+break
+case'\\':if(!p[++i])
+continue
+word+=p[i++]
+continue
+case'$':word+=p[i++]
+c=p[i]
+if(c=='0')
+gene.curfont=gene.deffont
+else if(c>='1'&&c<='9')
+gene.curfont=get_font("u"+c)
+default:word+=p[i++]
+continue}
+break}
+break}
+while(s&&s.type!=C.NOTE)
+s=s.next
+if(!s){syntax(1,"Too many words in lyric line")
+return}
+if(word&&(s.pos.voc&0x07)!=C.SL_HIDDEN){ly={t:word,font:cf,istart:j,iend:j+word.length}
+if(ln)
+ly.ln=ln
+if(!s.a_ly)
+s.a_ly=[]
+s.a_ly[curvoice.lyric_line]=ly
+cf=gene.curfont}
+s=s.next;i++}
+curvoice.lyric_cont=s}
+function ly_set(s){var i,j,ly,d,s1,s2,p,w,spw,xx,sz,shift,dw,r,s3=s,wx=0,wl=0,n=0,dx=0,a_ly=s.a_ly,align=0
+for(s2=s.ts_next;s2;s2=s2.ts_next){if(s2.seqst){dx+=s2.shrink
+n++}
+if(s2.bar_type){dx+=3
+break}
+if(!s2.a_ly)
+continue
+i=s2.a_ly.length
+while(--i>=0){ly=s2.a_ly[i]
+if(!ly)
+continue
+if(!ly.ln||ly.ln<2)
+break}
+if(i>=0)
+break}
+for(i=0;i<a_ly.length;i++){ly=a_ly[i]
+if(!ly)
+continue
+gene.curfont=ly.font
+ly.t=str2svg(ly.t)
+p=ly.t.replace(/<[^>]*>/g,'')
+if(ly.ln>=2){ly.shift=0
+continue}
+spw=cwid(' ')*ly.font.swfac
+w=ly.t.wh[0]
+r=abc2svg.lypre.exec(p)
+if(s.type==C.GRACE){shift=s.wl}else if(r){r=r[0]
+if(p[0]=='('){sz=spw}else{set_font(ly.font)
+if(p[r.length]==' '||r.slice(-1)==':')
+sz=strwh(p.slice(0,r.length))[0]
+else
+sz=w*.2}
+shift=(w-sz)*.4
+if(shift>14)
+shift=14
+shift+=sz
+if(p[0]>='0'&&p[0]<='9'){if(shift>align)
+align=shift}}else{shift=w*.4
+if(shift>14)
+shift=14}
+ly.shift=shift
+if(shift>wl)
+wl=shift
+w+=spw*1.5
+w-=shift
+if(w>wx)
+wx=w}
+while(!s3.seqst)
+s3=s3.ts_prev
+if(s3.ts_prev&&s3.ts_prev.bar_type)
+wl-=4
+if(s3.wl<wl){s3.shrink+=wl-s3.wl
+s3.wl=wl}
+dx-=6
+if(dx<wx&&s2){dx=(wx-dx)/n
+s1=s.ts_next
+while(1){if(s1.seqst){s1.shrink+=dx
+s3.wr+=dx
+s3=s1}
+if(s1==s2)
+break
+s1=s1.ts_next}}
+if(align>0){for(i=0;i<a_ly.length;i++){ly=a_ly[i]
+if(ly&&ly.t[0]>='0'&&ly.t[0]<='9')
+ly.shift=align}}}
+function draw_lyric_line(p_voice,j,y){var p,lastx,w,s,s2,ly,lyl,ln,hyflag,lflag,x0,shift
+if(p_voice.hy_st&(1<<j)){hyflag=true;p_voice.hy_st&=~(1<<j)}
+for(s=p_voice.sym;;s=s.next)
+if(s.type!=C.CLEF&&s.type!=C.KEY&&s.type!=C.METER)
+break
+lastx=s.prev?s.prev.x:tsfirst.x;x0=0
+for(;s;s=s.next){if(s.a_ly)
+ly=s.a_ly[j]
+else
+ly=null
+if(!ly){switch(s.type){case C.REST:case C.MREST:if(lflag){out_wln(lastx+3,y,x0-lastx);lflag=false;lastx=s.x+s.wr}}
+continue}
+if(ly.font!=gene.curfont)
+gene.curfont=ly.font
+p=ly.t;ln=ly.ln||0
+w=p.wh[0]
+shift=ly.shift
+if(hyflag){if(ln==3){ln=2}else if(ln<2){out_hyph(lastx,y,s.x-shift-lastx);hyflag=false;lastx=s.x+s.wr}}
+if(lflag&&ln!=3){out_wln(lastx+3,y,x0-lastx+3);lflag=false;lastx=s.x+s.wr}
+if(ln>=2){if(x0==0&&lastx>s.x-18)
+lastx=s.x-18
+if(ln==2)
+hyflag=true
+else
+lflag=true;x0=s.x-shift
+continue}
+x0=s.x-shift;if(ln)
+hyflag=true
+if(user.anno_start||user.anno_stop){s2={p_v:s.p_v,st:s.st,istart:ly.istart,iend:ly.iend,ts_prev:s,ts_next:s.ts_next,x:x0,y:y,ymn:y,ymx:y+gene.curfont.size,wl:0,wr:w}
+anno_start(s2,'lyrics')}
+xy_str(x0,y,p)
+anno_stop(s2,'lyrics')
+lastx=x0+w}
+if(hyflag){hyflag=false;x0=realwidth-10
+if(x0<lastx+10)
+x0=lastx+10;out_hyph(lastx,y,x0-lastx)
+if(p_voice.s_next&&p_voice.s_next.fmt.hyphencont)
+p_voice.hy_st|=(1<<j)}
+for(p_voice.s_next;s;s=s.next){if(s.type==C.NOTE){if(!s.a_ly)
+break
+ly=s.a_ly[j]
+if(ly&&ly.ln==3){lflag=true;x0=realwidth-15
+if(x0<lastx+12)
+x0=lastx+12}
+break}}
+if(lflag){out_wln(lastx+3,y,x0-lastx+3);lflag=false}}
+function draw_lyrics(p_voice,nly,a_h,y,incr){var j,top,sc=staff_tb[p_voice.st].staffscale;set_font("vocal")
+if(incr>0){if(y>-tsfirst.fmt.vocalspace)
+y=-tsfirst.fmt.vocalspace;y*=sc
+for(j=0;j<nly;j++){y-=a_h[j]*1.1;draw_lyric_line(p_voice,j,y+a_h[j]*.22)}
+return y/sc}
+top=staff_tb[p_voice.st].topbar+tsfirst.fmt.vocalspace
+if(y<top)
+y=top;y*=sc
+for(j=nly;--j>=0;){draw_lyric_line(p_voice,j,y+a_h[j]*.22)
+y+=a_h[j]*1.1}
+return y/sc}
+function draw_all_lyrics(){var p_voice,s,v,nly,i,x,y,w,a_ly,ly,lyst_tb=new Array(nstaff+1),nv=voice_tb.length,h_tb=new Array(nv),nly_tb=new Array(nv),above_tb=new Array(nv),rv_tb=new Array(nv),top=0,bot=0,st=-1
+for(v=0;v<nv;v++){p_voice=voice_tb[v]
+if(!p_voice.sym)
+continue
+if(p_voice.st!=st){top=0;bot=0;st=p_voice.st}
+nly=0
+if(p_voice.have_ly){if(!h_tb[v])
+h_tb[v]=[]
+for(s=p_voice.sym;s;s=s.next){a_ly=s.a_ly
+if(!a_ly)
+continue
+x=s.x;w=10
+for(i=0;i<a_ly.length;i++){ly=a_ly[i]
+if(ly){x-=ly.shift;w=ly.t.wh[0]
+break}}
+y=y_get(p_voice.st,1,x,w)
+if(top<y)
+top=y;y=y_get(p_voice.st,0,x,w)
+if(bot>y)
+bot=y
+while(nly<a_ly.length)
+h_tb[v][nly++]=0
+for(i=0;i<a_ly.length;i++){ly=a_ly[i]
+if(!ly)
+continue
+if(!h_tb[v][i]||ly.t.wh[1]>h_tb[v][i])
+h_tb[v][i]=ly.t.wh[1]}}}else{y=y_get(p_voice.st,1,0,realwidth)
+if(top<y)
+top=y;y=y_get(p_voice.st,0,0,realwidth)
+if(bot>y)
+bot=y}
+if(!lyst_tb[st])
+lyst_tb[st]={}
+lyst_tb[st].top=top;lyst_tb[st].bot=bot;nly_tb[v]=nly
+if(nly==0)
+continue
+if(p_voice.pos.voc)
+above_tb[v]=(p_voice.pos.voc&0x07)==C.SL_ABOVE
+else if(voice_tb[v+1]&&voice_tb[v+1].st==st&&voice_tb[v+1].have_ly)
+above_tb[v]=true
+else
+above_tb[v]=false
+if(above_tb[v])
+lyst_tb[st].a=true
+else
+lyst_tb[st].b=true}
+i=0
+for(v=0;v<nv;v++){p_voice=voice_tb[v]
+if(!p_voice.sym)
+continue
+if(!p_voice.have_ly)
+continue
+if(above_tb[v]){rv_tb[i++]=v
+continue}
+st=p_voice.st;set_dscale(st,true)
+if(nly_tb[v]>0)
+lyst_tb[st].bot=draw_lyrics(p_voice,nly_tb[v],h_tb[v],lyst_tb[st].bot,1)}
+while(--i>=0){v=rv_tb[i];p_voice=voice_tb[v];st=p_voice.st;set_dscale(st,true);lyst_tb[st].top=draw_lyrics(p_voice,nly_tb[v],h_tb[v],lyst_tb[st].top,-1)}
+for(v=0;v<nv;v++){p_voice=voice_tb[v]
+if(!p_voice.sym)
+continue
+st=p_voice.st;if(lyst_tb[st].a){top=lyst_tb[st].top+2
+for(s=p_voice.sym;s;s=s.next){if(s.a_ly){y_set(st,1,s.x-2,10,top)}}}
+if(lyst_tb[st].b){bot=lyst_tb[st].bot-2
+if(nly_tb[p_voice.v]>0){for(s=p_voice.sym;s;s=s.next){if(s.a_ly){y_set(st,0,s.x-2,10,bot)}}}else{y_set(st,0,0,realwidth,bot)}}}}
+function parse_gchord(type){var c,text,gch,x_abs,y_abs,i,j,istart,iend,ann_font=get_font("annotation"),h_ann=ann_font.size,line=parse.line
+function get_float(){var txt=''
+while(1){c=text[i++]
+if("1234567890.-".indexOf(c)<0)
+return parseFloat(txt)
+txt+=c}}
+istart=parse.bol+line.index
+if(type.length>1){text=type.slice(1,-1);iend=istart+1}else{i=++line.index
+while(1){j=line.buffer.indexOf('"',i)
+if(j<0){syntax(1,"No end of chord symbol/annotation")
+return}
+if(line.buffer[j-1]!='\\'||line.buffer[j-2]=='\\')
+break
+i=j+1}
+text=cnv_escape(line.buffer.slice(line.index,j))
+line.index=j
+iend=parse.bol+line.index+1}
+if(ann_font.pad)
+h_ann+=ann_font.pad
+i=0;type='g'
+while(1){c=text[i]
+if(!c)
+break
+gch={text:"",istart:istart,iend:iend,font:ann_font}
+switch(c){case'@':type=c;i++;x_abs=get_float()
+if(c!=','){syntax(1,"',' lacking in annotation '@x,y'");y_abs=0}else{y_abs=get_float()
+if(c!=' ')
+i--}
+gch.x=x_abs;gch.y=y_abs
+break
+case'^':gch.pos=C.SL_ABOVE
+case'_':if(c=='_')
+gch.pos=C.SL_BELOW
+case'<':case'>':i++;type=c
+break
+default:switch(type){case'g':gch.font=get_font("gchord")
+gch.pos=curvoice.pos.gch||C.SL_ABOVE
+break
+case'^':gch.pos=C.SL_ABOVE
+break
+case'_':gch.pos=C.SL_BELOW
+break
+case'@':gch.x=x_abs;y_abs-=h_ann;gch.y=y_abs
+break}
+break}
+gch.type=type
+while(1){c=text[i]
+if(!c)
+break
+switch(c){default:gch.text+=c;i++
+continue
+case'&':while(1){gch.text+=c;c=text[++i]
+switch(c){default:continue
+case';':case undefined:case'\\':break}
+break}
+if(c==';'){i++;gch.text+=c
+continue}
+break
+case'\n':case';':break}
+i++
+break}
+gch.otext=gch.text
+if(!a_gch)
+a_gch=[]
+a_gch.push(gch)}}
+function gch_tr1(p,tr){var i,o,n,ip,csa=p.split('/')
+tr=abc2svg.b40l5[(tr+202)%40]
+for(i=0;i<csa.length;i++){p=csa[i];o=p.search(/[A-G]/)
+if(o<0)
+continue
+ip=o+1
+n="FCGDAEB".indexOf(p[o])-1
+if(p[ip]=='#'||p[ip]=='\u266f'){n+=7
+ip++}else if(p[ip]=='b'||p[ip]=='\u266d'){n-=7
+ip++}
+n+=tr
+csa[i]=p.slice(0,o)
++"FCGDAEB"[(n+22)%7]
++(n>=13?'##':n>=6?'#':n<=-9?'bb':n<=-2?'b':'')
++p.slice(ip)}
+return csa.join('/')}
+function csan_add(s){var i,gch
+if(s.type==C.BAR){for(i=0;i<a_gch.length;i++){if(a_gch[i].type=='g'){error(1,s,"There cannot be chord symbols on measure bars")
+a_gch.splice(i)}}}
+if(curvoice.tr_sco||curvoice.tr_snd){for(i=0;i<a_gch.length;i++){gch=a_gch[i]
+if(gch.type=='g'){if(curvoice.tr_snd40)
+gch.otext=gch_tr1(gch.text,curvoice.tr_snd40)
+if(curvoice.tr_sco)
+gch.text=gch_tr1(gch.text,curvoice.tr_sco)}}}
+if(s.a_gch)
+s.a_gch=s.a_gch.concat(a_gch)
+else
+s.a_gch=a_gch
+a_gch=null}
+Abc.prototype.gch_build=function(s){var gch,wh,xspc,ix,y_left=0,y_right=0,GCHPRE=.4;for(ix=0;ix<s.a_gch.length;ix++){gch=s.a_gch[ix]
+if(gch.type=='g'){gch.text=gch.text.replace(/##|#|=|bb|b/g,function(x){switch(x){case'##':return"&#x1d12a;"
+case'#':return"\u266f"
+case'=':return"\u266e"
+case'b':return"\u266d"}
+return"&#x1d12b;"})}else{if(gch.type=='@'&&!user.anno_start&&!user.anno_stop){set_font(gch.font)
+gch.text=str2svg(gch.text)
+continue}}
+set_font(gch.font);gch.text=str2svg(gch.text)
+wh=gch.text.wh
+switch(gch.type){case'@':break
+default:xspc=wh[0]*GCHPRE
+if(xspc>8)
+xspc=8;gch.x=-xspc;break
+case'<':gch.x=-(wh[0]+6);y_left-=wh[1];gch.y=y_left+wh[1]/2
+break
+case'>':gch.x=6;y_right-=wh[1];gch.y=y_right+wh[1]/2
+break}}
+y_left/=2;y_right/=2
+for(ix=0;ix<s.a_gch.length;ix++){gch=s.a_gch[ix]
+switch(gch.type){case'<':gch.y-=y_left
+break
+case'>':gch.y-=y_right
+break}}}
+Abc.prototype.draw_gchord=function(i,s,x,y){if(s.invis&&s.play)
+return
+var y2,an=s.a_gch[i],h=an.text.wh[1],pad=an.font.pad,w=an.text.wh[0]+pad*2,dy=h*.22
+if(an.font.figb){h*=2.4
+dy+=an.font.size*1.3}
+switch(an.type){case'_':y-=h+pad
+break
+case'^':y+=pad
+break
+case'<':case'>':if(an.type=='<'){if(s.notes[0].acc)
+x-=s.notes[0].shac
+x-=pad}else{if(s.xmx)
+x+=s.xmx
+if(s.dots)
+x+=1.5+3.5*s.dots
+x+=pad}
+y+=(s.type==C.NOTE?(((s.notes[s.nhd].pit+s.notes[0].pit)>>1)-
+18)*3:12)
+-h/2
+break
+default:if(y>=0)
+y+=pad
+else
+y-=h+pad
+break
+case'@':y+=(s.type==C.NOTE?(((s.notes[s.nhd].pit+s.notes[0].pit)>>1)-
+18)*3:12)
+-h/2
+if(y>0){y2=y+h+pad+2
+if(y2>staff_tb[s.st].ann_top)
+staff_tb[s.st].ann_top=y2}else{y2=y-2
+if(y2<staff_tb[s.st].ann_bot)
+staff_tb[s.st].ann_bot=y2}
+break}
+if(an.type!='@'){if(y>=0)
+y_set(s.st,1,x,w,y+h+pad+2)
+else
+y_set(s.st,0,x,w,y-pad)}
+use_font(an.font)
+set_font(an.font)
+set_dscale(s.st)
+if(user.anno_start)
+user.anno_start("annot",an.istart,an.iend,x-2,y+h+2,w+4,h+4,s)
+xy_str(x,y+dy,an.text)
+if(user.anno_stop)
+user.anno_stop("annot",an.istart,an.iend,x-2,y+h+2,w+4,h+4,s)}
+function draw_all_chsy(){var s,san1,an,i,x,y,w,n_an=0,minmax=new Array(nstaff+1)
+function set_an_yu(j){var an,i,s,x,y,w
+for(s=san1;s;s=s.ts_next){an=s.a_gch
+if(!an)
+continue
+i=an.length-j-1
+an=an[i]
+if(!an)
+continue
+if(an.pos==C.SL_ABOVE){x=s.x+an.x
+w=an.text.wh[0]
+if(w&&x+w>realwidth)
+x=realwidth-w
+y=y_get(s.st,1,x,w)
+if(an.type=='g'&&y<minmax[s.st].yup)
+y=minmax[s.st].yup}else if(an.pos==C.SL_BELOW||an.pos==C.SL_HIDDEN){continue}else{x=s.x+an.x
+y=an.y}
+self.draw_gchord(i,s,x,y)}}
+function set_an_yl(i){var an,x,y,w
+for(var s=san1;s;s=s.ts_next){an=s.a_gch
+if(!an)
+continue
+an=an[i]
+if(!an||an.pos!=C.SL_BELOW)
+continue
+x=s.x+an.x
+w=an.text.wh[0]
+if(w&&x+w>realwidth)
+x=realwidth-w
+y=y_get(s.st,0,x,w)-2
+if(an.type=='g'&&y>minmax[s.st].ydn)
+y=minmax[s.st].ydn
+self.draw_gchord(i,s,x,y)}}
+for(i=0;i<=nstaff;i++)
+minmax[i]={ydn:staff_tb[i].botbar-3,yup:staff_tb[i].topbar+4}
+for(s=tsfirst;s;s=s.ts_next){an=s.a_gch
+if(!an)
+continue
+if(!san1)
+san1=s
+i=an.length
+if(i>n_an)
+n_an=i
+while(--i>=0){if(an[i].type=='g'){an=an[i]
+x=s.x+an.x
+w=an.text.wh[0]
+if(w&&x+w>realwidth)
+x=realwidth-w
+if(an.pos==C.SL_ABOVE){y=y_get(s.st,true,x,w)
+if(y>minmax[s.st].yup)
+minmax[s.st].yup=y}else if(an.pos==C.SL_BELOW){y=y_get(s.st,false,x,w)-2
+if(y<minmax[s.st].ydn)
+minmax[s.st].ydn=y}
+break}}}
+if(!san1)
+return
+set_dscale(-1)
+for(i=0;i<n_an;i++){set_an_yu(i)
+set_an_yl(i)}}
+init_tune()
+Abc.prototype.a_de=function(){return a_de}
+Abc.prototype.add_style=function(s){style+=s};Abc.prototype.anno_a=anno_a
+Abc.prototype.cfmt=function(){return cfmt};Abc.prototype.clone=clone;Abc.prototype.clr_sty=clr_sty
+Abc.prototype.deco_put=function(nm,s){a_dcn.push(nm)
+deco_cnv(s)}
+Abc.prototype.defs_add=defs_add
+Abc.prototype.dh_put=function(nm,s,nt){a_dcn.push(nm)
+dh_cnv(s,nt)}
+Abc.prototype.draw_meter=draw_meter
+Abc.prototype.draw_note=draw_note;Abc.prototype.errs=errs;Abc.prototype.font_class=font_class;Abc.prototype.gch_tr1=gch_tr1;Abc.prototype.get_bool=get_bool;Abc.prototype.get_cur_sy=function(){return cur_sy};Abc.prototype.get_curvoice=function(){return curvoice};Abc.prototype.get_delta_tb=function(){return delta_tb};Abc.prototype.get_decos=function(){return decos};Abc.prototype.get_font=get_font;Abc.prototype.get_font_style=function(){return font_style};Abc.prototype.get_glyphs=function(){return glyphs};Abc.prototype.get_img=function(){return img};Abc.prototype.get_lwidth=get_lwidth
+Abc.prototype.get_maps=function(){return maps};Abc.prototype.get_multi=function(){return multicol};Abc.prototype.get_newpage=function(){if(block.newpage){block.newpage=false;return true}};Abc.prototype.get_parse=function(){return parse}
+Abc.prototype.get_posy=function(){return posy}
+Abc.prototype.get_staff_tb=function(){return staff_tb};Abc.prototype.get_top_v=function(){return par_sy.top_voice};Abc.prototype.get_tsfirst=function(){return tsfirst};Abc.prototype.get_unit=get_unit;Abc.prototype.get_user=function(){return user}
+Abc.prototype.get_voice_tb=function(){return voice_tb};Abc.prototype.glout=glout
+Abc.prototype.glovar=function(){return glovar}
+Abc.prototype.info=function(){return info};Abc.prototype.new_block=new_block;Abc.prototype.out_arp=out_arp;Abc.prototype.out_deco_str=out_deco_str;Abc.prototype.out_deco_val=out_deco_val;Abc.prototype.out_ltr=out_ltr;Abc.prototype.param_set_font=param_set_font;Abc.prototype.part_seq=part_seq
+Abc.prototype.psdeco=empty_function;Abc.prototype.psxygl=empty_function;Abc.prototype.set_cur_sy=function(sy){cur_sy=sy};Abc.prototype.set_curvoice=function(p_v){curvoice=p_v}
+Abc.prototype.set_dscale=set_dscale;Abc.prototype.set_font=set_font;Abc.prototype.set_a_gch=function(s,a){a_gch=a;csan_add(s)}
+Abc.prototype.set_hl=set_hl
+Abc.prototype.set_map=set_map
+Abc.prototype.set_page=set_page
+Abc.prototype.set_pagef=function(){blkdiv=1}
+Abc.prototype.set_realwidth=function(v){realwidth=v}
+Abc.prototype.set_scale=set_scale;Abc.prototype.set_sscale=set_sscale
+Abc.prototype.set_tsfirst=function(s){tsfirst=s};Abc.prototype.set_v_param=set_v_param;Abc.prototype.str2svg=str2svg
+Abc.prototype.strwh=strwh;Abc.prototype.stv_g=function(){return stv_g};Abc.prototype.svg_flush=svg_flush;Abc.prototype.syntax=syntax;Abc.prototype.tunes=tunes
+Abc.prototype.unlksym=unlksym;Abc.prototype.use_font=use_font;Abc.prototype.vskip=vskip
+Abc.prototype.xy_str=xy_str;Abc.prototype.xygl=xygl;Abc.prototype.y_get=y_get
+Abc.prototype.y_set=y_set}
+var Abc=abc2svg.Abc
+if(typeof module=='object'&&typeof exports=='object'){exports.abc2svg=abc2svg;exports.Abc=Abc}
+if(!abc2svg.loadjs){abc2svg.loadjs=function(fn,onsuccess,onerror){if(onerror)
+onerror(fn)}}
+abc2svg.modules={ambitus:{},begingrid:{fn:'grid3'},beginps:{fn:'psvg'},break:{},capo:{},chordnames:{},clip:{},clairnote:{fn:'clair'},voicecombine:{fn:'combine'},diagram:{fn:'diag'},equalbars:{},fit2box:{},gamelan:{},grid:{},grid2:{},jazzchord:{},jianpu:{},mdnn:{},MIDI:{},nns:{},pageheight:{fn:'page'},pedline:{},percmap:{fn:'perc'},playswing:{fn:'swing'},roman:{},soloffs:{},sth:{},strtab:{},temperament:{fn:'temper'},temponame:{fn:'tempo'},tropt:{},titleformat:{fn:'tunhd'},nreq:0,load:function(file,relay,errmsg){function get_errmsg(){if(typeof user=='object'&&user.errmsg)
+return user.errmsg
+if(typeof abc2svg.printErr=='function')
+return abc2svg.printErr
+if(typeof alert=='function')
+return function(m){alert(m)}
+if(typeof console=='object')
+return console.log
+return function(){}}
+function load_end(){if(--abc2svg.modules.nreq==0)
+abc2svg.modules.cbf()}
+var m,i,fn,nreq_i=this.nreq,ls=file.match(/(%%|I:).+?\b/g)
+if(!ls)
+return true
+this.cbf=relay||function(){}
+this.errmsg=errmsg||get_errmsg()
+for(i=0;i<ls.length;i++){fn=ls[i].replace(/\n?(%%|I:)/,'')
+m=abc2svg.modules[fn]
+if(!m||m.loaded)
+continue
+m.loaded=true
+if(m.fn)
+fn=m.fn
+this.nreq++
+abc2svg.loadjs(fn+"-1.js",load_end,function(){abc2svg.modules.errmsg('Error loading the module '+fn)
+load_end()})}
+return this.nreq==nreq_i}}
+abc2svg.version="v1.22.33";abc2svg.vdate="2025-10-21"
