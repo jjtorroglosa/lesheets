@@ -105,8 +105,6 @@ const initAce = () => {
     // Listen for changes
     editor.session.on('change', debounce(() => render(), 100));
     editor.focus();
-    // Store initial content
-    const initialContent = editor.getValue();
     document.addEventListener("DOMContentLoaded", () => {
         const toggle = document.getElementById("vim-mode-toggler");
         toggle.onclick = toggleVimMode;
