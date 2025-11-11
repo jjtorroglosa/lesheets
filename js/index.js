@@ -12,7 +12,11 @@ const handleTextChange = (ev) => {
     localStorage.setItem("code", val);
 }
 const renderNasheet = (abc) => {
-    localStorage.setItem("code", JSON.stringify(abc));
+    try {
+        localStorage.setItem("code", JSON.stringify(abc));
+    } catch {
+        localStorage.setItem("code", "");
+    }
     const html = go_nasheetToJson(abc);
     const body = document.getElementById("root")
     body.innerHTML = html;
@@ -80,7 +84,12 @@ const render = () => {
 }
 
 const initAce = () => {
-    let prevCode = JSON.parse(localStorage.getItem("code"));
+    let prevCode;
+    try {
+        prevCode = JSON.parse(localStorage.getItem("code"));
+    } catch {
+        prevCode = "";
+    }
     if (prevCode) {
         document.getElementById("editor-text").textContent = prevCode;
     }

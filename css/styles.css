@@ -29,10 +29,6 @@ html{
     font-family: 'music';
 }
 
-#editor-text {
-    font-family: 'Courier';
-}
-
 .section-name {
     @apply border border-solid p-1 inline-block my-1 text-sm min-w-8 text-center;
 }
