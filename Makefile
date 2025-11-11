@@ -82,6 +82,7 @@ build/wasm.wasm: $(GO_FILES) $(TMPL_FILES) $(wildcard build/*.js)
 	#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js $@
 	@echo build-wasm
 	GOOS=js GOARCH=wasm GOTRACEBACK=all go build -ldflags="-s -w" -o $@ $(WASM_MAIN)
+	#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o $@ $(WASM_MAIN)
 	cp vendorjs/wasm_exec_go.js build/wasm_exec.js
 	cp js/index.js build/index.js
 

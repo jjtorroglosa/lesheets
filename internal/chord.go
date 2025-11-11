@@ -72,7 +72,8 @@ func FormatChord(chord string) string {
 		{regexp.MustCompile(`(?i)min7|m7`), "<small>m7</small>"},
 		{regexp.MustCompile(`(?i)/([♯♭]?[A-G1-7].*)`), "<span class=\"over\">/$1</span>"},
 		{regexp.MustCompile(`(?i)(\(.+\))`), "<small>$1</small>"},
-		{regexp.MustCompile(`(?i)ø`), "<small>ø</small>"},
+		{regexp.MustCompile(`(?i)ø`), "<sup>ø</sup>"},
+		{regexp.MustCompile(`(?i)°`), "<sup>o</sup>"},
 	}
 
 	for _, r := range replacements {
