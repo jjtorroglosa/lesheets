@@ -18,8 +18,10 @@ A/D Bmaj11 Cmaj6/Dm7 D7/Cmaj7(#11) Em7/D
 
 "bar note" C#7
 
+"alignment"
+!fermata!B !push!C !diamond-fermata!D Em7
 
-!diamond!Am7 | "double bar" C ||
+!diamond-fermata!Am7 B| "double bar" C ||
 
 
 "push"!push!Am7| C|"pull"!pull!Bmaj7/Cmin7 | "hold"!hold!Bmaj7/Cmin7 |

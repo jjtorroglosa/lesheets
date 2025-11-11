@@ -14,12 +14,8 @@
 }
 
 html{
-    font-size: 15px;
     font-family: "Helvetica Neue", "Helvetica", "Arial";
-}
-
-body {
-    @apply m-8 print:m-0;
+    @apply text-[15px] print:text-[12px];
 }
 
 @font-face {
@@ -61,6 +57,14 @@ body {
 
 .bt-svg {
     margin-top: 0.5rem;
+}
+.bt-svg svg{
+    width: 100%;
+}
+
+.multiline-backtick svg{
+    width: 100%;
+    height: fit-content;
 }
 
 .repeat-end {
