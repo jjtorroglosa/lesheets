@@ -86,7 +86,7 @@ func TestLexBacktick(t *testing.T) {
 func TestLexBacktickUnclosed(t *testing.T) {
 	lex := NewLexer("`backtick")
 	_, err := lex.ConsumeNextToken()
-	assert.Equal(t, ErrGeneric(lex.SurroundingString(), "`", string(lex.nextChar())), err)
+	assert.Equal(t, ErrGeneric(lex.SurroundingString(), "`", "EndOfFile"), err)
 }
 
 func TestLexMultilineBacktick(t *testing.T) {
@@ -100,7 +100,7 @@ func TestLexMultilineBacktick(t *testing.T) {
 func TestLexBacktickMultilineUnclosed(t *testing.T) {
 	lex := NewLexer("```backtick``")
 	_, err := lex.ConsumeNextToken()
-	assert.Equal(t, ErrGeneric(lex.SurroundingString(), "Closing ```", string(lex.nextChar())), err)
+	assert.Equal(t, ErrGeneric(lex.SurroundingString(), "Closing ```", "EndOfFile"), err)
 }
 
 func TestLexIgnoresComments(t *testing.T) {

@@ -55,7 +55,10 @@ func main() {
 		if err != nil {
 			log.Fatalf("error rendering list: %v", err)
 		}
-		internal.WriteEditorToHtmlFile(dev, "output/editor.html")
+		err = internal.WriteEditorToHtmlFile(dev, "output/editor.html")
+		if err != nil {
+			log.Fatalf("Error rendering editor: %v", err)
+		}
 	case "editor":
 		dev = false
 	case "serve":
@@ -81,7 +84,10 @@ func main() {
 		return
 	case "watch":
 		watch(*outputDir, 8008, func(f string) {
-			render(dev, f, *outputDir)
+			err = render(dev, f, *outputDir)
+			if err != nil {
+				log.Printf("Error rendering: %v\n", err)
+			}
 		}, files...)
 		return
 	}
@@ -108,7 +114,10 @@ func main() {
 				song.PrintSong()
 			}
 
-			render(false, inputFile, *outputDir)
+			err = render(false, inputFile, *outputDir)
+			if err != nil {
+				log.Printf("Error rendering file %s: %v\n", inputFile, err)
+			}
 		}
 	}
 }
@@ -131,7 +140,7 @@ func waitForFile(file string) {
 	}
 }
 
-func render(dev bool, inputFile string, outputDir string) {
+func render(dev bool, inputFile string, outputDir string) error {
 	waitForFile(inputFile)
 	defer timer.LogElapsedTime("WholeRender:" + inputFile)()
 	start := time.Now()
@@ -143,21 +152,31 @@ func render(dev bool, inputFile string, outputDir string) {
 	outputFilename := strings.TrimSuffix(inputFile, ".nns") + ".html"
 	err := os.MkdirAll("output/"+filepath.Dir(outputFilename), 0755)
 	if err != nil {
-		internal.Fatalf("Failed to create outupt dir: %v", err)
+		return fmt.Errorf("failed to create outupt dir: %w", err)
 	}
 
 	sourceCode, err := internal.ReadFile(inputFile)
 	if err != nil {
-		internal.Fatalf("error reading input file %s: %v", inputFile, err)
+		return fmt.Errorf("error reading input file %s: %w", inputFile, err)
 	}
 
 	song, err := internal.ParseSongFromStringWithFileName(inputFile, sourceCode)
 	if err != nil {
-		internal.Fatalf("error parsing song: %v", err)
+		log.Printf("Error rendering: %v\n", err)
+		// Write the error to the output html file
+		err = os.WriteFile(outputDir+"/"+outputFilename, []byte(internal.RenderError(err)), 0644)
+		if err != nil {
+			return err
+		}
+	} else {
+		fmt.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
+		err = internal.WriteSongHtmlToFile(dev, sourceCode, song, outputDir+"/"+outputFilename)
+		if err != nil {
+			return err
+		}
 	}
 
-	fmt.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
-	internal.WriteSongHtmlToFile(dev, sourceCode, song, outputDir+"/"+outputFilename)
+	return nil
 }
 
 func ExtractStatics(outputDir string) error {
@@ -208,9 +227,9 @@ func serve(outputDir string, port int) {
 	}
 }
 
-func watch(outputDir string, port int, render func(f string), files ...string) {
+func watch(outputDir string, port int, onChange func(f string), files ...string) {
 	for _, inputFile := range files {
-		render(inputFile)
+		onChange(inputFile)
 	}
 	hub := internal.NewSSEHub()
 
@@ -228,7 +247,7 @@ func watch(outputDir string, port int, render func(f string), files ...string) {
 	// Start listening for events.
 	go watcherFileLoop(w, files, func(f string) {
 		hub.Broadcast("start")
-		render(f)
+		onChange(f)
 		hub.Broadcast("reload")
 	})
 

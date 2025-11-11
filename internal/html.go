@@ -142,5 +142,7 @@ func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename strin
 }
 
 func RenderError(err error) string {
-	return "<pre>" + err.Error() + "</pre>"
+	buf := bytes.Buffer{}
+	template.HTMLEscape(&buf, []byte(err.Error()))
+	return "<pre>" + buf.String() + "</pre>"
 }

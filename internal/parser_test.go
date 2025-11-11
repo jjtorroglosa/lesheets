@@ -376,3 +376,8 @@ func TestPrettyPrint(t *testing.T) {
 	song, _ := ParseSongFromString("Amaj7(#11)|B|")
 	assert.Equal(t, "A△⁷<small>(♯¹¹)</small>", song.Sections[0].Lines[0].Bars[0].Chords[0].PrettyPrint())
 }
+
+func TestError(t *testing.T) {
+	_, err := ParseSongFromString("A\n:")
+	assert.Error(t, err)
+}
