@@ -9,45 +9,42 @@ const debounce = (fn, delay) => {
 const handleTextChange = (ev) => {
     const val = ev.target.value.trim();
     renderNasheet(val);
-    renderAbcs();
-
+    localStorage.setItem("code", val);
 }
 const renderNasheet = (abc) => {
+    localStorage.setItem("code", JSON.stringify(abc));
     const html = go_nasheetToJson(abc);
     const body = document.getElementById("root")
     body.innerHTML = html;
-    renderAbcs();
+    renderAbcScripts();
 }
 
 const initWasm = async () => {
+    if (typeof Go === "undefined") {
+        return;
+    }
     const go = new Go(); // Defined in wasm_exec.js
     const WASM_URL = '/wasm.wasm';
 
     var wasm;
-
-    var instance;
     if ('instantiateStreaming' in WebAssembly) {
-        instance = WebAssembly.instantiateStreaming(fetch(WASM_URL), go.importObject);
+        wasm = await WebAssembly.instantiateStreaming(fetch(WASM_URL), go.importObject);
     } else {
-        instance = fetch(WASM_URL)
+        wasm = await fetch(WASM_URL)
             .then(resp => resp.arrayBuffer())
-            .then(bytes => WebAssembly.instantiate(bytes, go.importObject))
+            .then(bytes => WebAssembly.instantiate(bytes, go.importObject));
     }
 
-    await instance.then(function(obj) {
-        wasm = obj.instance;
-        go.run(wasm);
-    })
+    go.run(wasm.instance);
 
-    // const textarea = document.getElementById("editor-text");
-    // textarea.addEventListener("input", debounce(handleTextChange, 200));
-
+    render();
     go.importObject.env = {
         'add': function(x, y) {
             return x + y
         }
         // ... other functions
     }
+    return Promise.resolve();
 }
 
 
@@ -55,49 +52,56 @@ const initTextarea = () => {
     const textarea = document.getElementById("editor-text");
     textarea.addEventListener("input", debounce(handleTextChange, 200));
 }
+
 let editor;
-let vimmode = false;
+const vimmode = () => localStorage.getItem("vimmode") == "true";
 const toggleVimMode = () => {
-    console.log("toggling", vimmode);
-    if (!vimmode) {
+    if (!vimmode()) {
         editor.setKeyboardHandler("ace/keyboard/vim");
-        vimmode = true;
+        localStorage.setItem("vimmode", "true");
     } else {
         editor.setKeyboardHandler(null);
-        vimmode = false;
+        localStorage.setItem("vimmode", "false");
     }
+}
+const getEditorContents = () => {
+    if (typeof ace !== "undefined") {
+        return editor.getValue();
+    }
+    const textarea = document.getElementById("editor-text");
+    return textarea.textContent
+}
+
+const render = () => {
+    if (typeof abc2svg === "undefined") {
+        return;
+    }
+    setTimeout(() => renderNasheet(getEditorContents()));
 }
 
 const initAce = () => {
+    let prevCode = JSON.parse(localStorage.getItem("code"));
+    if (prevCode) {
+        document.getElementById("editor-text").textContent = prevCode;
+    }
     editor = ace.edit("editor-contents");
     editor.setTheme("ace/theme/dracula");
     editor.session.setMode("ace/mode/markdown");
-    if (vimmode) {
+    if (vimmode()) {
         editor.setKeyboardHandler("ace/keyboard/vim");
     } else {
         editor.setKeyboardHandler(null);
     }
     editor.setFontSize("14px");
     // Listen for changes
-    editor.session.on('change', debounce(() => renderNasheet(editor.getValue()), 100));
+    editor.session.on('change', debounce(() => render(), 100));
     editor.focus();
     // Store initial content
     const initialContent = editor.getValue();
     document.addEventListener("DOMContentLoaded", () => {
-        const button = document.getElementById("toggleVimMode");
-        button.onclick = toggleVimMode;
-    });
-
-    // Listen for page unload
-    window.addEventListener("beforeunload", function(e) {
-        const currentContent = editor.getValue();
-
-        // Check if content has changed
-        if (currentContent !== initialContent) {
-            // Standard message for modern browsers (custom messages ignored)
-            e.preventDefault();
-            e.returnValue = ""; // Required for Chrome
-        }
+        const toggle = document.getElementById("vim-mode-toggler");
+        toggle.onclick = toggleVimMode;
+        toggle.checked = vimmode()
     });
 }
 
@@ -114,8 +118,9 @@ const renderAbc = (code) => {
             svg += p
         }
     }
-    const abc2 = new abc2svg.Abc(user);
-    abc2.tosvg("", code, 0, code.length);
+    const abcInstance = new abc2svg.Abc(user);
+    abcInstance.tosvg("", code, 0, code.length);
+    // Hack to remove the undefined coming from the title, or something
     const prefix = "undefined";
     if (svg.startsWith(prefix)) {
         svg = svg.slice(prefix.length);
@@ -123,7 +128,7 @@ const renderAbc = (code) => {
     return svg;
 };
 
-const renderAbcs = () => {
+const renderAbcScripts = () => {
     const abcScripts = document.querySelectorAll('script[type="text/vnd.abc"]');
 
     abcScripts.forEach(i => {
@@ -132,6 +137,14 @@ const renderAbcs = () => {
         i.outerHTML = svg;
     });
 }
-initWasm();
-initAce();
-//initTextarea();
+
+const init = () => {
+    initWasm();
+    if (typeof ace !== "undefined") {
+        initAce();
+    } else {
+        initTextarea();
+    }
+}
+
+init();

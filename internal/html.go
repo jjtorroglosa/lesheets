@@ -56,6 +56,10 @@ func RenderListHTML(inputFiles []string) {
 			Href: href,
 		})
 	}
+	files = append(files, Link{
+		Name: "editor.html",
+		Href: "editor.html",
+	})
 
 	defer f.Close()
 	var buf bytes.Buffer
@@ -67,16 +71,23 @@ func RenderListHTML(inputFiles []string) {
 	}
 }
 
-func RenderSongHtml(dev bool, wholeHtml bool, sourceCode string, song *Song, filename string) string {
+type RenderConfig struct {
+	WithLiveReload bool
+	WholeHtml      bool
+	WithEditor     bool
+}
+
+func RenderSongHtml(cfg RenderConfig, sourceCode string, song *Song, filename string) string {
 	defer timer.LogElapsedTime("RenderHtml")()
 
 	params := map[string]any{
 		"Song":   song,
-		"Dev":    dev,
+		"Dev":    cfg.WithLiveReload,
 		"Abc":    sourceCode,
-		"Whole":  wholeHtml,
-		"Editor": true,
+		"Whole":  cfg.WholeHtml,
+		"Editor": cfg.WithEditor,
 	}
+
 	var buf bytes.Buffer
 	tmpl := "base.html"
 
@@ -89,13 +100,33 @@ func RenderSongHtml(dev bool, wholeHtml bool, sourceCode string, song *Song, fil
 	return res
 }
 
+func WriteEditorToHtmlFile(dev bool, filename string) {
+	f, err := os.Create(filename)
+	if err != nil {
+		Fatalf("Failed to create HTML file: %v", filename)
+	}
+	defer f.Close()
+	htmlOut := []byte(RenderSongHtml(RenderConfig{
+		WithLiveReload: dev,
+		WholeHtml:      true,
+		WithEditor:     true,
+	}, "", nil, filename))
+	if err := os.WriteFile(filename, htmlOut, 0644); err != nil {
+		log.Fatalf("Write error: %v", err)
+	}
+}
+
 func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename string) {
 	f, err := os.Create(filename)
 	if err != nil {
 		Fatalf("Failed to create HTML file: %v", filename)
 	}
 	defer f.Close()
-	htmlOut := []byte(RenderSongHtml(dev, true, sourceCode, song, filename))
+	htmlOut := []byte(RenderSongHtml(RenderConfig{
+		WithLiveReload: dev,
+		WholeHtml:      true,
+		WithEditor:     false,
+	}, sourceCode, song, filename))
 	if err := os.WriteFile(filename, htmlOut, 0644); err != nil {
 		log.Fatalf("Write error: %v", err)
 	}

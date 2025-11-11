@@ -18,6 +18,9 @@ tailwind:
 build/compiled.css: css/styles.css
 	yarn tailwindcss --input css/styles.css --output build/compiled.css
 
+editor:
+	yarn tailwindcss --input css/styles.css --output build/compiled.css
+	make js wasm nasheets && ./nasheets editor
 .PHONY: dev
 dev:
 	yarn run concurrently \
@@ -59,7 +62,7 @@ js:
 	@echo build-js
 	cp fonts/*.woff2 fonts/*.ttf js/*.js vendorjs/*.js build/
 
-nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css build/*.js
+nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css $(wildcard build/*.js)
 	@echo build-exec
 	$(GO) build $(GO_FLAGS) -o $@ $(MAIN)
 
@@ -84,4 +87,4 @@ build/wasm.wasm: $(GO_FILES) $(TMPL_FILES) $(wildcard build/*.js)
 
 .PHONY: clean
 clean:
-	rm output/* build/*
+	rm -rf output/* build/*

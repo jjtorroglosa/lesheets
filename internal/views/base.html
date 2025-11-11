@@ -4,30 +4,42 @@
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width,initial-scale=1.0">
+            {{- if .Editor }}
+            <title>Nasheets</title>
+            {{- else }}
             <title>{{- index .Song.FrontMatter "title"}}</title>
-                <link href="/compiled.css?t=2" rel="stylesheet">
+            {{- end }}
+
+            <link href="/compiled.css?t=2" rel="stylesheet">
             {{/*<script src="/abcjs-basic-min.js"></script>*/}}
 
 
-            <script src="/wasm_exec.js"></script>
-
             {{- if .Editor}}
+                <script src="/wasm_exec.js"></script>
                 <script src="/ace.js" type="text/javascript" charset="utf-8"></script>
                 <script src="/abc2svg-1.js" type="text/javascript" charset="utf-8"></script>
             {{- end }}
             <script type="module" src="/index.js"></script>
         </head>
         <body class="h-screen bg-white print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
-            <div id="layout" class="flex h-full flex-row overflow-hidden select-none p-4 print:m-0 ">
-                {{- if .Editor}}
-                    <div id="editor" class="shrink-0 w-6/14 print:hidden bg-gray-800">
-                        <button id="toggleVimMode" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-300">Toggle vim mode</button>
-                        <div id="editor-contents" class="w-full h-full p-4"><textarea id="editor-text" class="">{{- .Abc }}</textarea></div>
-                    </div>
-                    <div id="resizer" class="h-full w-[5px] shrink-0 print:hidden bg-gray-300 cursor-col-resize"></div>
-                {{- end}}
-                <div id="root" class="@container h-full w-full pl-4 overflow-auto">
-                    {{- template "root" . }}
+            <div id="layout" class="flex h-full flex-row select-none p-4 print:p-0 print:m-0">
+                <div id="editor" class="shrink-0 w-6/14 print:hidden {{if not .Editor}}hidden{{end}}">
+                    <!-- Toggle switch vim mode -->
+                    <label class="inline-flex items-center cursor-pointer relative">
+                      <input id="vim-mode-toggler" type="checkbox" class="peer sr-only" />
+                      <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors duration-200"></div>
+                      <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200
+                                   peer-checked:translate-x-4"></span>
+                      <span class="ml-3 text-sm font-medium select-none">Vim mode</span>
+                    </label>
+
+                    <div id="editor-contents" class="w-full h-full p-4"><textarea id="editor-text" class="">{{- .Abc }}</textarea></div>
+                </div>
+                <div id="resizer" class="h-full w-[5px] shrink-0 print:hidden bg-gray-300 cursor-col-resize {{if not .Editor}}hidden{{end}}"></div>
+                <div id="root" class="@container h-full w-full pl-4 print:pl-0 ">
+                    {{- if not .Editor}}
+                        {{- template "root" . }}
+                    {{end}}
                 </div>
             </div>
 

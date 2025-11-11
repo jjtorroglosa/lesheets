@@ -18,5 +18,20 @@ if (localStorage.theme === "dark" || preferredDark) {
     document.documentElement.setAttribute('data-theme', "light")
     current = "light";
 }
+
+
+
+
+const copyDivText = () => {
+    const div = document.getElementById("editor-text");
+    const text = div.textContent; // or textContent
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            alert("Text copied to clipboard!");
+        })
+        .catch(err => {
+            console.error("Failed to copy text: ", err);
+        });
+}
 </script>
 {{- end}}

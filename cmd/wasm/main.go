@@ -9,13 +9,22 @@ import (
 )
 
 func nasheetToJson(this js.Value, args []js.Value) any {
-	s := args[0].String() // Convert JS string to Go string
-	song, err := internal.ParseSongFromString(s)
+	inputStr := args[0].String() // Convert JS string to Go string
+	song, err := internal.ParseSongFromString(inputStr)
 	if err != nil {
 		return err
 	}
-	j := internal.RenderSongHtml(false, false, s, song, "some")
-	return string(j)
+	html := internal.RenderSongHtml(
+		internal.RenderConfig{
+			WithLiveReload: false,
+			WholeHtml:      false,
+			WithEditor:     true,
+		},
+		inputStr,
+		song,
+		"some",
+	)
+	return string(html)
 }
 
 func main() {

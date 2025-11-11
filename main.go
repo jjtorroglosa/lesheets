@@ -40,27 +40,41 @@ func main() {
 	}
 	i := 0
 	cmd := args[i]
-	i++
 	files := []string{}
-	for ; i < len(args); i++ {
-		files = append(files, args[i])
+	dev := true
+	switch cmd {
+	case "html":
+		dev = false
+		fallthrough
+	case "watch":
+		i++
+		for ; i < len(args); i++ {
+			files = append(files, args[i])
+		}
+		internal.RenderListHTML(files)
+		internal.WriteEditorToHtmlFile(dev, "output/editor.html")
+	case "editor":
+		dev = false
+	case "serve":
 	}
-	internal.RenderListHTML(files)
+
+	err := ExtractStatics(*outputDir)
+	if err != nil {
+		log.Fatalf("error extracting statics: %v", err)
+	}
 
 	// Read the song file
 	switch cmd {
+	case "editor":
+		internal.RenderListHTML(files)
+		internal.WriteEditorToHtmlFile(dev, "output/editor.html")
 	case "html":
-		err := ExtractStatics(*outputDir)
-		if err != nil {
-			log.Fatalf("error extracting statics: %v", err)
-		}
 	case "serve":
 		serve(*outputDir, 8008)
 		return
-
 	case "watch":
 		watch(*outputDir, 8008, func(f string) {
-			render(true, f, *outputDir)
+			render(dev, f, *outputDir)
 		}, files...)
 		return
 	}
@@ -175,11 +189,6 @@ func ExtractStatics(outputDir string) error {
 }
 
 func serve(outputDir string, port int) {
-	err := ExtractStatics(outputDir)
-	if err != nil {
-		log.Fatalf("error extracting statics: %v", err)
-	}
-
 	// Serve static files (HTML/CSS) from outputDir
 	fs := http.FileServer(http.Dir(outputDir))
 
@@ -193,11 +202,6 @@ func serve(outputDir string, port int) {
 }
 
 func watch(outputDir string, port int, render func(f string), files ...string) {
-
-	err := ExtractStatics(outputDir)
-	if err != nil {
-		log.Fatalf("error extracting statics: %v", err)
-	}
 	for _, inputFile := range files {
 		render(inputFile)
 	}
