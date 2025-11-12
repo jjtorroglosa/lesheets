@@ -13,10 +13,10 @@ ENTR:= entr
 tailwind:
 	@echo tailwind
 	mkdir -p build
-	yarn tailwindcss --input css/styles.css --output build/compiled.css --watch
+	NODE_ENV=production yarn tailwindcss --input css/styles.css --output build/compiled.css --minify --watch
 
 build/compiled.css: css/styles.css
-	yarn tailwindcss --input css/styles.css --output build/compiled.css
+	NODE_ENV=production yarn tailwindcss --input css/styles.css --output build/compiled.css --minify
 
 editor:
 	yarn tailwindcss --input css/styles.css --output build/compiled.css
@@ -66,9 +66,8 @@ build/bundle.js: $(ABC2SVG) $(JS_FILES)
 	node build.mjs
 
 $(ABC2SVG): vendorjs/abc2svg-1.js vendorjs/abc2svg-caller.js
-	# Concat the vendored abc2svg code with the -caller, to export the RenderFunction
+	# Concat the vendored abc2svg code with the abc2svg-caller, to export the RenderFunction
 	cat vendorjs/abc2svg-1.js vendorjs/abc2svg-caller.js > $@
-
 
 nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css $(wildcard build/*.js)
 	@echo build-exec
@@ -91,8 +90,6 @@ build/wasm.wasm: $(GO_FILES) $(TMPL_FILES) $(wildcard build/*.js)
 	@echo build-wasm
 	GOOS=js GOARCH=wasm GOTRACEBACK=all go build -ldflags="-s -w" -o $@ $(WASM_MAIN)
 	#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o $@ $(WASM_MAIN)
-	cp vendorjs/wasm_exec_go.js build/wasm_exec.js
-	cp js/index.js build/index.js
 
 .PHONY: clean
 clean:

@@ -120,3 +120,26 @@ html{
   transform: rotate(-45deg);
 }
 
+.ace_scrollbar {
+    color: #0f0 !important;
+}
+.ace_gutter-active-line {
+    @apply bg-gray-600!;
+}
+.ace_gutter, .ace_scroller, .ace_scrollbar {
+    @apply bg-gray-800! text-gray-300!;
+    color: #f0f0f0;
+}
+.ace_print-margin {
+    width: 1px;
+    @apply bg-gray-600!;
+}
+.ace_cursor {
+    @apply text-blue-400! bg-gray-800! w-1!;
+}
+.normal-mode .ace_cursor {
+    @apply bg-blue-400! border-blue-300! w-2! opacity-60! ;
+}
+.ace_selection {
+    @apply bg-gray-600! text-gray-900!;
+}

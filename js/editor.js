@@ -1,14 +1,11 @@
-import { RenderSvgFromAbc } from '../vendorjs/abc2svg-compiled.js';
-import '../vendorjs/wasm_exec_go.js'; // import for side effects
+import { initWasm } from './wasm.js';
 
-import ace from 'ace-builds/src-noconflict/ace.js';
+const handleTextChange = (ev) => {
+    const val = ev.target.value.trim();
+    render(val);
+    localStorage.setItem("code", val);
+}
 
-import 'ace-builds/src-noconflict/keybinding-vim.js';
-import 'ace-builds/src-noconflict/mode-markdown.js';
-import 'ace-builds/src-noconflict/theme-dracula.js';
-
-// optional: import workers
-import 'ace-builds/src-noconflict/worker-javascript.js';
 
 const debounce = (fn, delay) => {
     let timeoutId;
@@ -18,126 +15,41 @@ const debounce = (fn, delay) => {
     };
 }
 
-const handleTextChange = (ev) => {
-    const val = ev.target.value.trim();
-    renderNasheet(val);
-    localStorage.setItem("code", val);
-}
-const renderNasheet = (abc) => {
-    try {
-        localStorage.setItem("code", JSON.stringify(abc));
-    } catch {
-        localStorage.setItem("code", "");
+const createRenderer = (renderSvgFromAbc, toHtml) => {
+    const renderAbcScripts = () => {
+        const abcScripts = document.querySelectorAll('script[type="text/vnd.abc"]');
+
+        abcScripts.forEach(i => {
+            const code = i.textContent.trim();
+            const svg = renderSvgFromAbc(code);
+            i.outerHTML = svg;
+        });
     }
-    const html = go_nasheetToJson(abc);
-    const body = document.getElementById("root")
-    body.innerHTML = html;
-    renderAbcScripts();
-}
-
-const initWasm = async () => {
-    if (typeof Go === "undefined") {
-        return;
-    }
-    const go = new Go(); // Defined in wasm_exec.js
-    const WASM_URL = '/wasm.wasm';
-
-    var wasm;
-    if ('instantiateStreaming' in WebAssembly) {
-        wasm = await WebAssembly.instantiateStreaming(fetch(WASM_URL), go.importObject);
-    } else {
-        wasm = await fetch(WASM_URL)
-            .then(resp => resp.arrayBuffer())
-            .then(bytes => WebAssembly.instantiate(bytes, go.importObject));
-    }
-
-    go.run(wasm.instance);
-
-    render();
-    go.importObject.env = {
-        'add': function(x, y) {
-            return x + y
+    const render = (nasheet) => {
+        console.time("render")
+        try {
+            localStorage.setItem("code", JSON.stringify(nasheet));
+        } catch {
+            localStorage.setItem("code", "");
         }
-        // ... other functions
+        const html = toHtml(nasheet);
+        const body = document.getElementById("root")
+        body.innerHTML = html;
+        renderAbcScripts();
+        console.timeEnd("render")
     }
-    return Promise.resolve();
+    return render;
 }
 
-
-const initTextarea = () => {
-    const textarea = document.getElementById("editor-text");
-    textarea.addEventListener("input", debounce(handleTextChange, 200));
-}
-
-let editor;
-const vimmode = () => localStorage.getItem("vimmode") == "true";
-const toggleVimMode = () => {
-    if (!vimmode()) {
-        editor.setKeyboardHandler("ace/keyboard/vim");
-        localStorage.setItem("vimmode", "true");
-    } else {
-        editor.setKeyboardHandler(null);
-        localStorage.setItem("vimmode", "false");
-    }
-}
-const getEditorContents = () => {
-    if (typeof ace !== "undefined") {
-        return editor.getValue();
-    }
-    const textarea = document.getElementById("editor-text");
-    return textarea.textContent
-}
-
-const render = () => {
-    setTimeout(() => renderNasheet(getEditorContents()));
-}
-
-const initAce = () => {
-    let prevCode;
-    try {
-        prevCode = JSON.parse(localStorage.getItem("code"));
-    } catch {
-        prevCode = "";
-    }
-    if (prevCode) {
-        document.getElementById("editor-text").textContent = prevCode;
-    }
-    editor = ace.edit("editor-contents");
-    editor.setTheme("ace/theme/dracula");
-    if (vimmode()) {
-        editor.setKeyboardHandler("ace/keyboard/vim");
-    } else {
-        editor.setKeyboardHandler(null);
-    }
-    editor.setFontSize("14px");
-    // Listen for changes
-    editor.session.on('change', debounce(() => render(), 100));
-    editor.focus();
-    document.addEventListener("DOMContentLoaded", () => {
-        const toggle = document.getElementById("vim-mode-toggler");
-        toggle.onclick = toggleVimMode;
-        toggle.checked = vimmode()
-    });
-}
-
-const renderAbcScripts = () => {
-    const abcScripts = document.querySelectorAll('script[type="text/vnd.abc"]');
-
-    abcScripts.forEach(i => {
-        const code = i.textContent.trim();
-        const svg = RenderSvgFromAbc(code);
-        i.outerHTML = svg;
-    });
-}
-
-const init = () => {
-    initWasm();
-    console.log("ace.edit", ace, ace.edit);
-    if (typeof ace !== "undefined") {
-        initAce();
-    } else {
-        initTextarea();
-    }
+const init = async () => {
+    const wasm = await initWasm();
+    const abc2svg = await import('abc2svg');
+    const render = createRenderer(abc2svg.RenderSvgFromAbc, wasm.toHtml);
+    const ace = await import("./ace.js");
+    const onChange = debounce(() => render(ace.getEditorContents()), 200);
+    ace.initAce(onChange);
+    // Trigger first render();
+    onChange();
 }
 
 init();

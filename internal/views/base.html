@@ -11,13 +11,11 @@
             {{- end }}
 
             <link href="/compiled.css?t=2" rel="stylesheet">
-            {{/*<script src="/abcjs-basic-min.js"></script>*/}}
-
 
             {{- if .Editor}}
-                {{/*<script src="/wasm_exec.js"></script>*/}}
+                <script type="module" src="/editor.js"></script>
             {{- end }}
-            <script type="module" src="/bundle.js"></script>
+            <script type="module" src="/sheet.js"></script>
         </head>
         <body class="h-screen bg-white print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
             <div id="layout" class="flex h-full flex-row select-none p-4 print:p-0 print:m-0">
@@ -34,7 +32,7 @@
                     <div id="editor-contents" class="w-full h-full p-4"><textarea id="editor-text" class="font-mono">{{- .Abc }}</textarea></div>
                 </div>
                 <div id="resizer" class="h-full w-[5px] shrink-0 print:hidden bg-gray-300 cursor-col-resize {{if not .Editor}}hidden{{end}}"></div>
-                <div id="root" class="@container h-full w-full pl-4 print:pl-0 ">
+                <div id="root" class="@container overflow-auto print:overflow-visible h-full w-full pl-4 print:pl-0 ">
                     {{- if not .Editor}}
                         {{- template "root" . }}
                     {{end}}
@@ -44,8 +42,6 @@
             {{- if .Dev }}
             <script src="/livereload.js"></script>
             {{- end }}
-
-            {{ template "ui" }}
 
             {{- if .Editor}}
             <script>
