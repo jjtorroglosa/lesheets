@@ -1,4 +1,14 @@
 import { RenderSvgFromAbc } from '../vendorjs/abc2svg-compiled.js';
+import '../vendorjs/wasm_exec_go.js'; // import for side effects
+
+import ace from 'ace-builds/src-noconflict/ace.js';
+
+import 'ace-builds/src-noconflict/keybinding-vim.js';
+import 'ace-builds/src-noconflict/mode-markdown.js';
+import 'ace-builds/src-noconflict/theme-dracula.js';
+
+// optional: import workers
+import 'ace-builds/src-noconflict/worker-javascript.js';
 
 const debounce = (fn, delay) => {
     let timeoutId;
@@ -94,7 +104,6 @@ const initAce = () => {
     }
     editor = ace.edit("editor-contents");
     editor.setTheme("ace/theme/dracula");
-    editor.session.setMode("ace/mode/markdown");
     if (vimmode()) {
         editor.setKeyboardHandler("ace/keyboard/vim");
     } else {
@@ -123,6 +132,7 @@ const renderAbcScripts = () => {
 
 const init = () => {
     initWasm();
+    console.log("ace.edit", ace, ace.edit);
     if (typeof ace !== "undefined") {
         initAce();
     } else {

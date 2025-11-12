@@ -409,6 +409,11 @@ abc2svg@^1.22.1:
   resolved "https://registry.yarnpkg.com/abc2svg/-/abc2svg-1.22.1.tgz#62c28a36f800496bd6f486e581130360c961328a"
   integrity sha512-Ec2GAjd1gUFJiSCFapMYD9ZcTuhGEeslsIOW53z9P09B3OMz2FqldoPebOLYd3aUlQyVll/oDbtw3ZX8WbjLrg==
 
+ace-builds@^1.43.4:
+  version "1.43.4"
+  resolved "https://registry.yarnpkg.com/ace-builds/-/ace-builds-1.43.4.tgz#126830ba77424f5f73cf48faa352e5fa3b345a90"
+  integrity sha512-8hAxVfo2ImICd69BWlZwZlxe9rxDGDjuUhh+WeWgGDvfBCE+r3lkynkQvIovDz4jcMi8O7bsEaFygaDT+h9sBA==
+
 ansi-regex@^5.0.1:
   version "5.0.1"
   resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-5.0.1.tgz#082cb2c89c9fe8659a311a53bd6a4dc5301db304"

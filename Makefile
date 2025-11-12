@@ -60,7 +60,7 @@ watch-js:
 ABC2SVG :=vendorjs/abc2svg-compiled.js
 .PHONY: js
 js: build/bundle.js
-build/bundle.js: $(ABC2SVG)
+build/bundle.js: $(ABC2SVG) $(JS_FILES)
 	@echo build-js
 	cp fonts/*.woff2 fonts/*.ttf build/
 	node build.mjs

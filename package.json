@@ -10,5 +10,8 @@
     "scripts": {
         "build": "node build.mjs",
         "watch": "node build.mjs --watch"
+    },
+    "dependencies": {
+        "ace-builds": "^1.43.4"
     }
 }
