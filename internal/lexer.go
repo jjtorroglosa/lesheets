@@ -54,7 +54,7 @@ func (l *Lexer) getPos(pos int, length int) string {
 	if pos < 0 {
 		return "BeginningOfFile"
 	}
-	if pos+length >= len(l.input) {
+	if pos+length > len(l.input) {
 		return "EndOfFile"
 	}
 	return l.input[pos : pos+length]

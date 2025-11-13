@@ -381,3 +381,10 @@ func TestError(t *testing.T) {
 	_, err := ParseSongFromString("A\n:")
 	assert.Error(t, err)
 }
+
+func TestParseRepeatEnd(t *testing.T) {
+	lex := NewParser(NewLexer("C :||"))
+
+	_, err := lex.ParseSong()
+	assert.NoError(t, err)
+}
