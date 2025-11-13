@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./ace.css";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
@@ -120,26 +121,33 @@ html{
   transform: rotate(-45deg);
 }
 
-.ace_scrollbar {
-    color: #0f0 !important;
+.tools button:first-of-type {
+    @apply ml-4 mt-0;
 }
-.ace_gutter-active-line {
-    @apply bg-gray-600!;
+#resizer.collapsed {
+    @apply hidden;
 }
-.ace_gutter, .ace_scroller, .ace_scrollbar {
-    @apply bg-gray-800! text-gray-300!;
-    color: #f0f0f0;
+.collapsed button:not(#collapse-button), .collapsed .toggle {
+    @apply hidden;
 }
-.ace_print-margin {
-    width: 1px;
-    @apply bg-gray-600!;
+.collapsed .tools button:first-of-type {
+    @apply ml-0;
 }
-.ace_cursor {
-    @apply text-blue-400! bg-gray-800! w-1!;
+.collapsed .tools {
+    @apply ml-0 flex flex-col;
 }
-.normal-mode .ace_cursor {
-    @apply bg-blue-400! border-blue-300! w-2! opacity-60! ;
+
+.tools button {
+    @apply border border-gray-700 dark:border-gray-300 px-0.5 rounded-sm shadow-md/20 text-sm min-w-6 max-w-16;
 }
-.ace_selection {
-    @apply bg-gray-600! text-gray-900!;
+
+#layout.collapsed {
+    @apply flex-col;
 }
+#editor.collapsed {
+    @apply h-auto w-auto;
+}
+.collapsed #editor-contents{
+    @apply hidden;
+}
+

@@ -17,12 +17,5 @@ export const initWasm = async () => {
     }
 
     go.run(wasm.instance);
-
-    go.importObject.env = {
-        'add': function(x, y) {
-            return x + y
-        }
-        // ... other functions
-    }
     return { toHtml: go_nasheetToJson };
 }

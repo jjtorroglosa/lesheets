@@ -1,3 +1,5 @@
+import { abc2svg } from './abc2svg-1.cjs';
+
 const RenderSvgFromAbc = (code) => {
     let svg = "";
     let error = "";
@@ -9,17 +11,14 @@ const RenderSvgFromAbc = (code) => {
             error = msg;
         },
         img_out: function(p) {		// image output
-            svg += p
+            if (p) {
+                svg += p
+            }
         }
     }
     const abcInstance = new abc2svg.Abc(user);
     abcInstance.tosvg("", code, 0, code.length);
 
-    // Mega hack to remove the undefined coming from the title, or something...
-    const prefix = "undefined";
-    if (svg.startsWith(prefix)) {
-        svg = svg.slice(prefix.length);
-    }
     if (error != "") {
         const div = document.createElement('div');
         div.textContent = error;
@@ -28,4 +27,4 @@ const RenderSvgFromAbc = (code) => {
     }
     return svg;
 };
-export { abc2svg, RenderSvgFromAbc };
+export { RenderSvgFromAbc };

@@ -1,3 +1,6 @@
+import { createActions } from './actions.js';
+import { time, timeEnd } from './logger.js';
+import './resizer.js';
 import { initWasm } from './wasm.js';
 
 const handleTextChange = (ev) => {
@@ -26,19 +29,23 @@ const createRenderer = (renderSvgFromAbc, toHtml) => {
         });
     }
     const render = (nasheet) => {
-        console.time("render")
+        time("render")
         try {
             localStorage.setItem("code", JSON.stringify(nasheet));
         } catch {
             localStorage.setItem("code", "");
         }
+        time("renderHtml")
         const html = toHtml(nasheet);
+        timeEnd("renderHtml")
         const body = document.getElementById("root")
         body.innerHTML = html;
+        time("renderAbcScripts")
         renderAbcScripts();
-        console.timeEnd("render")
+        timeEnd("renderAbcScripts")
+        timeEnd("render")
     }
-    return render;
+    return debounce(render, 200);
 }
 
 const init = async () => {
@@ -46,10 +53,11 @@ const init = async () => {
     const abc2svg = await import('abc2svg');
     const render = createRenderer(abc2svg.RenderSvgFromAbc, wasm.toHtml);
     const ace = await import("./ace.js");
-    const onChange = debounce(() => render(ace.getEditorContents()), 200);
-    ace.initAce(onChange);
+    const { editor, setOnChange } = ace.initAce();
+    setOnChange(() => render(editor.getValue()));
     // Trigger first render();
-    onChange();
+    render(editor.getValue());
+    document.actions = createActions(editor);
 }
 
 init();
