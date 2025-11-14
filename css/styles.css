@@ -121,33 +121,25 @@ html{
   transform: rotate(-45deg);
 }
 
-.tools button:first-of-type {
-    @apply ml-4 mt-0;
-}
-#resizer.collapsed {
+#resizer.editor-collapsed {
     @apply hidden;
 }
-.collapsed button:not(#collapse-button), .collapsed .toggle {
+
+.editor-collapsed button:not(#collapse-button), .editor-collapsed .toggle {
     @apply hidden;
-}
-.collapsed .tools button:first-of-type {
-    @apply ml-0;
-}
-.collapsed .tools {
-    @apply ml-0 flex flex-col;
 }
 
 .tools button {
     @apply border border-gray-700 dark:border-gray-300 px-0.5 rounded-sm shadow-md/20 text-sm min-w-6 max-w-16;
 }
 
-#layout.collapsed {
-    @apply flex-col;
+#editor.editor-collapsed {
+    @apply h-auto w-0;
 }
-#editor.collapsed {
-    @apply h-auto w-auto;
-}
-.collapsed #editor-contents{
-    @apply hidden;
+.editor-collapsed #editor-contents{
+    @apply w-0;
 }
 
+.toolbar-collapsed {
+    @appy hidden;
+}
