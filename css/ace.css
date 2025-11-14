@@ -1,0 +1,25 @@
+.ace-tm {
+    @apply dark:bg-gray-800!;
+}
+.ace_gutter-active-line {
+    @apply dark:bg-gray-700!;
+}
+.ace_gutter, .ace_scroller, .ace_scrollbar {
+    @apply dark:bg-gray-800! bg-gray-100! text-gray-800! dark:text-gray-300!;
+}
+.ace_gutter {
+    @apply text-gray-500! dark:text-gray-500!;
+}
+.ace_print-margin {
+    width: 1px;
+    @apply dark:bg-gray-600!;
+}
+.ace_cursor {
+    @apply text-blue-400! dark:bg-gray-800! bg-gray-100! w-1!;
+}
+.normal-mode .ace_cursor {
+    @apply bg-blue-400! border-blue-300! w-2! opacity-60! ;
+}
+.ace_selection {
+    @apply dark:bg-gray-600! dark:text-gray-900!;
+}

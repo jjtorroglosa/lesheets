@@ -54,7 +54,7 @@ func (l *Lexer) getPos(pos int, length int) string {
 	if pos < 0 {
 		return "BeginningOfFile"
 	}
-	if pos+length >= len(l.input) {
+	if pos+length > len(l.input) {
 		return "EndOfFile"
 	}
 	return l.input[pos : pos+length]
@@ -292,7 +292,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	}
 
 	// Headers
-	if ch == '#' && (l.getPos(l.pos-1, 1) == "" || l.getPos(l.pos-1, 1) == "\n") {
+	if ch == '#' && (l.getPos(l.pos-1, 1) == "BeginningOfFile" || l.getPos(l.pos-1, 1) == "" || l.getPos(l.pos-1, 1) == "\n") {
 		tokenType := TokenHeader
 		for l.pos < len(l.input) && l.input[l.pos] == '#' {
 			l.advance()

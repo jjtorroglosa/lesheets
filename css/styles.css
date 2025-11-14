@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./ace.css";
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
@@ -118,5 +119,35 @@ html{
   top:auto;
   display: inline-block;
   transform: rotate(-45deg);
+}
+
+.tools button:first-of-type {
+    @apply ml-4 mt-0;
+}
+#resizer.collapsed {
+    @apply hidden;
+}
+.collapsed button:not(#collapse-button), .collapsed .toggle {
+    @apply hidden;
+}
+.collapsed .tools button:first-of-type {
+    @apply ml-0;
+}
+.collapsed .tools {
+    @apply ml-0 flex flex-col;
+}
+
+.tools button {
+    @apply border border-gray-700 dark:border-gray-300 px-0.5 rounded-sm shadow-md/20 text-sm min-w-6 max-w-16;
+}
+
+#layout.collapsed {
+    @apply flex-col;
+}
+#editor.collapsed {
+    @apply h-auto w-auto;
+}
+.collapsed #editor-contents{
+    @apply hidden;
 }
 

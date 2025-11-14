@@ -2,34 +2,45 @@ GO := GOAMD64=v2 GOARM64=v8.0 GOPROXY=https://athens.jjtorroglosa.com,direct go
 GO_FLAGS = -ldflags -w
 
 GO_FILES := $(shell find . -name "*.go")
-JS_FILES := $(wildcard js/*.js vendorjs/*.js)
-TMPL_FILES := $(wildcard internal/views/*.html)
+ABC2SVG := vendorjs/abc2svg-compiled.js
+JS_INPUT_FILES = $(wildcard js/* vendorjs/*.js)
+JS_OUTPUT_FILES := build/editor.js build/sheet.js build/livereload.js
+TMPL_FILES = $(wildcard internal/views/*.html)
 NASHEETS := ./nasheets
 MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
 ENTR:= entr
 
-.PHONY: tailwind
-tailwind:
-	@echo tailwind
+.PHONY: watch-css
+watch-css:
+	@echo css
 	mkdir -p build
-	yarn tailwindcss --input css/styles.css --output build/compiled.css --watch
+	NODE_ENV=production yarn tailwindcss --input css/styles.css --output build/compiled.css --minify --watch
+
+.PHONY: css
+css:
+	mkdir -p build
+	NODE_ENV=production yarn tailwindcss --input css/styles.css --output build/compiled.css --minify
 
 build/compiled.css: css/styles.css
-	yarn tailwindcss --input css/styles.css --output build/compiled.css
+	NODE_ENV=production yarn tailwindcss --input css/styles.css --output build/compiled.css --minify
 
+.PHONY: editor
 editor:
 	yarn tailwindcss --input css/styles.css --output build/compiled.css
 	make js wasm nasheets && ./nasheets editor
+
 .PHONY: dev
 dev:
 	yarn run concurrently \
-		"make tailwind" \
+		"make watch-css" \
 		"make watch-wasm" \
 		"make watch-js" \
 		"make watch-build" \
 		"make watch-run"
 
+.PHONY: prod
+prod: css wasm js build nasheets html
 
 .PHONY: test
 test:
@@ -40,7 +51,7 @@ IN ?= examples/*.nns
 .PHONY: watch-build
 watch-build:
 	@echo watch-build
-	ls $(TMPL_FILES) build/compiled.css build/*.js $(GO_FILES) build/*.wasm | \
+	ls $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) $(GO_FILES) build/wasm.wasm | \
 				entr -a make nasheets
 
 
@@ -55,16 +66,23 @@ run:
 .PHONY: watch-js
 watch-js:
 	mkdir -p build
-	ls $(JS_FILES) | $(ENTR) -a -s "make js"
+	node build.mjs --dev --watch
 
 .PHONY: js
-js:
+js: $(JS_OUTPUT_FILES)
+$(JS_OUTPUT_FILES): $(JS_INPUT_FILES)
 	@echo build-js
-	cp fonts/*.woff2 fonts/*.ttf js/*.js vendorjs/*.js build/
+	cp fonts/*.woff2 fonts/*.ttf build/
+	node build.mjs
 
-nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css $(wildcard build/*.js)
+nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
 	@echo build-exec
 	$(GO) build $(GO_FLAGS) -o $@ $(MAIN)
+
+
+.PHONY: html
+html:
+	$(NASHEETS) html examples/*.nns
 
 output/%.html: examples/%.nns
 	$(NASHEETS) html $<
@@ -72,19 +90,20 @@ output/%.html: examples/%.nns
 
 watch-wasm:
 	@echo watch-wasm
-	ls $(TMPL_FILES) build/compiled.css $(GO_FILES) $(wildcard build/*.js) | \
+	ls $(TMPL_FILES) build/compiled.css $(GO_FILES) | \
 			$(ENTR) -a -s "make build/wasm.wasm"
 
 .PHONY: wasm
 wasm: build/wasm.wasm
-build/wasm.wasm: $(GO_FILES) $(TMPL_FILES) $(wildcard build/*.js)
-	#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o $@ $(WASM_MAIN)
+build/wasm.wasm: $(GO_FILES) $(TMPL_FILES)
+	#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o build/unoptimized.wasm $(WASM_MAIN)
 	#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js $@
 	@echo build-wasm
-	GOOS=js GOARCH=wasm GOTRACEBACK=all go build -ldflags="-s -w" -o $@ $(WASM_MAIN)
-	#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o $@ $(WASM_MAIN)
-	cp vendorjs/wasm_exec_go.js build/wasm_exec.js
-	cp js/index.js build/index.js
+	GOOS=js GOARCH=wasm GOTRACEBACK=all go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
+	#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o build/unoptimized.wasm $(WASM_MAIN)
+	wasm-opt build/unoptimized.wasm -Oz --enable-bulk-memory-opt -o $@
+	#cp build/unoptimized.wasm $@
+
 
 .PHONY: clean
 clean:
