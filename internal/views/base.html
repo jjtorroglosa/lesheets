@@ -11,32 +11,44 @@
             {{- end }}
 
             <link href="/compiled.css?t=2" rel="stylesheet">
-            {{/*<script src="/abcjs-basic-min.js"></script>*/}}
-
 
             {{- if .Editor}}
-                <script src="/wasm_exec.js"></script>
-                <script src="/ace.js" type="text/javascript" charset="utf-8"></script>
-                <script src="/abc2svg-1.js" type="text/javascript" charset="utf-8"></script>
+                <script type="module" src="/editor.js"></script>
             {{- end }}
-            <script type="module" src="/index.js"></script>
+            <script type="module" src="/sheet.js"></script>
         </head>
         <body class="h-screen bg-white print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
-            <div id="layout" class="flex h-full flex-row select-none p-4 print:p-0 print:m-0">
-                <div id="editor" class="shrink-0 w-1/2 print:hidden {{if not .Editor}}hidden{{end}}">
+            <div id="layout" class="flex h-full flex-col lg:flex-row select-none p-4 print:p-0 print:m-0">
+                <div id="editor" class="flex flex-col gap-2 shrink-0 h-1/2 lg:h-auto w-auto lg:w-1/2 print:hidden {{if not .Editor}}hidden{{end}} pr-2">
                     <!-- Toggle switch vim mode -->
-                    <label class="inline-flex items-center cursor-pointer relative">
-                      <input id="vim-mode-toggler" type="checkbox" class="peer sr-only" />
-                      <div class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors duration-200"></div>
-                      <span class="absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow transform transition-transform duration-200
-                                   peer-checked:translate-x-4"></span>
-                      <span class="ml-3 text-sm font-medium select-none">Vim mode</span>
-                    </label>
+                    <div class="tools flex flex-row gap-1">
+                        <div class="toggle inline-flex">
+                            <label class="inline-flex items-center cursor-pointer relative hidden">
+                              <input id="vim-mode-toggler" type="checkbox" class="peer sr-only" />
+                              <span class="w-10 h-6 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors duration-200">
+                              </span>
+                                  <span class="block absolute left-1 my-1 w-4 h-4 bg-white rounded-full shadow duration-200 transition-all peer-checked:left-auto peer-checked:origin-[100% 100%] peer-checked:translate-x-5"></span>
+                            </label>
+                              <span class="ml-3 font-medium text-sm select-none">Vim mode</span>
+                        </div>
+                        <button onclick="document.actions.header()">Header</button>
+                        <button onclick="document.actions.section()">Section</button>
+                        <button onclick="document.actions.push()">❮</button>
+                        <button onclick="document.actions.hold()">❯</button>
+                        <button onclick="document.actions.fermata()" class="font-music"></button>
+                        <button onclick="document.actions.diamond()"><></button>
+                        <button onclick="document.actions.diamondFermata()"><span class="align-middle font-music mr-1"></span><></button>
+                        <button onclick="document.actions.repeatStart()">||:</button>
+                        <button onclick="document.actions.repeatEnd()">:||</button>
+                        <div class="flex-grow flex flex-row-reverse ">
+                            <button id="collapse-button" onclick="document.actions.toggleCollapse()">Collapse</button>
+                        </div>
+                    </div>
 
-                    <div id="editor-contents" class="w-full h-full p-4"><textarea id="editor-text" class="font-mono">{{- .Abc }}</textarea></div>
+                    <div id="editor-contents" class="w-full h-full p-4 "><textarea id="editor-text" class="font-mono">{{- .Abc }}</textarea></div>
                 </div>
-                <div id="resizer" class="h-full w-[5px] shrink-0 print:hidden bg-gray-300 cursor-col-resize {{if not .Editor}}hidden{{end}}"></div>
-                <div id="root" class="@container h-full w-full pl-4 print:pl-0 ">
+                <div id="resizer" class="hidden lg:block h-full w-[5px] shrink-0 print:hidden bg-blue-500 dark:bg-blue-300 cursor-col-resize {{if not .Editor}}hidden{{end}}"></div>
+                <div id="root" class="@container overflow-auto print:overflow-visible h-full w-full pl-4 print:pl-0 ">
                     {{- if not .Editor}}
                         {{- template "root" . }}
                     {{end}}
@@ -45,45 +57,6 @@
 
             {{- if .Dev }}
             <script src="/livereload.js"></script>
-            {{- end }}
-
-            {{ template "ui" }}
-
-            {{- if .Editor}}
-            <script>
-                const resizer = document.getElementById('resizer');
-                const left = document.getElementById('editor');
-                const body = document.getElementById('layout');
-
-                let isResizing = false;
-                let startX = 0;
-                let startWidth = 0;
-
-                resizer.addEventListener('mousedown', e => {
-                  isResizing = true;
-                  startX = e.clientX;
-                  startWidth = left.offsetWidth;
-                  document.body.style.cursor = 'col-resize';
-                  document.body.style.userSelect = 'none';
-                });
-
-                document.addEventListener('mousemove', e => {
-                  if (!isResizing) return;
-
-                  const delta = e.clientX - startX;
-                  const newWidth = startWidth + delta;
-
-                  const minWidth = 150;
-                  const maxWidth = window.innerWidth - 150;
-                  left.style.width = Math.min(Math.max(newWidth, minWidth), maxWidth) + 'px';
-                });
-
-                document.addEventListener('mouseup', () => {
-                  isResizing = false;
-                  document.body.style.cursor = 'default';
-                  document.body.style.userSelect = 'auto';
-                });
-            </script>
             {{- end }}
         </body>
     </html>

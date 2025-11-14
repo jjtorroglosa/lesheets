@@ -37,7 +37,7 @@ other: value
 
 }
 func TestSongSection(t *testing.T) {
-	song, err := ParseSongFromString("# a section\nA")
+	song, err := ParseSongFromString("# a section\nA\n")
 	assert.NoError(t, err)
 	assert.False(t, song.Sections[0].IsEmpty())
 	assert.Equal(t, 1, len(song.Sections))
@@ -140,7 +140,7 @@ another: value
 	assert.Equal(t, err.Error(), `unexpected string at pos 55 line 7 near:
 ction1\n\n!a!!The second exclama
                  ^
- Want: <!> Got: < >`)
+Want: <!> Got: < >`)
 }
 
 func TestParseBar(t *testing.T) {
@@ -380,4 +380,11 @@ func TestPrettyPrint(t *testing.T) {
 func TestError(t *testing.T) {
 	_, err := ParseSongFromString("A\n:")
 	assert.Error(t, err)
+}
+
+func TestParseRepeatEnd(t *testing.T) {
+	lex := NewParser(NewLexer("C :||"))
+
+	_, err := lex.ParseSong()
+	assert.NoError(t, err)
 }
