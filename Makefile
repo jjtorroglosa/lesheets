@@ -32,7 +32,7 @@ editor:
 
 .PHONY: dev
 dev:
-	yarn run concurrently \
+	yarn run concurrently --kill-others-on-fail \
 		"make watch-css" \
 		"make watch-wasm" \
 		"make watch-js" \

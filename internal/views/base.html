@@ -17,14 +17,13 @@
             {{- end }}
             <script type="module" src="/sheet.js"></script>
         </head>
-        <body class="h-screen bg-white print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
+        <body class="h-screen bg-white print:h-auto print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
             <div id="layout" class="flex h-full flex-col lg:flex-row select-none p-4 print:p-0 print:m-0">
                 <div id="editor" class="flex flex-col gap-2 shrink-0 h-1/2 lg:h-auto w-auto lg:w-1/2 print:hidden {{if not .Editor}}hidden{{end}} pr-2">
                     {{- template "toolbar"}}
-                    
                     <div id="editor-contents" class="w-full h-full p-4 "><textarea id="editor-text" class="font-mono">{{- .Abc }}</textarea></div>
                 </div>
-                <div id="resizer" class="hidden lg:block h-full w-[5px] shrink-0 print:hidden bg-blue-500 dark:bg-blue-300 cursor-col-resize {{if not .Editor}}hidden{{end}}"></div>
+                <div id="resizer" class="hidden {{if .Editor}}lg:block{{end}} h-full w-[5px] shrink-0 print:hidden bg-blue-500 dark:bg-blue-300 cursor-col-resize"></div>
                 <div id="root" class="@container overflow-auto print:overflow-visible h-full w-full pl-4 print:pl-0 ">
                     {{- if not .Editor}}
                         {{- template "root" . }}

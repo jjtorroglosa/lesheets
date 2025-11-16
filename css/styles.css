@@ -35,14 +35,14 @@ html{
 }
 
 .bar-note {
-    @apply mb-2 text-xs;
+    @apply text-xs;
 }
 
 .bar-lyrics {
     @apply mt-0 text-xs;
 }
 
-.bar-and-annotations:last-child .bar:not(.repeat-end) {
+.bar-and-annotations:last-child .bar:not(.repeat-end) .bar-border-right {
     @apply border-r border-solid;
 }
 
@@ -61,6 +61,11 @@ html{
 }
 .bt-svg svg{
     width: 100%;
+    height: auto;
+}
+
+.bt-svg  svg:has(+ svg) {
+    display: none;
 }
 
 .multiline-backtick svg{
@@ -68,27 +73,11 @@ html{
     height: fit-content;
 }
 
-.repeat-end {
-  @apply border-r-4 border-solid pr-[2px];
-}
-
-.repeat-end .repeat-end-symbol {
-    @apply border-r flex items-center justify-center h-full pr-[2px];
-}
-
-.repeat-start {
-  @apply border-l-4 border-solid pl-[2px];
-}
-
-.repeat-start .repeat-start-symbol{
-    @apply border-l flex items-center justify-center h-full pl-[2px];
-}
-
-.double {
+.double .bar-border-right {
   @apply relative border-r border-solid pr-4;
 }
 
-.double::before {
+.double .bar-border-right::before {
   content: "";
   padding-right: 0.5rem;
   position: absolute;
@@ -129,8 +118,8 @@ html{
     @apply hidden;
 }
 
-.tools button {
-    @apply border border-gray-700 dark:border-gray-300 px-0.5 rounded-sm shadow-md/20 text-sm min-w-6 max-w-16;
+.tool-button {
+    @apply border border-gray-700 dark:border-gray-300 px-0.5 rounded-md text-sm min-w-6 max-w-16;
 }
 
 #editor.editor-collapsed {

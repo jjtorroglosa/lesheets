@@ -170,7 +170,7 @@ func (a *Annotation) Symbol() template.HTML {
 	case "fermata":
 		return `<div class="font-music text-xl leading-none"></div>`
 	case "diamond-fermata":
-		return `<div class="ml-1 font-music font-size text-xl leading-none"></div>`
+		return `<div class="font-music font-size text-xl leading-none"></div>`
 	}
 	return ""
 }

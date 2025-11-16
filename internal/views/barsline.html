@@ -1,5 +1,5 @@
 {{ define "barsline" }}
-    <div class="barlines flex flex-row items-end ml-4">
+    <div class="barlines flex flex-row items-center ml-4">
     {{- if not (eq "" .MultilineBacktick.Value) }}
     <div class="multiline-backtick w-130">
         {{.MultilineBacktick.Svg}}
@@ -13,38 +13,24 @@
                 {{$mb = "relative top-[-0.75rem]"}}
             {{end}}
             {{end}}
-            <div class="bar-note relative flex flex-row gap-1 items-end {{if not .RepeatStart}}left-[-0.25rem]{{end}} {{if .PreviousWasRepeatEnd}}left-[-0.46rem]{{end}}">
-                <span class="relative block top-[0.55rem] w-[0.5rem] text-xs text-center text-[0.5rem] opacity-70 print:opacity-100">{{.Number}} </span><span class="{{$mb}}">{{-  if .BarNote }}{{- .BarNote }}{{- end}}<span class="opacity-0">.</span></span>
+            <div class="bar-note text-xs relative flex flex-row gap-1 items-end {{if not .RepeatStart}}left-[-0.25rem]{{end}} {{if .PreviousWasRepeatEnd}}left-[-0.46rem]{{end}}">
+                <span class="ml-4">{{-  if .BarNote }}{{- .BarNote }}{{- end}}<span class="opacity-0">.</span></span>
             </div>
-            <div class="bar min-w-20 h-8 border-l border-solid flex justify-items-start items-center {{if .DoubleBarEnd}}double{{end}} {{if .RepeatStart}}repeat-start{{end}} {{if .RepeatEnd}}repeat-end{{end}} ">
+            <div class="bar min-w-20 flex justify-items-start items-center {{if .DoubleBarEnd}}double{{end}} {{if .RepeatStart}}repeat-start{{end}} {{if .RepeatEnd}}repeat-end{{end}} ">
+                <div class="bar-border-left w-0 h-10 border-solid border-l {{if .RepeatStart}}border-l-4{{end}} relative">
+                    <span class="absolute top-[-0.7rem] left-[-0.3rem] relative block w-[0.5rem] text-xs text-center text-[0.5rem] opacity-70 print:opacity-100">{{.Number}} </span>
+                </div>
                 {{if .RepeatStart }}
-                    <div class="repeat-start-symbol ">:</div>
+                    <div class="repeat-start-symbol h-10 border-l border-solid ml-0.5 pr-0.5"></div>
+                    <div>:</div>
                 {{end}}
-                <div class="mx-2 flex flex-row flex-grow gap-2 justify-between items-end">
+
+
+
+                <div class="mx-2 flex flex-row flex-grow gap-2 justify-between items-center">
                 {{- if eq .Backtick.Value ""}}
                     {{- range .Chords}}
-                        <div class="flex flex-col gap-0">
-                                {{$opacity := "opacity-0"}}
-                                {{$symbol := "."}}
-                                {{ if not (eq .Annotation.Symbol "") }}
-                                    {{$opacity = ""}}
-                                    {{$symbol = .Annotation.Symbol}}
-                                {{end}}
-                                {{if or (eq .Annotation.Value "diamond") (eq .Annotation.Value "diamond-fermata") }}
-                                <div class="ch flex flex-col items-center">
-                                    {{if eq .Annotation.Value "diamond-fermata" }}<div class="ml-1 text-xl" style="font-family: 'music'"></div>{{end}}
-                                    <div class="annotation annotation-diamond">
-                                        <span class="annotation-container"><span class="annotated-chord">{{- .PrettyPrintHTML}}</span></span>
-                                    </div>
-                                    {{if eq .Annotation.Value "diamond-fermata" }}<div class="mt-auto opacity-0 text-xl">.</div> {{end}}
-                                </div>
-
-                                {{else}}
-                                <div class="annotation-symbol text-sm mt-4 mb-0 leading-none {{$opacity}}">{{$symbol}}</div>
-                                <div class="ch leading-none">{{- .PrettyPrintHTML}}</div>
-                                <div class="annotation-symbol text-sm mb-4 leading-none opacity-0">.</div>
-                                {{end}}
-                        </div>
+                        {{- template "chord" .}}
                     {{- end}}
                 {{- else}}
                     <div class="bt-svg" style="width:150px">
@@ -54,8 +40,10 @@
                 </div>
 
                 {{if .RepeatEnd }}
-                    <div class="repeat-end-symbol">:</div>
+                    <div class="">:</div>
+                    <div class="repeat-end-symbol h-10 border-r border-solid mr-0.5 pr-0.5"></div>
                 {{end}}
+                <div class="bar-border-right h-10 {{if .RepeatEnd}}border-solid border-r-4{{end}}"></div>
             </div>
 
             <div class="bar-lyrics">
