@@ -40,7 +40,7 @@ dev:
 		"make watch-run"
 
 .PHONY: prod
-prod: css wasm js build nasheets html
+prod: css wasm js build nasheets html compress
 
 .PHONY: test
 test:
@@ -105,6 +105,11 @@ build/wasm.wasm: $(GO_FILES) $(TMPL_FILES)
 	#cp build/unoptimized.wasm $@
 
 
+.PHONY: compress
+compress:
+	gzip -k -9 output/*.{js,css,wasm,html}
+
 .PHONY: clean
 clean:
 	rm -rf output/* build/*
+
