@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"html/template"
-	"nasheets/internal/timer"
+	"lesheets/internal/timer"
 	"os/exec"
 	"strings"
 )

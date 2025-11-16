@@ -29,15 +29,15 @@ const createRenderer = (renderSvgFromAbc, toHtml) => {
             i.outerHTML = svg;
         });
     }
-    const render = (nasheet) => {
+    const render = (lesheet) => {
         time("render")
         try {
-            localStorage.setItem("code", JSON.stringify(nasheet));
+            localStorage.setItem("code", JSON.stringify(lesheet));
         } catch {
             localStorage.setItem("code", "");
         }
         time("renderHtml")
-        const html = toHtml(nasheet);
+        const html = toHtml(lesheet);
         timeEnd("renderHtml")
         const body = document.getElementById("root")
         body.innerHTML = html;

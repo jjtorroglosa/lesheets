@@ -4,11 +4,11 @@
 package main
 
 import (
-	"nasheets/internal"
+	"lesheets/internal"
 	"syscall/js"
 )
 
-func nasheetToJson(this js.Value, args []js.Value) any {
+func lesheetToJson(this js.Value, args []js.Value) any {
 	inputStr := args[0].String() // Convert JS string to Go string
 	song, err := internal.ParseSongFromString(inputStr)
 	if err != nil {
@@ -33,6 +33,6 @@ func nasheetToJson(this js.Value, args []js.Value) any {
 }
 
 func main() {
-	js.Global().Set("go_nasheetToJson", js.FuncOf(nasheetToJson))
+	js.Global().Set("go_lesheetToJson", js.FuncOf(lesheetToJson))
 	select {}
 }

@@ -6,7 +6,7 @@ ABC2SVG := vendorjs/abc2svg-compiled.js
 JS_INPUT_FILES = $(wildcard js/* vendorjs/*.js)
 JS_OUTPUT_FILES := build/editor.js build/sheet.js build/livereload.js
 TMPL_FILES = $(wildcard internal/views/*.html)
-NASHEETS := ./nasheets
+LESHEETS := ./lesheets
 MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
 ENTR:= entr
@@ -31,7 +31,7 @@ build/compiled.css: css/styles.css
 .PHONY: editor
 editor:
 	yarn tailwindcss --input css/styles.css --output build/compiled.css
-	make js wasm nasheets && ./nasheets editor
+	make js wasm lesheets && ./lesheets editor
 
 .PHONY: dev
 dev:
@@ -43,7 +43,7 @@ dev:
 		"make watch-run"
 
 .PHONY: prod
-prod: css wasm js build nasheets html compress
+prod: css wasm js build lesheets html compress
 
 .PHONY: test
 test:
@@ -55,16 +55,16 @@ IN ?= examples/*.nns
 watch-build:
 	@echo watch-build
 	ls $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) $(GO_FILES) build/wasm.wasm | \
-				entr -a make nasheets
+				entr -a make lesheets
 
 
 .PHONY: watch-run
 watch-run:
-	ls nasheets | entr -r -s "$(NASHEETS) watch $(IN)"
+	ls lesheets | entr -r -s "$(LESHEETS) watch $(IN)"
 
 .PHONY: run
 run:
-	$(NASHEETS) watch *.nns
+	$(LESHEETS) watch *.nns
 
 .PHONY: watch-js
 watch-js:
@@ -78,17 +78,17 @@ $(JS_OUTPUT_FILES): $(JS_INPUT_FILES)
 	cp fonts/*.woff2 fonts/*.ttf build/
 	node build.mjs
 
-nasheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
+lesheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
 	@echo build-exec
 	$(GO) build $(GO_FLAGS) -o $@ $(MAIN)
 
 
 .PHONY: html
 html:
-	$(NASHEETS) html examples/*.nns
+	$(LESHEETS) html examples/*.nns
 
 output/%.html: examples/%.nns
-	$(NASHEETS) html $<
+	$(LESHEETS) html $<
 
 
 watch-wasm:
