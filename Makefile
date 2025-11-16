@@ -11,6 +11,9 @@ MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
 ENTR:= entr
 
+TAG ?= $(shell date +'%Y%m%d.%H%M')
+IMAGE_NAME := lesheets
+
 .PHONY: watch-css
 watch-css:
 	@echo css
@@ -113,3 +116,14 @@ compress:
 clean:
 	rm -rf output/* build/*
 
+.PHONY: deploy
+deploy: prod docker
+	 bin/deploy.sh $(TAG)
+
+
+.PHONY: docker
+docker: build/lesheets.tgz
+build/lesheets.tgz: Dockerfile $(JS_OUTPUT_FILES) output/*
+	docker buildx build --platform linux/amd64 -t $(IMAGE_NAME):$(TAG) .
+	docker save $(IMAGE_NAME):$(TAG) | gzip > $@
+	docker load -i $@
