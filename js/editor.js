@@ -1,4 +1,5 @@
 import { createActions } from './actions.js';
+import { initSaveAndOpenButtons } from './file-save-open.js';
 import { time, timeEnd } from './logger.js';
 import './resizer.js';
 import { initWasm } from './wasm.js';
@@ -58,6 +59,7 @@ const init = async () => {
     // Trigger first render();
     render(editor.getValue());
     document.actions = createActions(editor);
+    initSaveAndOpenButtons(editor);
 }
 
 init();

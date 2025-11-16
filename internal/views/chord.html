@@ -1,0 +1,18 @@
+{{define "chord"}}
+<div class="flex flex-col gap-0">
+    {{$opacity := "opacity-0"}}
+    {{$symbol := "."}}
+    {{ if not (eq .Annotation.Symbol "") }}
+        {{$opacity = ""}}
+        {{$symbol = .Annotation.Symbol}}
+    {{end}}
+    {{if or (eq .Annotation.Value "diamond") (eq .Annotation.Value "diamond-fermata") }}
+    {{template "diamond" . }}
+
+    {{else}}
+    <div class="annotation-symbol text-sm mb-0 leading-none {{$opacity}}">{{$symbol}}</div>
+    <div class="ch leading-none">{{- .PrettyPrintHTML}}</div>
+    <div class="annotation-symbol text-sm leading-none opacity-0">.</div>
+    {{end}}
+</div>
+{{end}}

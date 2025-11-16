@@ -1,6 +1,6 @@
 services:
   nasheets-web:
-    build: .
+    image: lesheets:20220101.1111
     ports:
       - "8008:80"
     volumes:

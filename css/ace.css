@@ -23,3 +23,6 @@
 .ace_selection {
     @apply dark:bg-gray-600! dark:text-gray-900!;
 }
+#editor-contents {
+    @apply text-gray-800 dark:text-gray-300
+}
