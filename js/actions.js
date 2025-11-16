@@ -4,12 +4,21 @@ export const createActions = (editor) => {
         editor.session.insert(position, str);
         editor.focus()
     }
+    const menu = document.getElementById("tools-dropdown");
+    const btn = document.getElementById("tools-dropdown-open-button");
+    const onClickOutside = (e) => {
+        if (!menu.classList.contains("hidden") && !menu.contains(e.target) && !btn.contains(e.target)) {
+            menu.classList.add("hidden");
+            document.removeEventListener("click", onClickOutside)
+        }
+    }
+
     return {
         section: () => {
             return addText("# ");
         },
         header: () => {
-            return addText("---\ntitle: Title\nsubtitle: Subtitle\ntempo: 123bpm\nkey\nL: 1/8\n---\n");
+            return addText("---\ntitle: Title\nsubtitle: Subtitle\ntempo: 123bpm\nkey: C\nL: 1/8\n---\n");
         },
         push: () => {
             return addText("!push!");
@@ -32,15 +41,30 @@ export const createActions = (editor) => {
         repeatEnd: () => {
             return addText(" :||");
         },
-        toggleCollapse: () => {
-            // if (document.getElementById("editor").classList.contains("collapsed")) {
-            //     document.getElementById('editor').style.width = "50%";
-            // } else {
-            //     document.getElementById('editor').style.width = "auto";
-            // }
-            document.getElementById("layout").classList.toggle("collapsed");
-            document.getElementById("resizer").classList.toggle("collapsed");
-            document.getElementById("editor").classList.toggle("collapsed");
+        toggleEditorCollapse: () => {
+            document.getElementById("editor").classList.add("transition-all");
+            document.getElementById("editor").classList.add("duration-200");
+            document.getElementById("editor").style.removeProperty("width");
+
+            setTimeout(() => {
+                document.getElementById("layout").classList.toggle("editor-collapsed");
+                document.getElementById("resizer").classList.toggle("editor-collapsed");
+                document.getElementById("editor").classList.toggle("editor-collapsed");
+            });
+
+            setTimeout(() => {
+                document.getElementById("editor").classList.remove("transition-all");
+                document.getElementById("editor").classList.remove("duration-200");
+            }, 200);
+        },
+        toggleToolbarCollapse: () => {
+            if (menu.classList.contains("hidden")) {
+                menu.classList.remove("hidden");
+                document.addEventListener("click", onClickOutside);
+            } else {
+                document.removeEventListener("click", onClickOutside);
+                menu.classList.add("hidden");
+            }
         },
     }
 };

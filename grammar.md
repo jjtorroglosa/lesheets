@@ -1,61 +1,61 @@
 # Tokens
 
 ```
-TokenFrontMatter: "---" .* "---"
-TokenHeader: "#".*\n
-TokenHeaderBreak: "#-".*\n
-TokenBar: "|" | "||:" | ":||"
-TokenReturn: \n
-TokenBarNote: "\"" .* "\""
-TokenAnnotation: "!" .* "!"
-TokenBacktick: "`" .* "`
-TokenBacktickMultiline: "```" .* "```"
-TokenEof: EOF
-TokenChord: [^ ]+
+TokenFrontMatter ::= "---" .* "---"
+TokenHeader ::= "#".*\n
+TokenHeaderBreak ::= "#-".*\n
+TokenBar ::= "|" | "||:" | ":||"
+TokenReturn ::= \n
+TokenComment ::= "\"" .* "\""
+TokenAnnotation ::= "!" .* "!"
+TokenBacktick ::= "`" .* "`
+TokenBacktickMultiline ::= "```" .* "```"
+TokenEof ::= EOF
+TokenChord ::= [^ ]+
 ```
 
 # Parser
 ```
-Song:
+Song ::=
   FrontMatter Body
   |Body
   ;
-FrontMatter: TokenFrontMatter
-Body:
+FrontMatter ::= TokenFrontMatter
+Body ::=
   Lines Sections
   |Sections
   ;
-Sections:
+Sections ::=
   Section
   |Section Sections
-Section:
+Section ::=
   Header Lines
-Header: TokenHeader
-Lines:
+Header ::= TokenHeader
+Lines ::=
   Line
   |Line Lines
   ;
-Line:
+Line ::=
   Bars TokenReturn
   |Bars TokenBar TokenReturn
   |TokenBar Bars TokenReturn
-Bars:
+Bars ::=
   Bar
   |Bar TokenBar Bars
-Bar:
-  TokenBarNote TokenBar BarBody
-  |TokenBar TokenBarNote BarBody
+Bar ::=
+  TokenComment TokenBar BarBody
+  |TokenBar TokenComment BarBody
   |BarBody
   ;
-BarBody:
+BarBody ::=
   TokenBacktick
   |Chords
   ;
-Chords:
+Chords ::=
   Chord
   |Chord Chords
   ;
-Chord:
+Chord ::=
   TokenChord
   |TokenAnnotation TokenChord
   ;
