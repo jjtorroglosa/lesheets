@@ -70,8 +70,8 @@ Output:
 Input:
 ```markdown
 ---
-title: Lesheet
-subtitle: Author or something whatever you want
+title: Lesheets
+subtitle: "subtitle: You can put here the author, or anything else"
 tempo: 132bpm
 key: Cm
 columns: 2
@@ -143,7 +143,7 @@ Output:
 
 ## Quick Start
 
-Go to [the online editor](lesheets.jtorr.eu/editor.html) and start writing your charts.
+Go to [the online editor](https://lesheets.jtorr.eu/editor.html) and start writing your charts.
 
 ### Installation
 
