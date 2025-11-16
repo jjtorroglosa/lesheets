@@ -114,6 +114,10 @@ html{
     @apply hidden;
 }
 
+.editor-collapsed #collapse-button {
+    @apply transition-transform duration-200 rotate-180;
+}
+
 .editor-collapsed button:not(#collapse-button), .editor-collapsed .toggle {
     @apply hidden;
 }
