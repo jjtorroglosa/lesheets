@@ -46,37 +46,23 @@ func RenderListHTML(inputFiles []string) error {
 
 	defer f.Close()
 	var buf bytes.Buffer
-	views.RenderListOfFiles(files, &buf)
-	// if err := templ.ExecuteTemplate(&buf, "list.html", files); err != nil {
-	// 	return err
-	// }
+	err = views.RenderListOfFiles(files, &buf)
+	if err != nil {
+		return err
+	}
+
 	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
 		return err
 	}
 	return nil
 }
 
-type RenderConfig struct {
-	WithLiveReload bool
-	WholeHtml      bool
-	WithEditor     bool
-}
-
-func RenderSongHtml(cfg RenderConfig, sourceCode string, song *domain.Song, filename string) (string, error) {
+func RenderSongHtml(cfg views.RenderConfig, sourceCode string, song *domain.Song, filename string) (string, error) {
 	defer timer.LogElapsedTime("RenderHtml")()
 
 	var buf bytes.Buffer
 
-	// if err := templ.ExecuteTemplate(&buf, tmpl, params); err != nil {
-	// 	return "", fmt.Errorf("failed to render template: %w", err)
-	// }
-	err := views.RenderSong(views.BaseData{
-		Song:   song,
-		Dev:    cfg.WithLiveReload,
-		Abc:    sourceCode,
-		Whole:  cfg.WholeHtml,
-		Editor: cfg.WithEditor,
-	}, &buf)
+	err := views.RenderSong(song, sourceCode, cfg, &buf)
 	if err != nil {
 		return "", err
 	}
@@ -91,7 +77,7 @@ func WriteEditorToHtmlFile(dev bool, filename string) error {
 		return fmt.Errorf("failed to create filename %s: %w", filename, err)
 	}
 	defer f.Close()
-	htmlOut, err := RenderSongHtml(RenderConfig{
+	htmlOut, err := RenderSongHtml(views.RenderConfig{
 		WithLiveReload: dev,
 		WholeHtml:      true,
 		WithEditor:     true,
@@ -112,7 +98,7 @@ func WriteSongHtmlToFile(dev bool, sourceCode string, song *domain.Song, filenam
 		return fmt.Errorf("failed to create HTML file: %s", filename)
 	}
 	defer f.Close()
-	htmlOut, err := RenderSongHtml(RenderConfig{
+	htmlOut, err := RenderSongHtml(views.RenderConfig{
 		WithLiveReload: dev,
 		WholeHtml:      true,
 		WithEditor:     false,

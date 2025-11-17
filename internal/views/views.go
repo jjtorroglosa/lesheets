@@ -3,6 +3,7 @@ package views
 import (
 	"bytes"
 	"context"
+	"lesheets/internal/domain"
 )
 
 type Link struct {
@@ -10,8 +11,8 @@ type Link struct {
 	Href string
 }
 
-func RenderSong(data BaseData, buf *bytes.Buffer) error {
-	component := base(data)
+func RenderSong(song *domain.Song, abc string, cfg RenderConfig, buf *bytes.Buffer) error {
+	component := base(song, abc, cfg)
 	err := component.Render(context.Background(), buf)
 	if err != nil {
 		return err

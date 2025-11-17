@@ -101,19 +101,19 @@ watch-wasm:
 wasm: build/wasm.wasm
 build/wasm.wasm: $(GO_FILES) $(TMPL_FILES)
 	@echo build-wasm
-	#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o build/unoptimized.wasm $(WASM_MAIN)
-	GOOS=js GOARCH=wasm TG_CACHE=~/.tinygo-cache tinygo build -o build/unoptimized.wasm $(WASM_MAIN)
+	GOOS=js GOARCH=wasm TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o build/unoptimized.wasm $(WASM_MAIN)
+	#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -o build/unoptimized.wasm $(WASM_MAIN)
 	cp build/unoptimized.wasm $@
 	@#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js build/wasm_exec.js
 	@#GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
 	@#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o build/unoptimized.wasm $(WASM_MAIN)
-	@#wasm-opt build/unoptimized.wasm -Oz --enable-bulk-memory-opt -o $@
+	wasm-opt build/unoptimized.wasm -Oz --enable-bulk-memory-opt -o $@
 	#cp build/unoptimized.wasm $@
 
 
 .PHONY: compress
 compress:
-	gzip -k -9 output/*.{js,css,wasm,html}
+	gzip -f -k -9 output/*.{js,css,wasm,html}
 
 .PHONY: clean
 clean:

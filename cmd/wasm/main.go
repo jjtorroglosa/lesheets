@@ -5,6 +5,7 @@ package main
 
 import (
 	"lesheets/internal"
+	"lesheets/internal/views"
 	"syscall/js"
 )
 
@@ -15,7 +16,7 @@ func lesheetToHtml(this js.Value, args []js.Value) any {
 		return js.ValueOf(internal.RenderError(err))
 	}
 	html, err := internal.RenderSongHtml(
-		internal.RenderConfig{
+		views.RenderConfig{
 			WithLiveReload: false,
 			WholeHtml:      false,
 			WithEditor:     true,
