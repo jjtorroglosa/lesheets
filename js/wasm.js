@@ -1,3 +1,5 @@
+import '../vendorjs/wasm_exec.v.js';
+
 export const initWasm = async () => {
     if (typeof Go === "undefined") {
         return;

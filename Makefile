@@ -36,6 +36,7 @@ editor:
 
 .PHONY: dev
 dev:
+	make css wasm js build $(LESHEETS)
 	yarn run concurrently \
 		"make watch-css" \
 		"make watch-templ" \
@@ -79,12 +80,12 @@ watch-js:
 	node build.mjs --dev --watch
 
 .PHONY: js
-js: $(JS_OUTPUT_FILES)
-$(JS_OUTPUT_FILES): $(JS_INPUT_FILES)
+js: build/esbuild-built
+build/esbuild-built: $(JS_INPUT_FILES)
 	@echo build-js
-	cp fonts/*.woff2 fonts/*.ttf vendorjs/wasm_exec_tinygo.js build/
-	cp vendorjs/wasm_exec_tinygo.js build/wasm_exec.js
+	cp fonts/*.woff2 fonts/*.ttf build/
 	node build.mjs
+	touch $@
 
 $(LESHEETS): $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
 	@echo build-exec
