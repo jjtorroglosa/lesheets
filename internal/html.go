@@ -2,9 +2,9 @@ package internal
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"lesheets/internal/domain"
-	"lesheets/internal/timer"
+	"lesheets/internal/logger"
 	"lesheets/internal/views"
 	"os"
 	"path/filepath"
@@ -21,7 +21,7 @@ func dict(values ...any) map[string]any {
 }
 
 func RenderListHTML(inputFiles []string) error {
-	defer timer.LogElapsedTime("RenderList")()
+	defer logger.LogElapsedTime("RenderList")()
 	filename := "output/index.html"
 	f, err := os.Create(filename)
 	if err != nil {
@@ -58,7 +58,7 @@ func RenderListHTML(inputFiles []string) error {
 }
 
 func RenderSongHtml(cfg views.RenderConfig, sourceCode string, song *domain.Song, filename string) (string, error) {
-	defer timer.LogElapsedTime("RenderHtml")()
+	defer logger.LogElapsedTime("RenderHtml")()
 
 	var buf bytes.Buffer
 
@@ -74,7 +74,7 @@ func RenderSongHtml(cfg views.RenderConfig, sourceCode string, song *domain.Song
 func WriteEditorToHtmlFile(dev bool, filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("failed to create filename %s: %w", filename, err)
+		return errors.New("failed to create filename " + filename + ": " + err.Error())
 	}
 	defer f.Close()
 	htmlOut, err := RenderSongHtml(views.RenderConfig{
@@ -95,7 +95,7 @@ func WriteEditorToHtmlFile(dev bool, filename string) error {
 func WriteSongHtmlToFile(dev bool, sourceCode string, song *domain.Song, filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("failed to create HTML file: %s", filename)
+		return errors.New("failed to create HTML file: " + filename)
 	}
 	defer f.Close()
 	htmlOut, err := RenderSongHtml(views.RenderConfig{

@@ -2,7 +2,7 @@ package domain
 
 import (
 	"encoding/json"
-	"fmt"
+	"errors"
 	"lesheets/internal/logger"
 	"lesheets/internal/svg"
 
@@ -140,7 +140,7 @@ func (song *Song) PrintSong() {
 func (song *Song) ToJson() (string, error) {
 	j, err := json.MarshalIndent(song, "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("error marshalling json: %w", err)
+		return "", errors.New("error marshalling json: " + err.Error())
 	}
 	return string(j), nil
 }
@@ -170,19 +170,4 @@ func (backtick *Backtick) Svg() string {
 		return "<pre>Error rendering svg</pre>"
 	}
 	return html
-}
-func (a *Annotation) Symbol() string {
-	switch a.Value {
-	case "marcato":
-		return `<div class="font-bold relative top-[4px] leading-[1.3] text-[1rem]/2 font-music">^</div>`
-	case "push":
-		return `<span class="text-[10px]/[1.25rem]">❮</span>`
-	case "pull", "hold":
-		return `<span class="text-[10px]/[1.25rem]">❯</span>`
-	case "fermata":
-		return `<div class="font-music text-xl leading-none"></div>`
-	case "diamond-fermata":
-		return `<div class="font-music font-size text-xl leading-none"></div>`
-	}
-	return ""
 }

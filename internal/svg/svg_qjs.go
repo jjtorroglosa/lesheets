@@ -7,7 +7,7 @@ import (
 	"crypto/sha256"
 	"embed"
 	"encoding/hex"
-	"lesheets/internal/timer"
+	"lesheets/internal/logger"
 	"log"
 	"sync"
 
@@ -73,7 +73,7 @@ func init() {
 }
 
 func loadJsRuntime() func() {
-	defer timer.LogElapsedTime("LoadQjs")()
+	defer logger.LogElapsedTime("LoadQjs")()
 	rt, err := qjs.New()
 	if err != nil {
 		log.Fatal(err)

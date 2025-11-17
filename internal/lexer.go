@@ -1,8 +1,10 @@
 package internal
 
 import (
-	"fmt"
+	"errors"
 	"lesheets/internal/domain"
+	"lesheets/internal/logger"
+	"strconv"
 	"strings"
 	"unicode"
 )
@@ -70,11 +72,11 @@ func (l *Lexer) consumeWhitespacesAndNewLines() {
 }
 
 func ErrGeneric(context string, want string, got string) error {
-	return fmt.Errorf("unexpected string %sWant: <%s> Got: <%s>", context, want, got)
+	return errors.New("unexpected string " + context + "Want: <" + want + "> Got: <" + got + ">")
 }
 
 func ErrInvalidFrontmatter(context string, want string, got string) error {
-	return fmt.Errorf("invalid frontmatter %sWant: <%s> Got: <%s> ", context, want, got)
+	return errors.New("invalid frontmatter " + context + "Want: <" + want + "> Got: <" + got + "> ")
 }
 
 func (l *Lexer) consumeFrontmatter() (*domain.Token, error) {
@@ -342,8 +344,8 @@ func (l *Lexer) SurroundingString() string {
 	start := max(0, l.pos-context)
 	end := min(len(l.input), l.pos+context)
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf("at pos %d ", l.pos))
-	sb.WriteString(fmt.Sprintf("line %d ", l.line))
+	sb.WriteString("at pos " + strconv.Itoa(l.pos) + " ")
+	sb.WriteString("line " + strconv.Itoa(l.line) + " ")
 	sb.WriteString("near:\n")
 	pos := start
 	for i := start; i < end; i++ {
@@ -369,6 +371,6 @@ func (l *Lexer) PrintTokens() {
 			return
 		}
 
-		fmt.Printf("Token%s: %s\n", tok.Type, tok.Value)
+		logger.Printf("Token%s: %s\n", tok.Type, tok.Value)
 	}
 }

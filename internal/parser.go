@@ -1,10 +1,11 @@
 package internal
 
 import (
-	"fmt"
+	"errors"
 	"lesheets/internal/domain"
-	"lesheets/internal/timer"
+	"lesheets/internal/logger"
 	"os"
+	"strconv"
 
 	"github.com/stretchr/testify/assert/yaml"
 )
@@ -39,17 +40,17 @@ func ParseSongFromStringWithFileName(filename string, sourceCode string) (*domai
 func ReadFile(file string) (string, error) {
 	data, err := os.ReadFile(file)
 	if err != nil {
-		return "", fmt.Errorf("failed to read file: %w", err)
+		return "", errors.New("failed to read file: " + err.Error())
 	}
 	return string(data), nil
 }
 
 func ParseSongFromFile(file string) (*Parser, *domain.Song, error) {
-	defer timer.LogElapsedTime("parsing")()
+	defer logger.LogElapsedTime("parsing")()
 
 	data, err := ReadFile(file)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to read file: %w", err)
+		return nil, nil, errors.New("failed to read file: " + err.Error())
 	}
 
 	parser := NewParser(NewLexerFromSource(file, string(data)))
@@ -99,7 +100,7 @@ func (p *Parser) ParseFrontmatter() (map[string]string, error) {
 	}
 
 	if tok.Type != domain.TokenFrontMatter {
-		return nil, fmt.Errorf("unexpected token. Want TokenFrontmatter, Got: %s", tok.Type)
+		return nil, errors.New("unexpected token. Want TokenFrontmatter, Got: " + string(tok.Type))
 	}
 	bytes := []byte(tok.Value)
 	frontmatter := map[string]string{}
@@ -170,7 +171,7 @@ func (p *Parser) ParseSections() ([]domain.Section, error) {
 			}
 			sections = append(sections, *section)
 		default:
-			return nil, fmt.Errorf("unexpected token. Expected TokenHeader, TokenHeaderBreak or TokenEof, got %s", tok.Type)
+			return nil, errors.New("unexpected token. Expected TokenHeader, TokenHeaderBreak or TokenEof, got " + string(tok.Type))
 		}
 	}
 }
@@ -198,7 +199,7 @@ func (p *Parser) ParseSection() (*domain.Section, error) {
 		section.Lines = lines
 		return &section, nil
 	default:
-		return nil, fmt.Errorf("unexpected token while parsing section: %s at pos %d", tok.Type, p.Lexer.pos)
+		return nil, errors.New("unexpected token while parsing section: " + string(tok.Type) + "at pos " + strconv.Itoa(p.Lexer.pos))
 	}
 }
 
@@ -325,7 +326,7 @@ func (p *Parser) ParseBar() (*domain.Bar, error) {
 	}
 	// BarBody
 	if tok.Type != domain.TokenChord && tok.Type != domain.TokenAnnotation && tok.Type != domain.TokenBacktick {
-		return nil, fmt.Errorf("parsing bar: unexpected token. Want Chord, Annotation or Backtick, got %s %s", tok.Type, p.Lexer.SurroundingString())
+		return nil, errors.New("parsing bar: unexpected token. Want Chord, Annotation or Backtick, got " + string(tok.Type) + " " + p.Lexer.SurroundingString())
 	}
 
 	switch tok.Type {
@@ -366,7 +367,7 @@ func (p *Parser) ParseBar() (*domain.Bar, error) {
 			}
 		}
 		if len(chords) == 0 {
-			return nil, fmt.Errorf("found no chords in bar %s", p.Lexer.SurroundingString())
+			return nil, errors.New("found no chords in bar " + p.Lexer.SurroundingString())
 		}
 		bar.Chords = chords
 
@@ -384,11 +385,7 @@ func (p *Parser) ParseBar() (*domain.Bar, error) {
 		}
 		return &bar, nil
 	default:
-		return nil, fmt.Errorf(
-			"expected chord or backtick expression but found %s %s",
-			tok.Type,
-			p.Lexer.SurroundingString(),
-		)
+		return nil, errors.New("expected chord or backtick expression but found " + string(tok.Type) + " " + p.Lexer.SurroundingString())
 	}
 }
 
@@ -399,7 +396,7 @@ func (p *Parser) ParseBacktick() (*domain.Backtick, error) {
 	}
 
 	if tok.Type != domain.TokenBacktick {
-		return nil, fmt.Errorf("expected backtick, got: %s", tok.Type)
+		return nil, errors.New("expected backtick, got: " + string(tok.Type))
 	}
 
 	bt := domain.Backtick{
@@ -436,16 +433,12 @@ func (p *Parser) ParseChord() (*domain.Chord, error) {
 	}
 
 	if tok.Type != domain.TokenChord {
-		return nil, fmt.Errorf(
-			"expected chord but found %s, %s",
-			tok.Type,
-			p.Lexer.SurroundingString(),
-		)
+		return nil, errors.New("expected chord but found " + string(tok.Type) + ", " + p.Lexer.SurroundingString())
 	}
 	chord.Value = tok.Value
 
 	if chord.Value == "" {
-		return nil, fmt.Errorf("empty chord found at %s", p.Lexer.SurroundingString())
+		return nil, errors.New("empty chord found at " + p.Lexer.SurroundingString())
 	}
 
 	_, _ = p.Lexer.ConsumeNextToken()

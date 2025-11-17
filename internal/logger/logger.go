@@ -2,27 +2,36 @@ package logger
 
 import (
 	"log"
+	"strconv"
+	"time"
 )
 
-func debugf(format string, args ...any) {
-	log.Printf(format, args...)
-}
+var IsProd = false
 
-func Println(args ...any) (n int) {
+func Println(args ...any) {
 	log.Println(args...)
-	return 0
+	// for _, i := range args {
+	// 	print(i)
+	// 	print("  ")
+	// }
+	// println()
 }
 
 func Printf(format string, a ...any) {
 	log.Printf(format, a...)
-	// for _, a := range a {
-	// 	println(a)
-	// }
-	// println(format)
+	// print(format)
+	// print(": ")
+	// Println(a...)
 }
 
-func Fatalf(format string, a ...any) {
-	log.Fatalf(format, a...)
-	// println(a)
-	// panic(format)
+func LogElapsedTime(name string) func() {
+	if IsProd {
+		return func() {}
+	}
+
+	start := time.Now()
+	return func() {
+		elapsed := time.Since(start)
+		Println("Timer:" + name + ":" + strconv.FormatFloat(elapsed.Seconds()*1000.0, 'f', 2, 64) + "ms")
+	}
 }

@@ -36,7 +36,7 @@ editor:
 
 .PHONY: dev
 dev:
-	make css wasm js build $(LESHEETS)
+	make css templ wasm js build $(LESHEETS)
 	yarn run concurrently \
 		"make watch-css" \
 		"make watch-templ" \
@@ -46,7 +46,7 @@ dev:
 		"make watch-run"
 
 .PHONY: prod
-prod: css wasm js build $(LESHEETS) html compress
+prod: css templ wasm js build $(LESHEETS) html compress
 
 .PHONY: test
 test:
@@ -57,6 +57,10 @@ test:
 watch-templ:
 	@echo watch-templ
 	templ generate -watch
+
+.PHONY: templ
+templ:
+	templ generate
 
 
 .PHONY: watch-build
@@ -124,7 +128,7 @@ compress:
 
 .PHONY: clean
 clean:
-	rm -rf output/* build/*
+	rm -rf output/* build/* internal/views/*_templ.go
 
 .PHONY: deploy
 deploy: prod docker
