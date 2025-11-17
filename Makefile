@@ -113,8 +113,8 @@ watch-wasm:
 wasm: build/wasm.wasm
 build/wasm.wasm: $(GO_FILES) $(TMPL_FILES)
 	@echo build-wasm
-	GOOS=js GOARCH=wasm TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o $@ $(WASM_MAIN)
-	@#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -o $@ $(WASM_MAIN)
+	GOOS=js GOARCH=wasm tinygo build -no-debug -opt=1 -o $@ $(WASM_MAIN)
+	@#GOOS=js GOARCH=wasm GOTRACEBACK=all tinygo build -o $@ $(WASM_MAIN)
 	@#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js build/wasm_exec.js
 	@#GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
 	@#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o build/unoptimized.wasm $(WASM_MAIN)
