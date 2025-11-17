@@ -1,0 +1,32 @@
+package views
+
+// SongEntry is an entry in the list of songs.
+type SongEntry struct {
+	Href string
+	Name string
+}
+
+templ list(songs []SongEntry) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+			<title>Index of songs</title>
+			<link href="/compiled.css" rel="stylesheet"/>
+			<script type="module" src="/sheet.js"></script>
+		</head>
+		<body class="bg-white text-gray-800 dark:bg-gray-900 dark:text-gray-300 mt-8">
+			<div class="mx-auto max-w-fit">
+				<h1>Songs</h1>
+				<ul class="mt-8">
+					for _, song := range songs {
+						<li>
+							<a href={ templ.URL(song.Href) }>{ song.Name }</a>
+						</li>
+					}
+				</ul>
+			</div>
+		</body>
+	</html>
+}

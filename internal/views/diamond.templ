@@ -1,0 +1,31 @@
+package views
+
+import models "lesheets/internal/domain"
+
+func opacitySymbol(s string) (string, string) {
+	opacity := "opacity-0"
+	symbol := "."
+
+	if s != "" {
+		opacity = ""
+		symbol = s
+	}
+	return opacity, symbol
+}
+
+templ diamond(chord models.Chord) {
+	{{ opacity, symbol := opacitySymbol(chord.Annotation.Symbol()) }}
+	<div class="relative min-w-10 min-h-23 mx-1">
+		<div class={ templ.Classes("annotation-symbol text-xl mb-0 leading-none text-center", opacity) }>
+			@templ.Raw(symbol)
+		</div>
+		<div class="ch leading-none relative mt-5">
+			<div class="text-center absolute min-w-10">
+				@templ.Raw(chord.PrettyPrintHTML())
+			</div>
+			<div class="min-w-10"></div>
+			<div class="absolute border dark:border-white print:border-gray-900 border-gray-900 min-w-10 min-h-10 rotate-45 inline-block top-[-13px] print:top-[-10px]"></div>
+		</div>
+		<div class="annotation-symbol text-sm mb-4 leading-none opacity-0">.</div>
+	</div>
+}
