@@ -2,7 +2,7 @@ package internal
 
 import (
 	"fmt"
-	"nasheets/internal/timer"
+	"lesheets/internal/timer"
 	"os"
 
 	"gopkg.in/yaml.v3"

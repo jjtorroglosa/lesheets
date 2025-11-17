@@ -5,7 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"html/template"
-	"nasheets/internal/timer"
+	"lesheets/internal/timer"
 	"os"
 	"path/filepath"
 	"strings"

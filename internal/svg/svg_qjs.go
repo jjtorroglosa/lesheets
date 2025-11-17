@@ -7,8 +7,8 @@ import (
 	"crypto/sha256"
 	"embed"
 	"encoding/hex"
+	"lesheets/internal/timer"
 	"log"
-	"nasheets/internal/timer"
 	"sync"
 
 	"github.com/fastschema/qjs"
