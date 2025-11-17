@@ -5,7 +5,7 @@ GO_FILES := $(shell find . -name "*.go")
 ABC2SVG := vendorjs/abc2svg-compiled.js
 JS_INPUT_FILES = $(wildcard js/* vendorjs/*.js)
 JS_OUTPUT_FILES := build/editor.js build/sheet.js build/livereload.js build/
-TMPL_FILES = $(wildcard internal/views/*.html)
+TMPL_FILES = $(wildcard internal/views/*.templ)
 LESHEETS := ./build/lesheets
 MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
@@ -38,6 +38,7 @@ editor:
 dev:
 	yarn run concurrently \
 		"make watch-css" \
+		"make watch-templ" \
 		"make watch-wasm" \
 		"make watch-js" \
 		"make watch-build" \
@@ -49,6 +50,12 @@ prod: css wasm js build $(LESHEETS) html compress
 .PHONY: test
 test:
 	$(GO) test ./...
+
+
+.PHONY: watch-templ
+watch-templ:
+	@echo watch-templ
+	templ generate -watch
 
 
 .PHONY: watch-build
