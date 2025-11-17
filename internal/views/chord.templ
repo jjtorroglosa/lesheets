@@ -37,7 +37,7 @@ templ symbol(a *models.Annotation) {
 }
 
 func opacitySymbol(s string) string {
-	if s == "" {
+	if s == "" || s == "diamond" {
 		return "opacity-0"
 	} else {
 		return ""
@@ -46,7 +46,7 @@ func opacitySymbol(s string) string {
 
 templ diamond(chord models.Chord) {
 	<div class="relative min-w-10 min-h-23 mx-1">
-		<div class={ templ.Classes("annotation-symbol text-xl mb-0 leading-none text-center", opacitySymbol(chord.Annotation.Value)) }>
+		<div class={ templ.Classes("annotation-symbol text-xl mb-0 leading-none text-center " + opacitySymbol(chord.Annotation.Value)) }>
 			@symbol(chord.Annotation)
 		</div>
 		<div class="ch leading-none relative mt-5">
