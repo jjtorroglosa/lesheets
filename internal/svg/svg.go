@@ -3,13 +3,12 @@ package svg
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"lesheets/internal/timer"
 	"os/exec"
 	"strings"
 )
 
-func AbcToHtml(sourceFile string, defaultLength string, abcInput string) (template.HTML, error) {
+func AbcToHtml(sourceFile string, defaultLength string, abcInput string) (string, error) {
 	abc := `
 %%topspace 0
 %%musicfont
@@ -23,13 +22,13 @@ func AbcToHtml(sourceFile string, defaultLength string, abcInput string) (templa
 ` + abcInput
 	svg, err := AbcToSvg(sourceFile, abc)
 	if err != nil {
-		return template.HTML(""), err
+		return "", err
 	}
 
-	return template.HTML(svg), nil
+	return svg, nil
 }
 
-func InlineAbcToHtml(sourceFile string, defaultLength string, abcInput string) (template.HTML, error) {
+func InlineAbcToHtml(sourceFile string, defaultLength string, abcInput string) (string, error) {
 	abc := `
 %%topspace 0
 %%musicfont
@@ -49,10 +48,10 @@ K:none clef=none stafflines=0 stem=up
 ` + abcInput
 	svg, err := AbcToSvg(sourceFile, abc)
 	if err != nil {
-		return template.HTML(""), err
+		return "", err
 	}
 
-	return template.HTML(svg), nil
+	return svg, nil
 }
 
 func AbcToSvg(sourceFile string, abcInput string) (string, error) {

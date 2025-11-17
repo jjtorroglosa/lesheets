@@ -2,33 +2,21 @@ package internal
 
 import (
 	"fmt"
+	"lesheets/internal/domain"
 	"lesheets/internal/timer"
 	"os"
-
-	"gopkg.in/yaml.v3"
 )
 
 type Parser struct {
 	Lexer              *Lexer
 	backtickId         int
 	mutilineBacktickId int
-	song               *Song
+	song               *domain.Song
 	barsCount          int
 }
 
 func (p *Parser) SourceFile() string {
 	return p.Lexer.source
-}
-
-func (s *Song) DefaultLength() string {
-	if s == nil {
-		return "1/16"
-	}
-	defaultLength, ok := s.FrontMatter["L"]
-	if !ok || defaultLength == "" {
-		return "1/16"
-	}
-	return defaultLength
 }
 
 func NewParser(lex *Lexer) *Parser {
@@ -38,11 +26,11 @@ func NewParser(lex *Lexer) *Parser {
 	}
 }
 
-func ParseSongFromString(s string) (*Song, error) {
+func ParseSongFromString(s string) (*domain.Song, error) {
 	return NewParser(NewLexerFromSource("unknown", s)).ParseSong()
 }
 
-func ParseSongFromStringWithFileName(filename string, sourceCode string) (*Song, error) {
+func ParseSongFromStringWithFileName(filename string, sourceCode string) (*domain.Song, error) {
 	return NewParser(NewLexerFromSource(filename, sourceCode)).ParseSong()
 }
 
@@ -54,15 +42,17 @@ func ReadFile(file string) (string, error) {
 	return string(data), nil
 }
 
-func ParseSongFromFile(file string) (*Song, error) {
+func ParseSongFromFile(file string) (*Parser, *domain.Song, error) {
 	defer timer.LogElapsedTime("parsing")()
 
 	data, err := ReadFile(file)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %w", err)
+		return nil, nil, fmt.Errorf("failed to read file: %w", err)
 	}
 
-	return NewParser(NewLexerFromSource(file, string(data))).ParseSong()
+	parser := NewParser(NewLexerFromSource(file, string(data)))
+	res, err := parser.ParseSong()
+	return parser, res, err
 }
 
 var SURROUNDING_CONTEXT = 15
@@ -72,9 +62,8 @@ var SURROUNDING_CONTEXT = 15
 //	Frontmatter Body
 //	| Body
 //	;
-func (p *Parser) ParseSong() (*Song, error) {
-	song := Song{}
-	song.Parser = p
+func (p *Parser) ParseSong() (*domain.Song, error) {
+	song := domain.Song{}
 	p.song = &song
 	p.Lexer.consumeWhitespacesAndNewLines()
 
@@ -83,7 +72,7 @@ func (p *Parser) ParseSong() (*Song, error) {
 		return nil, err
 	}
 	switch tok.Type {
-	case TokenFrontMatter:
+	case domain.TokenFrontMatter:
 		fm, err := p.ParseFrontmatter()
 		if err != nil {
 			return nil, err
@@ -102,44 +91,45 @@ func (p *Parser) ParseSong() (*Song, error) {
 
 // FrontMatter: TokenFrontmatter
 func (p *Parser) ParseFrontmatter() (map[string]string, error) {
-	tok, err := p.Lexer.ConsumeNextToken()
+	_, err := p.Lexer.ConsumeNextToken()
 	if err != nil {
 		return nil, err
 	}
-
-	if tok.Type != TokenFrontMatter {
-		return nil, fmt.Errorf("unexpected token. Want TokenFrontmatter, Got: %s", tok.Type)
-	}
-	bytes := []byte(tok.Value)
-	frontmatter := map[string]string{}
-	err = yaml.Unmarshal(bytes, &frontmatter)
-	if err != nil {
-		return nil, err
-	}
-	return frontmatter, err
+	//
+	// if tok.Type != domain.TokenFrontMatter {
+	// 	return nil, fmt.Errorf("unexpected token. Want TokenFrontmatter, Got: %s", tok.Type)
+	// }
+	// bytes := []byte(tok.Value)
+	// frontmatter := map[string]string{}
+	// err = yaml.Unmarshal(bytes, &frontmatter)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return frontmatter, err
+	return map[string]string{}, nil
 }
 
 // Body:
 // Lines Sections
 // |Sections
 // ;
-func (p *Parser) ParseBody() ([]Section, error) {
+func (p *Parser) ParseBody() ([]domain.Section, error) {
 	tok, err := p.Lexer.Lookahead()
-	sections := []Section{}
+	sections := []domain.Section{}
 	if err != nil {
 		return sections, err
 	}
 	switch tok.Type {
-	case TokenHeader, TokenHeaderBreak:
+	case domain.TokenHeader, domain.TokenHeaderBreak:
 		sections, err := p.ParseSections()
 		if err != nil {
 			return nil, err
 		}
 		return sections, nil
 	default:
-		emptySection := Section{
+		emptySection := domain.Section{
 			Name:  "",
-			Lines: []Line{},
+			Lines: []domain.Line{},
 			Break: false,
 		}
 		lines, err := p.ParseLines()
@@ -161,8 +151,8 @@ func (p *Parser) ParseBody() ([]Section, error) {
 // Sections
 // :Section
 // |Section Sections
-func (p *Parser) ParseSections() ([]Section, error) {
-	sections := []Section{}
+func (p *Parser) ParseSections() ([]domain.Section, error) {
+	sections := []domain.Section{}
 	for {
 		tok, err := p.Lexer.Lookahead()
 		if err != nil {
@@ -170,9 +160,9 @@ func (p *Parser) ParseSections() ([]Section, error) {
 		}
 
 		switch tok.Type {
-		case TokenEof:
+		case domain.TokenEof:
 			return sections, nil
-		case TokenHeader, TokenHeaderBreak:
+		case domain.TokenHeader, domain.TokenHeaderBreak:
 			section, err := p.ParseSection()
 			if err != nil {
 				return nil, err
@@ -186,17 +176,17 @@ func (p *Parser) ParseSections() ([]Section, error) {
 
 // Section
 // :Header Lines
-func (p *Parser) ParseSection() (*Section, error) {
+func (p *Parser) ParseSection() (*domain.Section, error) {
 	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
 	switch tok.Type {
-	case TokenHeader, TokenHeaderBreak:
-		section := Section{
+	case domain.TokenHeader, domain.TokenHeaderBreak:
+		section := domain.Section{
 			Name:  tok.Value,
 			Lines: nil,
-			Break: tok.Type == TokenHeaderBreak,
+			Break: tok.Type == domain.TokenHeaderBreak,
 		}
 		_, _ = p.Lexer.ConsumeNextToken()
 
@@ -215,16 +205,16 @@ func (p *Parser) ParseSection() (*Section, error) {
 // Line
 // |Line Lines
 // ;
-func (p *Parser) ParseLines() ([]Line, error) {
+func (p *Parser) ParseLines() ([]domain.Line, error) {
 	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
-	lines := []Line{}
+	lines := []domain.Line{}
 
 	for {
 		switch tok.Type {
-		case TokenHeaderBreak, TokenHeader, TokenEof:
+		case domain.TokenHeaderBreak, domain.TokenHeader, domain.TokenEof:
 			return lines, nil
 		default:
 			line, err := p.ParseLine()
@@ -245,19 +235,19 @@ func (p *Parser) ParseLines() ([]Line, error) {
 // Line:
 // Bars TokenReturn
 // |Bar Bars
-func (p *Parser) ParseLine() (*Line, error) {
-	bars := []Bar{}
+func (p *Parser) ParseLine() (*domain.Line, error) {
+	bars := []domain.Bar{}
 
 	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
 
-	if tok.Type == TokenBacktickMultiline {
+	if tok.Type == domain.TokenBacktickMultiline {
 		_, _ = p.Lexer.ConsumeNextToken()
-		line := &Line{
-			Bars: []Bar{},
-			MultilineBacktick: MultilineBacktick{
+		line := &domain.Line{
+			Bars: []domain.Bar{},
+			MultilineBacktick: domain.MultilineBacktick{
 				Id:            p.mutilineBacktickId,
 				Value:         tok.Value,
 				DefaultLength: p.song.DefaultLength(),
@@ -268,8 +258,8 @@ func (p *Parser) ParseLine() (*Line, error) {
 		return line, nil
 	}
 
-	var prev *Bar
-	for tok.Type != TokenReturn && tok.Type != TokenEof {
+	var prev *domain.Bar
+	for tok.Type != domain.TokenReturn && tok.Type != domain.TokenEof {
 		bar, err := p.ParseBar()
 		if err != nil {
 			return nil, err
@@ -284,7 +274,7 @@ func (p *Parser) ParseLine() (*Line, error) {
 		prev = bar
 	}
 	_, _ = p.Lexer.ConsumeNextToken()
-	return &Line{Bars: bars}, nil
+	return &domain.Line{Bars: bars}, nil
 }
 
 // Bar
@@ -300,8 +290,8 @@ func (p *Parser) ParseLine() (*Line, error) {
 // Chords
 // :Chord
 // |Chord Chords
-func (p *Parser) ParseBar() (*Bar, error) {
-	bar := Bar{}
+func (p *Parser) ParseBar() (*domain.Bar, error) {
+	bar := domain.Bar{}
 	bar.Id = p.barsCount
 	p.barsCount++
 
@@ -310,9 +300,9 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		return nil, err
 	}
 
-	for tok.Type == TokenBar || tok.Type == TokenBarNote {
+	for tok.Type == domain.TokenBar || tok.Type == domain.TokenBarNote {
 		switch tok.Type {
-		case TokenBar:
+		case domain.TokenBar:
 			if tok.Value == "||:" {
 				bar.RepeatStart = true
 			}
@@ -321,7 +311,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			if err != nil {
 				return nil, err
 			}
-		case TokenBarNote:
+		case domain.TokenBarNote:
 			bar.BarNote = tok.Value
 			// consume it
 			_, _ = p.Lexer.ConsumeNextToken()
@@ -333,12 +323,12 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		}
 	}
 	// BarBody
-	if tok.Type != TokenChord && tok.Type != TokenAnnotation && tok.Type != TokenBacktick {
+	if tok.Type != domain.TokenChord && tok.Type != domain.TokenAnnotation && tok.Type != domain.TokenBacktick {
 		return nil, fmt.Errorf("parsing bar: unexpected token. Want Chord, Annotation or Backtick, got %s %s", tok.Type, p.Lexer.SurroundingString())
 	}
 
 	switch tok.Type {
-	case TokenBacktick:
+	case domain.TokenBacktick:
 		backtick, err := p.ParseBacktick()
 		if err != nil {
 			return nil, err
@@ -348,7 +338,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		if err != nil {
 			return nil, err
 		}
-		if tok.Type == TokenBar && tok.Value != "||:" {
+		if tok.Type == domain.TokenBar && tok.Value != "||:" {
 			switch tok.Value {
 			case ":||":
 				bar.RepeatEnd = true
@@ -361,9 +351,9 @@ func (p *Parser) ParseBar() (*Bar, error) {
 			}
 		}
 		return &bar, nil
-	case TokenAnnotation, TokenChord:
-		chords := []Chord{}
-		for tok.Type == TokenChord || tok.Type == TokenAnnotation {
+	case domain.TokenAnnotation, domain.TokenChord:
+		chords := []domain.Chord{}
+		for tok.Type == domain.TokenChord || tok.Type == domain.TokenAnnotation {
 			chord, err := p.ParseChord()
 			if err != nil {
 				return nil, err
@@ -379,7 +369,7 @@ func (p *Parser) ParseBar() (*Bar, error) {
 		}
 		bar.Chords = chords
 
-		if tok.Type == TokenBar && tok.Value != "||:" {
+		if tok.Type == domain.TokenBar && tok.Value != "||:" {
 			switch tok.Value {
 			case ":||":
 				bar.RepeatEnd = true
@@ -401,17 +391,17 @@ func (p *Parser) ParseBar() (*Bar, error) {
 	}
 }
 
-func (p *Parser) ParseBacktick() (*Backtick, error) {
+func (p *Parser) ParseBacktick() (*domain.Backtick, error) {
 	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
 
-	if tok.Type != TokenBacktick {
+	if tok.Type != domain.TokenBacktick {
 		return nil, fmt.Errorf("expected backtick, got: %s", tok.Type)
 	}
 
-	bt := Backtick{
+	bt := domain.Backtick{
 		Id:            p.backtickId,
 		Value:         "",
 		DefaultLength: p.song.DefaultLength(),
@@ -426,16 +416,16 @@ func (p *Parser) ParseBacktick() (*Backtick, error) {
 // Chord
 // :TokenChord
 // |TokenAnnotation TokenChord
-func (p *Parser) ParseChord() (*Chord, error) {
+func (p *Parser) ParseChord() (*domain.Chord, error) {
 	tok, err := p.Lexer.Lookahead()
 	if err != nil {
 		return nil, err
 	}
-	chord := Chord{
+	chord := domain.Chord{
 		Value:      "",
-		Annotation: &Annotation{},
+		Annotation: &domain.Annotation{},
 	}
-	if tok.Type == TokenAnnotation {
+	if tok.Type == domain.TokenAnnotation {
 		chord.Annotation.Value = tok.Value
 		_, _ = p.Lexer.ConsumeNextToken()
 		tok, err = p.Lexer.Lookahead()
@@ -444,7 +434,7 @@ func (p *Parser) ParseChord() (*Chord, error) {
 		}
 	}
 
-	if tok.Type != TokenChord {
+	if tok.Type != domain.TokenChord {
 		return nil, fmt.Errorf(
 			"expected chord but found %s, %s",
 			tok.Type,

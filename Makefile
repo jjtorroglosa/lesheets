@@ -63,7 +63,7 @@ watch-run:
 	ls $(LESHEETS) | entr -r -s "$(LESHEETS) watch $(IN)"
 
 .PHONY: run
-run:
+run: $(LESHEETS)
 	$(LESHEETS) watch *.nns
 
 .PHONY: watch-js
@@ -75,7 +75,8 @@ watch-js:
 js: $(JS_OUTPUT_FILES)
 $(JS_OUTPUT_FILES): $(JS_INPUT_FILES)
 	@echo build-js
-	cp fonts/*.woff2 fonts/*.ttf build/
+	cp fonts/*.woff2 fonts/*.ttf vendorjs/wasm_exec_tinygo.js build/
+	cp vendorjs/wasm_exec_tinygo.js build/wasm_exec.js
 	node build.mjs
 
 $(LESHEETS): $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
@@ -99,12 +100,14 @@ watch-wasm:
 .PHONY: wasm
 wasm: build/wasm.wasm
 build/wasm.wasm: $(GO_FILES) $(TMPL_FILES)
-	#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o build/unoptimized.wasm $(WASM_MAIN)
-	#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js $@
 	@echo build-wasm
-	GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
-	#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o build/unoptimized.wasm $(WASM_MAIN)
-	wasm-opt build/unoptimized.wasm -Oz --enable-bulk-memory-opt -o $@
+	#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o build/unoptimized.wasm $(WASM_MAIN)
+	GOOS=js GOARCH=wasm TG_CACHE=~/.tinygo-cache tinygo build -o build/unoptimized.wasm $(WASM_MAIN)
+	cp build/unoptimized.wasm $@
+	@#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js build/wasm_exec.js
+	@#GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
+	@#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o build/unoptimized.wasm $(WASM_MAIN)
+	@#wasm-opt build/unoptimized.wasm -Oz --enable-bulk-memory-opt -o $@
 	#cp build/unoptimized.wasm $@
 
 

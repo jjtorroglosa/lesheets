@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"embed"
 	"fmt"
-	"html/template"
+	"lesheets/internal/domain"
 	"lesheets/internal/timer"
+	"lesheets/internal/views"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,14 +24,14 @@ func dict(values ...any) map[string]any {
 	return m
 }
 
-var templ *template.Template
+//var templ *template.Template
 
 func init() {
-	defer timer.LogElapsedTime("InitTmpl")()
-	funcs := template.FuncMap{
-		"dict": dict,
-	}
-	templ = template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "views/*.html"))
+	// defer timer.LogElapsedTime("InitTmpl")()
+	// funcs := template.FuncMap{
+	// 	"dict": dict,
+	// }
+	// templ = template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "views/*.html"))
 }
 
 func RenderListHTML(inputFiles []string) error {
@@ -63,9 +64,9 @@ func RenderListHTML(inputFiles []string) error {
 
 	defer f.Close()
 	var buf bytes.Buffer
-	if err := templ.ExecuteTemplate(&buf, "list.html", files); err != nil {
-		return err
-	}
+	// if err := templ.ExecuteTemplate(&buf, "list.html", files); err != nil {
+	// 	return err
+	// }
 	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
 		return err
 	}
@@ -78,23 +79,25 @@ type RenderConfig struct {
 	WithEditor     bool
 }
 
-func RenderSongHtml(cfg RenderConfig, sourceCode string, song *Song, filename string) (string, error) {
+func RenderSongHtml(cfg RenderConfig, sourceCode string, song *domain.Song, filename string) (string, error) {
 	defer timer.LogElapsedTime("RenderHtml")()
 
-	params := map[string]any{
-		"Song":   song,
-		"Dev":    cfg.WithLiveReload,
-		"Abc":    sourceCode,
-		"Whole":  cfg.WholeHtml,
-		"Editor": cfg.WithEditor,
-	}
-
 	var buf bytes.Buffer
-	tmpl := "base.html"
 
-	if err := templ.ExecuteTemplate(&buf, tmpl, params); err != nil {
-		return "", fmt.Errorf("failed to render template: %w", err)
+	// if err := templ.ExecuteTemplate(&buf, tmpl, params); err != nil {
+	// 	return "", fmt.Errorf("failed to render template: %w", err)
+	// }
+	err := views.RenderSong(views.BaseData{
+		Song:   song,
+		Dev:    cfg.WithLiveReload,
+		Abc:    sourceCode,
+		Whole:  cfg.WholeHtml,
+		Editor: cfg.WithEditor,
+	}, &buf)
+	if err != nil {
+		return "", err
 	}
+
 	res := buf.String()
 	return res, nil
 }
@@ -120,7 +123,7 @@ func WriteEditorToHtmlFile(dev bool, filename string) error {
 	return nil
 }
 
-func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename string) error {
+func WriteSongHtmlToFile(dev bool, sourceCode string, song *domain.Song, filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {
 		return fmt.Errorf("failed to create HTML file: %s", filename)
@@ -143,6 +146,6 @@ func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename strin
 
 func RenderError(err error) string {
 	buf := bytes.Buffer{}
-	template.HTMLEscape(&buf, []byte(err.Error()))
+	// template.HTMLEscape(&buf, []byte(err.Error()))
 	return "<pre>" + buf.String() + "</pre>"
 }

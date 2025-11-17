@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"lesheets/internal/domain"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -11,34 +12,34 @@ func TestLexEmptySection(t *testing.T) {
 
 	tok, err := lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenChord, tok.Type)
+	assert.Equal(t, domain.TokenChord, tok.Type)
 	assert.Equal(t, "Cmaj7", tok.Value)
 
 	tok, err = lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenBar, tok.Type)
+	assert.Equal(t, domain.TokenBar, tok.Type)
 
 	tok, err = lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenAnnotation, tok.Type)
+	assert.Equal(t, domain.TokenAnnotation, tok.Type)
 
 	tok, err = lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenChord, tok.Type)
+	assert.Equal(t, domain.TokenChord, tok.Type)
 	assert.Equal(t, "D", tok.Value)
 
 	tok, err = lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenChord, tok.Type)
+	assert.Equal(t, domain.TokenChord, tok.Type)
 	assert.Equal(t, "Caug", tok.Value)
 
 	tok, err = lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenReturn, tok.Type)
+	assert.Equal(t, domain.TokenReturn, tok.Type)
 
 	tok, err = lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenChord, tok.Type)
+	assert.Equal(t, domain.TokenChord, tok.Type)
 	assert.Equal(t, "C", tok.Value)
 }
 
@@ -70,7 +71,7 @@ func TestLexSection(t *testing.T) {
 			toks, err := lex.Lex()
 			assert.NoError(t, err)
 			assert.Equal(t, "section", toks[tC.pos].Value)
-			assert.True(t, tC.posNotHeader == -1 || toks[tC.posNotHeader].Type != TokenHeader)
+			assert.True(t, tC.posNotHeader == -1 || toks[tC.posNotHeader].Type != domain.TokenHeader)
 		})
 	}
 }
@@ -79,7 +80,7 @@ func TestLexBacktick(t *testing.T) {
 	lex := NewLexer("`backtick`")
 	toks, err := lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenBacktick, toks.Type)
+	assert.Equal(t, domain.TokenBacktick, toks.Type)
 	assert.Equal(t, "backtick", toks.Value)
 }
 
@@ -93,7 +94,7 @@ func TestLexMultilineBacktick(t *testing.T) {
 	lex := NewLexer("```\nmy\nbacktick\n```")
 	toks, err := lex.ConsumeNextToken()
 	assert.NoError(t, err)
-	assert.Equal(t, TokenBacktickMultiline, toks.Type)
+	assert.Equal(t, domain.TokenBacktickMultiline, toks.Type)
 	assert.Equal(t, "my\nbacktick\n", toks.Value)
 }
 
@@ -109,12 +110,12 @@ func TestLexIgnoresComments(t *testing.T) {
 E`)
 	lex.PrintTokens()
 	lex.pos = 0
-	expected := []TokenType{
-		TokenChord, TokenReturn, TokenChord, TokenReturn,
+	expected := []domain.TokenType{
+		domain.TokenChord, domain.TokenReturn, domain.TokenChord, domain.TokenReturn,
 	}
 	i := 0
 	tok, err := lex.ConsumeNextToken()
-	for tok.Type != TokenEof {
+	for tok.Type != domain.TokenEof {
 		assert.NoError(t, err)
 		assert.Equalf(t, expected[i], tok.Type, "want %s got %s with val %s; tok: %d", expected[i], tok.Type, tok.Value, i)
 		i++
@@ -137,7 +138,7 @@ func TestChordStartingWithSharpShouldNotBeTreatedAsHeaderIfInTheMiddleOfLine(t *
 			tokens, err := lex.Lex()
 			assert.NoError(t, err)
 			for _, tok := range tokens {
-				if tok.Type == TokenChord && tok.Value == "#1" {
+				if tok.Type == domain.TokenChord && tok.Value == "#1" {
 					found = true
 				}
 			}
@@ -156,12 +157,12 @@ func TestLexCommentDoesNotConsumeTokenReturnIfInline(t *testing.T) {
 E
 `)
 	lex.pos = 0
-	expected := []TokenType{
-		TokenChord, TokenReturn, TokenChord, TokenReturn,
+	expected := []domain.TokenType{
+		domain.TokenChord, domain.TokenReturn, domain.TokenChord, domain.TokenReturn,
 	}
 	i := 0
 	tok, err := lex.ConsumeNextToken()
-	for tok.Type != TokenEof {
+	for tok.Type != domain.TokenEof {
 		assert.NoError(t, err)
 		assert.Equalf(t, expected[i], tok.Type, "want %s got %s with val %s; tok: %d", expected[i], tok.Type, tok.Value, i)
 		i++
@@ -179,11 +180,11 @@ func TestLexChord(t *testing.T) {
 	lex := NewLexer("!annotation!Cmaj7 !second!D")
 
 	tok, _ := lex.ConsumeNextToken()
-	assert.Equal(t, TokenAnnotation, tok.Type)
+	assert.Equal(t, domain.TokenAnnotation, tok.Type)
 	tok, _ = lex.ConsumeNextToken()
-	assert.Equal(t, TokenChord, tok.Type)
+	assert.Equal(t, domain.TokenChord, tok.Type)
 	tok, _ = lex.ConsumeNextToken()
-	assert.Equal(t, TokenAnnotation, tok.Type)
+	assert.Equal(t, domain.TokenAnnotation, tok.Type)
 	tok, _ = lex.ConsumeNextToken()
-	assert.Equal(t, TokenChord, tok.Type)
+	assert.Equal(t, domain.TokenChord, tok.Type)
 }

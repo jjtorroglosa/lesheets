@@ -8,3 +8,4 @@ lesheets
 *.nns
 !examples/*.nns
 vendorjs/abc2svg-compiled.js
+**/*_templ.go

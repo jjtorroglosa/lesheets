@@ -8,11 +8,17 @@ import (
 	"syscall/js"
 )
 
-func lesheetToJson(this js.Value, args []js.Value) any {
+func lesheetToHtml(this js.Value, args []js.Value) any {
+	defer func() {
+		if r := recover(); r != nil {
+			println("Recovered panic:", r)
+		}
+	}()
 	inputStr := args[0].String() // Convert JS string to Go string
+	println("heeeeeeeeeeeeeeeeeeeeeeeeeee")
 	song, err := internal.ParseSongFromString(inputStr)
 	if err != nil {
-		return internal.RenderError(err)
+		return js.ValueOf(internal.RenderError(err))
 	}
 	html, err := internal.RenderSongHtml(
 		internal.RenderConfig{
@@ -29,10 +35,10 @@ func lesheetToJson(this js.Value, args []js.Value) any {
 		html = internal.RenderError(err)
 	}
 
-	return html
+	return js.ValueOf(html)
 }
 
 func main() {
-	js.Global().Set("go_lesheetToJson", js.FuncOf(lesheetToJson))
+	js.Global().Set("go_lesheetToHtml", js.FuncOf(lesheetToHtml))
 	select {}
 }

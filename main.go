@@ -5,11 +5,11 @@ package main
 
 import (
 	"embed"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
 	"lesheets/internal"
+	"lesheets/internal/logger"
 	"lesheets/internal/timer"
 	"log"
 	"net/http"
@@ -36,7 +36,7 @@ func main() {
 	args := flag.Args()
 	if len(args) < 1 {
 		flag.Usage()
-		internal.Fatalf("invalid args")
+		logger.Fatalf("invalid args")
 	}
 	i := 0
 	cmd := args[i]
@@ -92,21 +92,22 @@ func main() {
 		return
 	}
 	for _, inputFile := range files {
-		song, err := internal.ParseSongFromFile(inputFile)
+		parser, song, err := internal.ParseSongFromFile(inputFile)
 		if err != nil {
-			internal.Fatalf("error parsing song: %v", err)
+			logger.Fatalf("error parsing song: %v", err)
 		}
 
 		switch cmd {
 		case "json":
-			j, err := json.Marshal(song)
-			if err != nil {
-				log.Fatalf("Error marshalling json: %v", err)
-			}
-			fmt.Println(string(j))
+			// j, err := json.Marshal(song)
+			// if err != nil {
+			// 	log.Fatalf("Error marshalling json: %v", err)
+			// }
+			// fmt.Println(string(j))
+			fmt.Println("disabled")
 		case "html":
 			if *printTokens {
-				lexer := song.Parser.Lexer
+				lexer := parser.Lexer
 				lexer.PrintTokens()
 			}
 

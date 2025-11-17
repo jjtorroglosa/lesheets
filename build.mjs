@@ -15,9 +15,13 @@ const ctx = await context({
     format: 'esm',
     outdir: 'build',
     target: ['es2017'],
-    loader: { '.css': 'css' },
+    external: ['./vendorjs/wasm_exec_tinygo.js'],
+    loader: {
+        '.css': 'css',
+    },
     alias: {
-        wasm_exec: './vendorjs/wasm_exec_go.js',
+        //wasm_exec: './vendorjs/wasm_exec_go.js',
+        //
         abc2svg: './vendorjs/abc2svg-wrapper.js',
     },
     define: {
