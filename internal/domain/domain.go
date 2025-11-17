@@ -1,16 +1,17 @@
-package internal
+package domain
 
 import (
 	"encoding/json"
-	"fmt"
-	"html/template"
+	"errors"
+	"lesheets/internal/logger"
 	"lesheets/internal/svg"
+
+	"github.com/a-h/templ"
 )
 
 type Song struct {
 	FrontMatter map[string]string `json:"front_matter"`
 	Sections    []Section         `json:"sections"`
-	Parser      *Parser           `json:"-"`
 }
 
 type Section struct {
@@ -88,8 +89,8 @@ func (chord *Chord) PrettyPrint() string {
 	return FormatChord(chord.Value)
 }
 
-func (chord *Chord) PrettyPrintHTML() template.HTML {
-	return template.HTML(chord.PrettyPrint())
+func (chord *Chord) PrettyPrintHTML() string {
+	return chord.PrettyPrint()
 }
 
 func (song *Song) Backticks() []Backtick {
@@ -106,32 +107,32 @@ func (song *Song) Backticks() []Backtick {
 	return bts
 }
 
-func (song *Song) Key() template.HTML {
+func (song *Song) Key() templ.Component {
 	key := song.FrontMatter["key"]
-	return template.HTML(FormatChord(key))
+	return templ.Raw(FormatChord(key))
 }
 
 func (song *Song) PrintSong() {
-	Println("Frontmatter:")
+	logger.Println("Frontmatter:")
 	for k, v := range song.FrontMatter {
-		Printf("%s: %s\n", k, v)
+		logger.Printf("%s: %s\n", k, v)
 	}
 	i := 1
 	for _, sec := range song.Sections {
-		Printf("Section: %s\n", sec.Name)
+		logger.Printf("Section: %s\n", sec.Name)
 		for _, line := range sec.Lines {
 			if line.MultilineBacktick.Value != "" {
-				Printf("MultilineBacktick: %s", line.MultilineBacktick.Value)
+				logger.Printf("MultilineBacktick: %s", line.MultilineBacktick.Value)
 			} else {
 				for _, bar := range line.Bars {
-					Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.BarNote)
+					logger.Printf("  Bar %d (%s) '%s': ", i+1, bar.Type, bar.BarNote)
 					for _, t := range bar.Chords {
-						Printf("Chord (%s): %s", t.Annotation.Value, t.Value)
+						logger.Printf("Chord (%s): %s", t.Annotation.Value, t.Value)
 					}
 					i++
 				}
 			}
-			Printf("\n")
+			logger.Printf("\n")
 		}
 	}
 }
@@ -139,38 +140,34 @@ func (song *Song) PrintSong() {
 func (song *Song) ToJson() (string, error) {
 	j, err := json.MarshalIndent(song, "", "  ")
 	if err != nil {
-		return "", fmt.Errorf("error marshalling json: %w", err)
+		return "", errors.New("error marshalling json: " + err.Error())
 	}
 	return string(j), nil
 }
 
-func (mb *MultilineBacktick) Svg() template.HTML {
-	html, err := svg.AbcToHtml(mb.SourceFile, mb.DefaultLength, mb.Value)
-	if err != nil {
-		return template.HTML("<pre>Error rendering svg</pre>")
+func (s *Song) DefaultLength() string {
+	if s == nil {
+		return "1/16"
 	}
-	return template.HTML(html)
+	defaultLength, ok := s.FrontMatter["L"]
+	if !ok || defaultLength == "" {
+		return "1/16"
+	}
+	return defaultLength
 }
 
-func (backtick *Backtick) Svg() template.HTML {
-	html, err := svg.InlineAbcToHtml("", backtick.DefaultLength, backtick.Value)
+func (mb *MultilineBacktick) Svg() string {
+	html, err := svg.AbcToHtml(mb.SourceFile, mb.DefaultLength, mb.Value)
 	if err != nil {
-		return template.HTML("<pre>Error rendering svg</pre>")
+		return "<pre>Error rendering svg</pre>"
 	}
 	return html
 }
-func (a *Annotation) Symbol() template.HTML {
-	switch a.Value {
-	case "marcato":
-		return `<div class="font-bold relative top-[4px] leading-[1.3] text-[1rem]/2 font-music">^</div>`
-	case "push":
-		return `<span class="text-[10px]/[1.25rem]">❮</span>`
-	case "pull", "hold":
-		return `<span class="text-[10px]/[1.25rem]">❯</span>`
-	case "fermata":
-		return `<div class="font-music text-xl leading-none"></div>`
-	case "diamond-fermata":
-		return `<div class="font-music font-size text-xl leading-none"></div>`
+
+func (backtick *Backtick) Svg() string {
+	html, err := svg.InlineAbcToHtml("", backtick.DefaultLength, backtick.Value)
+	if err != nil {
+		return "<pre>Error rendering svg</pre>"
 	}
-	return ""
+	return html
 }

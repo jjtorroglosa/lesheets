@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"io/fs"
 	"lesheets/internal"
-	"lesheets/internal/timer"
+	"lesheets/internal/logger"
 	"log"
 	"net/http"
 	"os"
@@ -36,7 +36,7 @@ func main() {
 	args := flag.Args()
 	if len(args) < 1 {
 		flag.Usage()
-		internal.Fatalf("invalid args")
+		log.Fatalf("invalid args")
 	}
 	i := 0
 	cmd := args[i]
@@ -92,9 +92,9 @@ func main() {
 		return
 	}
 	for _, inputFile := range files {
-		song, err := internal.ParseSongFromFile(inputFile)
+		parser, song, err := internal.ParseSongFromFile(inputFile)
 		if err != nil {
-			internal.Fatalf("error parsing song: %v", err)
+			log.Fatalf("error parsing song: %v", err)
 		}
 
 		switch cmd {
@@ -106,7 +106,7 @@ func main() {
 			fmt.Println(string(j))
 		case "html":
 			if *printTokens {
-				lexer := song.Parser.Lexer
+				lexer := parser.Lexer
 				lexer.PrintTokens()
 			}
 
@@ -142,7 +142,7 @@ func waitForFile(file string) {
 
 func render(dev bool, inputFile string, outputDir string) error {
 	waitForFile(inputFile)
-	defer timer.LogElapsedTime("WholeRender:" + inputFile)()
+	defer logger.LogElapsedTime("WholeRender:" + inputFile)()
 	start := time.Now()
 	defer func() {
 		elapsed := time.Since(start)

@@ -1,12 +1,13 @@
 package internal
 
 import (
+	"lesheets/internal/domain"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
 
-func (s *Song) PrintFrontmatter(sb *strings.Builder) error {
+func PrintFrontmatter(s *domain.Song, sb *strings.Builder) error {
 	if len(s.FrontMatter) == 0 {
 		return nil
 	}
@@ -22,7 +23,7 @@ func (s *Song) PrintFrontmatter(sb *strings.Builder) error {
 	return nil
 }
 
-func (song *Song) PrintSections(sb *strings.Builder) error {
+func PrintSections(song *domain.Song, sb *strings.Builder) error {
 	for _, s := range song.Sections {
 		if s.Name != "" {
 			sb.WriteString("\n")
@@ -35,14 +36,14 @@ func (song *Song) PrintSections(sb *strings.Builder) error {
 			sb.WriteString("\n\n")
 		}
 		for _, l := range s.Lines {
-			l.PrintBarsLine(sb)
+			PrintBarsLine(&l, sb)
 			sb.WriteString("\n")
 		}
 	}
 	return nil
 }
 
-func (line *Line) PrintBarsLine(sb *strings.Builder) {
+func PrintBarsLine(line *domain.Line, sb *strings.Builder) {
 	if line.MultilineBacktick.Value != "" {
 		sb.WriteString("```\n")
 		sb.WriteString(line.MultilineBacktick.Value)
@@ -51,15 +52,15 @@ func (line *Line) PrintBarsLine(sb *strings.Builder) {
 
 	for i, b := range line.Bars {
 		isLastOfLine := i >= len(line.Bars)-1
-		var next *Bar
+		var next *domain.Bar
 		if !isLastOfLine {
 			next = &line.Bars[i+1]
 		}
-		b.PrintBar(sb, next)
+		PrintBar(&b, sb, next)
 	}
 }
 
-func (bar *Bar) PrintBar(sb *strings.Builder, next *Bar) {
+func PrintBar(bar *domain.Bar, sb *strings.Builder, next *domain.Bar) {
 	if bar.RepeatStart {
 		sb.WriteString("||: ")
 	}
@@ -95,15 +96,15 @@ func (bar *Bar) PrintBar(sb *strings.Builder, next *Bar) {
 	}
 }
 
-func (s *Song) PrintLesheet() string {
+func PrintLesheet(s *domain.Song) string {
 	sb := &strings.Builder{}
 
-	err := s.PrintFrontmatter(sb)
+	err := PrintFrontmatter(s, sb)
 	if err != nil {
 		return ""
 	}
 
-	err = s.PrintSections(sb)
+	err = PrintSections(s, sb)
 	if err != nil {
 		return ""
 	}

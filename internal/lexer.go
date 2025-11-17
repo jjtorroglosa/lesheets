@@ -1,32 +1,13 @@
 package internal
 
 import (
-	"fmt"
+	"errors"
+	"lesheets/internal/domain"
+	"lesheets/internal/logger"
+	"strconv"
 	"strings"
 	"unicode"
 )
-
-type TokenType string
-
-const (
-	TokenFrontMatter       TokenType = "FrontMatter"
-	TokenHeader            TokenType = "Header"
-	TokenHeaderBreak       TokenType = "HeaderBreak"
-	TokenBar               TokenType = "Bar"
-	TokenReturn            TokenType = "Return"
-	TokenBarNote           TokenType = "BarNote"
-	TokenAnnotation        TokenType = "Annotation"
-	TokenBacktick          TokenType = "BacktickExpression"
-	TokenBacktickMultiline TokenType = "BacktickMultilineExpression"
-	TokenUnknown           TokenType = "Unknown"
-	TokenEof               TokenType = "EOF"
-	TokenChord             TokenType = "Chord"
-)
-
-type Token struct {
-	Type  TokenType
-	Value string
-}
 
 type Lexer struct {
 	source string
@@ -91,14 +72,14 @@ func (l *Lexer) consumeWhitespacesAndNewLines() {
 }
 
 func ErrGeneric(context string, want string, got string) error {
-	return fmt.Errorf("unexpected string %sWant: <%s> Got: <%s>", context, want, got)
+	return errors.New("unexpected string " + context + "Want: <" + want + "> Got: <" + got + ">")
 }
 
 func ErrInvalidFrontmatter(context string, want string, got string) error {
-	return fmt.Errorf("invalid frontmatter %sWant: <%s> Got: <%s> ", context, want, got)
+	return errors.New("invalid frontmatter " + context + "Want: <" + want + "> Got: <" + got + "> ")
 }
 
-func (l *Lexer) consumeFrontmatter() (*Token, error) {
+func (l *Lexer) consumeFrontmatter() (*domain.Token, error) {
 	start := l.pos
 	// opening ---
 	for !l.eof() && l.nextChar() == '-' {
@@ -127,13 +108,13 @@ func (l *Lexer) consumeFrontmatter() (*Token, error) {
 		return nil, ErrInvalidFrontmatter(l.SurroundingString(), "Closing ---", l.getPos(start, 3))
 	}
 
-	return &Token{
-		Type:  TokenFrontMatter,
+	return &domain.Token{
+		Type:  domain.TokenFrontMatter,
 		Value: value,
 	}, nil
 }
 
-func (l *Lexer) Lookahead() (*Token, error) {
+func (l *Lexer) Lookahead() (*domain.Token, error) {
 	prev := l.pos
 	line := l.line
 	tok, err := l.ConsumeNextToken()
@@ -145,12 +126,12 @@ func (l *Lexer) Lookahead() (*Token, error) {
 	return tok, nil
 }
 
-func (l *Lexer) ConsumeNextToken() (*Token, error) {
+func (l *Lexer) ConsumeNextToken() (*domain.Token, error) {
 	l.consumeWhitespaces()
 	if l.eof() {
 		l.pos++
-		return &Token{
-			Type:  TokenEof,
+		return &domain.Token{
+			Type:  domain.TokenEof,
 			Value: "",
 		}, nil
 	}
@@ -169,8 +150,8 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		if l.getPos(l.pos, 3) != ":||" {
 			return nil, ErrGeneric(l.SurroundingString(), ":||", l.getPos(l.pos, 3))
 		}
-		tok := Token{
-			Type:  TokenBar,
+		tok := domain.Token{
+			Type:  domain.TokenBar,
 			Value: ":||",
 		}
 		l.pos += 3
@@ -179,22 +160,22 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	// Single bar
 	if ch == '|' {
 		if l.getPos(l.pos, 3) == "||:" {
-			tok := Token{
-				Type:  TokenBar,
+			tok := domain.Token{
+				Type:  domain.TokenBar,
 				Value: "||:",
 			}
 			l.pos += 3
 			return &tok, nil
 		} else if l.getPos(l.pos, 2) == "||" {
-			tok := Token{
-				Type:  TokenBar,
+			tok := domain.Token{
+				Type:  domain.TokenBar,
 				Value: "||",
 			}
 			l.pos += 2
 			return &tok, nil
 		} else {
-			tok := Token{
-				Type:  TokenBar,
+			tok := domain.Token{
+				Type:  domain.TokenBar,
 				Value: "|",
 			}
 			l.advance()
@@ -224,8 +205,8 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		if l.nextChar() != '!' {
 			return nil, ErrGeneric(l.SurroundingString(), "!", string(l.nextChar()))
 		}
-		tok := Token{
-			Type:  TokenAnnotation,
+		tok := domain.Token{
+			Type:  domain.TokenAnnotation,
 			Value: l.input[start:l.pos],
 		}
 		l.advance()
@@ -239,8 +220,8 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		for l.pos < len(l.input) && l.input[l.pos] != '"' {
 			l.advance()
 		}
-		tok := Token{
-			Type:  TokenBarNote,
+		tok := domain.Token{
+			Type:  domain.TokenBarNote,
 			Value: l.input[start:l.pos],
 		}
 
@@ -265,8 +246,8 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 			if l.pos+3 > len(l.input) || l.getPos(l.pos, 3) != "```" {
 				return nil, ErrGeneric(l.SurroundingString(), "Closing ```", l.getPos(l.pos, 3))
 			}
-			tok := Token{
-				Type:  TokenBacktickMultiline,
+			tok := domain.Token{
+				Type:  domain.TokenBacktickMultiline,
 				Value: l.input[start:l.pos],
 			}
 			l.pos += 3
@@ -278,8 +259,8 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 			for l.pos < len(l.input) && l.input[l.pos] != '`' {
 				l.advance()
 			}
-			tok := Token{
-				Type:  TokenBacktick,
+			tok := domain.Token{
+				Type:  domain.TokenBacktick,
 				Value: l.input[start:l.pos],
 			}
 
@@ -293,12 +274,12 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 
 	// Headers
 	if ch == '#' && (l.getPos(l.pos-1, 1) == "BeginningOfFile" || l.getPos(l.pos-1, 1) == "" || l.getPos(l.pos-1, 1) == "\n") {
-		tokenType := TokenHeader
+		tokenType := domain.TokenHeader
 		for l.pos < len(l.input) && l.input[l.pos] == '#' {
 			l.advance()
 		}
 		if l.pos < len(l.input) && l.input[l.pos] == '-' {
-			tokenType = TokenHeaderBreak
+			tokenType = domain.TokenHeaderBreak
 			l.advance()
 		}
 		l.consumeWhitespaces()
@@ -309,7 +290,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		if l.nextChar() == '\n' {
 			l.line++
 		}
-		tok := Token{
+		tok := domain.Token{
 			Type:  tokenType,
 			Value: strings.TrimSpace(l.input[start:l.pos]),
 		}
@@ -321,7 +302,7 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 	if l.nextChar() == '\n' {
 		l.consumeWhitespacesAndNewLines()
 		// tokens = append(tokens, Token{Type: TokenBar, Value: "|"})
-		tok := Token{Type: TokenReturn, Value: "\n"}
+		tok := domain.Token{Type: domain.TokenReturn, Value: "\n"}
 		return &tok, nil
 	}
 
@@ -331,13 +312,13 @@ func (l *Lexer) ConsumeNextToken() (*Token, error) {
 		l.advance()
 	}
 	value := l.input[start:l.pos]
-	tok := Token{Type: TokenChord, Value: value}
+	tok := domain.Token{Type: domain.TokenChord, Value: value}
 	return &tok, nil
 }
 
 // Scan all tokens in the input
-func (l *Lexer) Lex() ([]Token, error) {
-	var tokens []Token
+func (l *Lexer) Lex() ([]domain.Token, error) {
+	var tokens []domain.Token
 	for l.pos < len(l.input) {
 		tok, err := l.ConsumeNextToken()
 		if err != nil {
@@ -363,8 +344,8 @@ func (l *Lexer) SurroundingString() string {
 	start := max(0, l.pos-context)
 	end := min(len(l.input), l.pos+context)
 	sb := strings.Builder{}
-	sb.WriteString(fmt.Sprintf("at pos %d ", l.pos))
-	sb.WriteString(fmt.Sprintf("line %d ", l.line))
+	sb.WriteString("at pos " + strconv.Itoa(l.pos) + " ")
+	sb.WriteString("line " + strconv.Itoa(l.line) + " ")
 	sb.WriteString("near:\n")
 	pos := start
 	for i := start; i < end; i++ {
@@ -390,6 +371,6 @@ func (l *Lexer) PrintTokens() {
 			return
 		}
 
-		fmt.Printf("Token%s: %s\n", tok.Type, tok.Value)
+		logger.Printf("Token%s: %s\n", tok.Type, tok.Value)
 	}
 }

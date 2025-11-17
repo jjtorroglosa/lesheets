@@ -1,4 +1,4 @@
-import 'wasm_exec'; // import for side effects
+import '../vendorjs/wasm_exec.v.js';
 
 export const initWasm = async () => {
     if (typeof Go === "undefined") {
@@ -17,5 +17,5 @@ export const initWasm = async () => {
     }
 
     go.run(wasm.instance);
-    return { toHtml: go_lesheetToJson };
+    return { toHtml: go_lesheetToHtml };
 }
