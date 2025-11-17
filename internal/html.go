@@ -2,7 +2,6 @@ package internal
 
 import (
 	"bytes"
-	"embed"
 	"fmt"
 	"lesheets/internal/domain"
 	"lesheets/internal/timer"
@@ -11,9 +10,6 @@ import (
 	"path/filepath"
 	"strings"
 )
-
-//go:embed views/*.html
-var templateFS embed.FS
 
 func dict(values ...any) map[string]any {
 	m := make(map[string]any)
@@ -24,16 +20,6 @@ func dict(values ...any) map[string]any {
 	return m
 }
 
-//var templ *template.Template
-
-func init() {
-	// defer timer.LogElapsedTime("InitTmpl")()
-	// funcs := template.FuncMap{
-	// 	"dict": dict,
-	// }
-	// templ = template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "views/*.html"))
-}
-
 func RenderListHTML(inputFiles []string) error {
 	defer timer.LogElapsedTime("RenderList")()
 	filename := "output/index.html"
@@ -42,28 +28,25 @@ func RenderListHTML(inputFiles []string) error {
 		return err
 	}
 
-	type Link struct {
-		Name string
-		Href string
-	}
-	files := []Link{}
+	files := []views.Link{}
 	for _, i := range inputFiles {
 		name := strings.TrimSuffix(i, ".nns")
 		href := name + ".html"
 		href = filepath.Dir(i) + "/" + filepath.Base(href)
 
-		files = append(files, Link{
+		files = append(files, views.Link{
 			Name: name,
 			Href: href,
 		})
 	}
-	files = append(files, Link{
+	files = append(files, views.Link{
 		Name: "editor.html",
 		Href: "editor.html",
 	})
 
 	defer f.Close()
 	var buf bytes.Buffer
+	views.RenderListOfFiles(files, &buf)
 	// if err := templ.ExecuteTemplate(&buf, "list.html", files); err != nil {
 	// 	return err
 	// }
