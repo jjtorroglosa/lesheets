@@ -9,13 +9,7 @@ import (
 )
 
 func lesheetToHtml(this js.Value, args []js.Value) any {
-	defer func() {
-		if r := recover(); r != nil {
-			println("Recovered panic:", r)
-		}
-	}()
 	inputStr := args[0].String() // Convert JS string to Go string
-	println("heeeeeeeeeeeeeeeeeeeeeeeeeee")
 	song, err := internal.ParseSongFromString(inputStr)
 	if err != nil {
 		return js.ValueOf(internal.RenderError(err))

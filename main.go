@@ -5,6 +5,7 @@ package main
 
 import (
 	"embed"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -99,12 +100,11 @@ func main() {
 
 		switch cmd {
 		case "json":
-			// j, err := json.Marshal(song)
-			// if err != nil {
-			// 	log.Fatalf("Error marshalling json: %v", err)
-			// }
-			// fmt.Println(string(j))
-			fmt.Println("disabled")
+			j, err := json.Marshal(song)
+			if err != nil {
+				log.Fatalf("Error marshalling json: %v", err)
+			}
+			fmt.Println(string(j))
 		case "html":
 			if *printTokens {
 				lexer := parser.Lexer

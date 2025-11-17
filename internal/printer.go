@@ -3,6 +3,8 @@ package internal
 import (
 	"lesheets/internal/domain"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 func PrintFrontmatter(s *domain.Song, sb *strings.Builder) error {
@@ -10,11 +12,11 @@ func PrintFrontmatter(s *domain.Song, sb *strings.Builder) error {
 		return nil
 	}
 	sb.WriteString("---\n")
-	// yml, err := yaml.Marshal(s.FrontMatter)
-	// if err != nil {
-	// 	return err
-	// }
-	// sb.Write(yml)
+	yml, err := yaml.Marshal(s.FrontMatter)
+	if err != nil {
+		return err
+	}
+	sb.Write(yml)
 
 	sb.WriteString("---\n")
 
