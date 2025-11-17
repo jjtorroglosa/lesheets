@@ -5,6 +5,8 @@ import (
 	"lesheets/internal/domain"
 	"lesheets/internal/timer"
 	"os"
+
+	"github.com/stretchr/testify/assert/yaml"
 )
 
 type Parser struct {
@@ -91,22 +93,21 @@ func (p *Parser) ParseSong() (*domain.Song, error) {
 
 // FrontMatter: TokenFrontmatter
 func (p *Parser) ParseFrontmatter() (map[string]string, error) {
-	_, err := p.Lexer.ConsumeNextToken()
+	tok, err := p.Lexer.ConsumeNextToken()
 	if err != nil {
 		return nil, err
 	}
-	//
-	// if tok.Type != domain.TokenFrontMatter {
-	// 	return nil, fmt.Errorf("unexpected token. Want TokenFrontmatter, Got: %s", tok.Type)
-	// }
-	// bytes := []byte(tok.Value)
-	// frontmatter := map[string]string{}
-	// err = yaml.Unmarshal(bytes, &frontmatter)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return frontmatter, err
-	return map[string]string{}, nil
+
+	if tok.Type != domain.TokenFrontMatter {
+		return nil, fmt.Errorf("unexpected token. Want TokenFrontmatter, Got: %s", tok.Type)
+	}
+	bytes := []byte(tok.Value)
+	frontmatter := map[string]string{}
+	err = yaml.Unmarshal(bytes, &frontmatter)
+	if err != nil {
+		return nil, err
+	}
+	return frontmatter, err
 }
 
 // Body:

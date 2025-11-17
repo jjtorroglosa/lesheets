@@ -7,9 +7,10 @@ templ header(song *models.Song) {
 		<h1>{ song.FrontMatter["title"] }</h1>
 		<p>{ song.FrontMatter["subtitle"] }</p>
 		<div class="flex flex-row gap-4 @3xl:justify-center print:justify-start">
-			if song.Key() != "" {
-				<p><span style="font-family: 'music'; position:relative; top:-2px" class="text-xs mr-1"></span>{ song.Key() }</p>
-			}
+			<p>
+				<span style="font-family: 'music'; position:relative; top:-2px" class="text-xs mr-1"></span>
+				@song.Key()
+			</p>
 			if tempo, ok := song.FrontMatter["tempo"]; ok {
 				<p><span style="font-family: 'music'; position:relative; top:-1px"></span> = { tempo }</p>
 			}

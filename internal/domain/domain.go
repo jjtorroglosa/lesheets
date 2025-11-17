@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"lesheets/internal/logger"
 	"lesheets/internal/svg"
+
+	"github.com/a-h/templ"
 )
 
 type Song struct {
@@ -105,9 +107,9 @@ func (song *Song) Backticks() []Backtick {
 	return bts
 }
 
-func (song *Song) Key() string {
+func (song *Song) Key() templ.Component {
 	key := song.FrontMatter["key"]
-	return FormatChord(key)
+	return templ.Raw(FormatChord(key))
 }
 
 func (song *Song) PrintSong() {
