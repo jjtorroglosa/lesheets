@@ -1,0 +1,8 @@
+package views
+
+import models "lesheets/internal/domain"
+
+templ root(song *models.Song) {
+	@header(song)
+	@body(song)
+}

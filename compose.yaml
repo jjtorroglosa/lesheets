@@ -1,6 +1,7 @@
 services:
   lesheets-web:
-    image: lesheets:20220101.1111
+    #image: lesheets:20220101.1111
+    build: .
     ports:
       - "8008:80"
     volumes:

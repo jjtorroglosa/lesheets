@@ -15,9 +15,12 @@ const ctx = await context({
     format: 'esm',
     outdir: 'build',
     target: ['es2017'],
-    loader: { '.css': 'css' },
+    loader: {
+        '.css': 'css',
+        // vendor files, just copy them
+        '.v.js': 'copy',
+    },
     alias: {
-        wasm_exec: './vendorjs/wasm_exec_go.js',
         abc2svg: './vendorjs/abc2svg-wrapper.js',
     },
     define: {

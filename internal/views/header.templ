@@ -1,0 +1,24 @@
+package views
+
+import models "lesheets/internal/domain"
+
+templ header(song *models.Song) {
+	<div class="@3xl:text-center print:text-left mb-8">
+		<h1>{ song.FrontMatter["title"] }</h1>
+		<p>{ song.FrontMatter["subtitle"] }</p>
+		<div class="flex flex-row gap-4 @3xl:justify-center print:justify-start">
+			<p>
+				<span style="font-family: 'music'; position:relative; top:-2px" class="text-xs mr-1"></span>
+				@song.Key()
+			</p>
+			if tempo, ok := song.FrontMatter["tempo"]; ok {
+				<p><span style="font-family: 'music'; position:relative; top:-1px"></span> = { tempo }</p>
+			}
+		</div>
+		<ul class="flex flex-row gap-4 @3xl:justify-center print:hidden">
+			<li><p><a href="/">[index]</a></p></li>
+			<li><p><a href="#" onclick="toggleDarkMode()">[darkmode]</a></p></li>
+			<li><p><a href="#" onclick="copySheetCode()">[copy-code]</a></p></li>
+		</ul>
+	</div>
+}
