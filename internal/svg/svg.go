@@ -1,15 +1,11 @@
 package svg
 
 import (
-	"bytes"
-	"fmt"
-	"html/template"
-	"lesheets/internal/timer"
-	"os/exec"
-	"strings"
+	"errors"
+	"lesheets/internal/logger"
 )
 
-func AbcToHtml(sourceFile string, defaultLength string, abcInput string) (template.HTML, error) {
+func AbcToHtml(sourceFile string, defaultLength string, abcInput string) (string, error) {
 	abc := `
 %%topspace 0
 %%musicfont
@@ -23,13 +19,13 @@ func AbcToHtml(sourceFile string, defaultLength string, abcInput string) (templa
 ` + abcInput
 	svg, err := AbcToSvg(sourceFile, abc)
 	if err != nil {
-		return template.HTML(""), err
+		return "", err
 	}
 
-	return template.HTML(svg), nil
+	return svg, nil
 }
 
-func InlineAbcToHtml(sourceFile string, defaultLength string, abcInput string) (template.HTML, error) {
+func InlineAbcToHtml(sourceFile string, defaultLength string, abcInput string) (string, error) {
 	abc := `
 %%topspace 0
 %%musicfont
@@ -49,41 +45,17 @@ K:none clef=none stafflines=0 stem=up
 ` + abcInput
 	svg, err := AbcToSvg(sourceFile, abc)
 	if err != nil {
-		return template.HTML(""), err
+		return "", err
 	}
 
-	return template.HTML(svg), nil
+	return svg, nil
 }
 
 func AbcToSvg(sourceFile string, abcInput string) (string, error) {
-	defer timer.LogElapsedTime("RenderSvg")()
-	if true {
-		res, err := RenderAbcToSvg(sourceFile, abcInput)
-		if err != nil {
-			return "", fmt.Errorf("error rendering abc to svg: %w", err)
-		}
-		return res, nil
-
-	} else {
-		// Example ABC notation
-
-		// Run the abc script with the temp file as argument
-		cmd := exec.Command("dash", "/Users/jtorr/Downloads/abc2svg-trystdin/abcqjs", "tosvg.js", "-")
-
-		cmd.Stdin = strings.NewReader(abcInput)
-
-		// Capture stdout and stderr
-		var out bytes.Buffer
-		var stderr bytes.Buffer
-		cmd.Stdout = &out
-		cmd.Stderr = &stderr
-
-		// Execute the command
-		if err := cmd.Run(); err != nil {
-			return "", fmt.Errorf("error running abc script: %w, stderr: %s", err, stderr.String())
-		}
-
-		// Get SVG output
-		return out.String(), nil
+	defer logger.LogElapsedTime("RenderSvg")()
+	res, err := RenderAbcToSvg(sourceFile, abcInput)
+	if err != nil {
+		return "", errors.New("error rendering abc to svg: " + err.Error())
 	}
+	return res, nil
 }

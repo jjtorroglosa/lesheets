@@ -2,17 +2,14 @@ package internal
 
 import (
 	"bytes"
-	"embed"
-	"fmt"
-	"html/template"
-	"lesheets/internal/timer"
+	"errors"
+	"lesheets/internal/domain"
+	"lesheets/internal/logger"
+	"lesheets/internal/views"
 	"os"
 	"path/filepath"
 	"strings"
 )
-
-//go:embed views/*.html
-var templateFS embed.FS
 
 func dict(values ...any) map[string]any {
 	m := make(map[string]any)
@@ -23,78 +20,53 @@ func dict(values ...any) map[string]any {
 	return m
 }
 
-var templ *template.Template
-
-func init() {
-	defer timer.LogElapsedTime("InitTmpl")()
-	funcs := template.FuncMap{
-		"dict": dict,
-	}
-	templ = template.Must(template.New("").Funcs(funcs).ParseFS(templateFS, "views/*.html"))
-}
-
 func RenderListHTML(inputFiles []string) error {
-	defer timer.LogElapsedTime("RenderList")()
+	defer logger.LogElapsedTime("RenderList")()
 	filename := "output/index.html"
 	f, err := os.Create(filename)
 	if err != nil {
 		return err
 	}
 
-	type Link struct {
-		Name string
-		Href string
-	}
-	files := []Link{}
+	files := []views.Link{}
 	for _, i := range inputFiles {
 		name := strings.TrimSuffix(i, ".nns")
 		href := name + ".html"
 		href = filepath.Dir(i) + "/" + filepath.Base(href)
 
-		files = append(files, Link{
+		files = append(files, views.Link{
 			Name: name,
 			Href: href,
 		})
 	}
-	files = append(files, Link{
+	files = append(files, views.Link{
 		Name: "editor.html",
 		Href: "editor.html",
 	})
 
 	defer f.Close()
 	var buf bytes.Buffer
-	if err := templ.ExecuteTemplate(&buf, "list.html", files); err != nil {
+	err = views.RenderListOfFiles(files, &buf)
+	if err != nil {
 		return err
 	}
+
 	if err := os.WriteFile(filename, buf.Bytes(), 0644); err != nil {
 		return err
 	}
 	return nil
 }
 
-type RenderConfig struct {
-	WithLiveReload bool
-	WholeHtml      bool
-	WithEditor     bool
-}
-
-func RenderSongHtml(cfg RenderConfig, sourceCode string, song *Song, filename string) (string, error) {
-	defer timer.LogElapsedTime("RenderHtml")()
-
-	params := map[string]any{
-		"Song":   song,
-		"Dev":    cfg.WithLiveReload,
-		"Abc":    sourceCode,
-		"Whole":  cfg.WholeHtml,
-		"Editor": cfg.WithEditor,
-	}
+func RenderSongHtml(cfg views.RenderConfig, sourceCode string, song *domain.Song, filename string) (string, error) {
+	defer logger.LogElapsedTime("RenderHtml")()
 
 	var buf bytes.Buffer
-	tmpl := "base.html"
 
-	if err := templ.ExecuteTemplate(&buf, tmpl, params); err != nil {
-		return "", fmt.Errorf("failed to render template: %w", err)
+	err := views.RenderSong(song, sourceCode, cfg, &buf)
+	if err != nil {
+		return "", err
 	}
+
 	res := buf.String()
 	return res, nil
 }
@@ -102,10 +74,10 @@ func RenderSongHtml(cfg RenderConfig, sourceCode string, song *Song, filename st
 func WriteEditorToHtmlFile(dev bool, filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("failed to create filename %s: %w", filename, err)
+		return errors.New("failed to create filename " + filename + ": " + err.Error())
 	}
 	defer f.Close()
-	htmlOut, err := RenderSongHtml(RenderConfig{
+	htmlOut, err := RenderSongHtml(views.RenderConfig{
 		WithLiveReload: dev,
 		WholeHtml:      true,
 		WithEditor:     true,
@@ -120,13 +92,13 @@ func WriteEditorToHtmlFile(dev bool, filename string) error {
 	return nil
 }
 
-func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename string) error {
+func WriteSongHtmlToFile(dev bool, sourceCode string, song *domain.Song, filename string) error {
 	f, err := os.Create(filename)
 	if err != nil {
-		return fmt.Errorf("failed to create HTML file: %s", filename)
+		return errors.New("failed to create HTML file: " + filename)
 	}
 	defer f.Close()
-	htmlOut, err := RenderSongHtml(RenderConfig{
+	htmlOut, err := RenderSongHtml(views.RenderConfig{
 		WithLiveReload: dev,
 		WholeHtml:      true,
 		WithEditor:     false,
@@ -143,6 +115,6 @@ func WriteSongHtmlToFile(dev bool, sourceCode string, song *Song, filename strin
 
 func RenderError(err error) string {
 	buf := bytes.Buffer{}
-	template.HTMLEscape(&buf, []byte(err.Error()))
+	// template.HTMLEscape(&buf, []byte(err.Error()))
 	return "<pre>" + buf.String() + "</pre>"
 }

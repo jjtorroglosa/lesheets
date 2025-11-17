@@ -1,0 +1,52 @@
+package views
+
+import models "lesheets/internal/domain"
+
+type RenderConfig struct {
+	WithLiveReload bool
+	WholeHtml      bool
+	WithEditor     bool
+}
+
+templ base(song *models.Song, abc string, data RenderConfig) {
+	if data.WholeHtml {
+		<!DOCTYPE html>
+		<html lang="en">
+			<head>
+				<meta charset="UTF-8"/>
+				<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+				<title>
+					if data.WithEditor {
+						Lesheets
+					} else {
+						Lesheets - { song.FrontMatter["title"] }
+					}
+				</title>
+				<link href="/compiled.css?t=2" rel="stylesheet"/>
+				if data.WithEditor {
+					<script type="module" src="/editor.js"></script>
+				}
+				<script type="module" src="/sheet.js"></script>
+			</head>
+			<body class="h-screen bg-white print:h-auto print:text-black text-gray-800 dark:bg-gray-900 dark:text-gray-300">
+				<div id="layout" class="flex h-full flex-col lg:flex-row select-none p-4 print:p-0 print:m-0">
+					<div id="editor" class={ templ.Classes("flex flex-col gap-2 shrink-0 h-1/2 lg:h-auto w-auto lg:w-1/2 print:hidden pr-2", templ.KV("hidden", !data.WithEditor)) }>
+						@toolbar()
+						<div id="editor-contents" class="w-full h-full p-4"><textarea id="editor-text" class="font-mono">{ abc }</textarea></div>
+					</div>
+					<div id="resizer" class={ templ.Classes("hidden w-[5px] shrink-0 print:hidden bg-blue-500 dark:bg-blue-300 cursor-col-resize", templ.KV("lg:block", data.WithEditor)) }></div>
+					<div id="root" class="@container overflow-auto print:overflow-visible h-full w-full pl-4 print:pl-0 ">
+						if !data.WithEditor {
+							@root(song)
+						}
+					</div>
+				</div>
+				if data.WithLiveReload {
+					<script src="/livereload.js"></script>
+				}
+			</body>
+		</html>
+	} else {
+		@root(song)
+	}
+}

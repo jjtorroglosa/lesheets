@@ -5,7 +5,7 @@ GO_FILES := $(shell find . -name "*.go")
 ABC2SVG := vendorjs/abc2svg-compiled.js
 JS_INPUT_FILES = $(wildcard js/* vendorjs/*.js)
 JS_OUTPUT_FILES := build/editor.js build/sheet.js build/livereload.js build/
-TMPL_FILES = $(wildcard internal/views/*.html)
+TMPL_FILES = $(wildcard internal/views/*.templ)
 LESHEETS := ./build/lesheets
 MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
@@ -36,19 +36,31 @@ editor:
 
 .PHONY: dev
 dev:
+	make css templ wasm js build $(LESHEETS)
 	yarn run concurrently \
 		"make watch-css" \
+		"make watch-templ" \
 		"make watch-wasm" \
 		"make watch-js" \
 		"make watch-build" \
 		"make watch-run"
 
 .PHONY: prod
-prod: css wasm js build $(LESHEETS) html compress
+prod: css templ wasm js build $(LESHEETS) html compress
 
 .PHONY: test
 test:
 	$(GO) test ./...
+
+
+.PHONY: watch-templ
+watch-templ:
+	@echo watch-templ
+	templ generate -watch
+
+.PHONY: templ
+templ:
+	templ generate
 
 
 .PHONY: watch-build
@@ -63,7 +75,7 @@ watch-run:
 	ls $(LESHEETS) | entr -r -s "$(LESHEETS) watch $(IN)"
 
 .PHONY: run
-run:
+run: $(LESHEETS)
 	$(LESHEETS) watch *.nns
 
 .PHONY: watch-js
@@ -72,11 +84,12 @@ watch-js:
 	node build.mjs --dev --watch
 
 .PHONY: js
-js: $(JS_OUTPUT_FILES)
-$(JS_OUTPUT_FILES): $(JS_INPUT_FILES)
+js: build/esbuild-built
+build/esbuild-built: $(JS_INPUT_FILES)
 	@echo build-js
 	cp fonts/*.woff2 fonts/*.ttf build/
 	node build.mjs
+	touch $@
 
 $(LESHEETS): $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
 	@echo build-exec
@@ -99,22 +112,23 @@ watch-wasm:
 .PHONY: wasm
 wasm: build/wasm.wasm
 build/wasm.wasm: $(GO_FILES) $(TMPL_FILES)
-	#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o build/unoptimized.wasm $(WASM_MAIN)
-	#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js $@
 	@echo build-wasm
-	GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
-	#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o build/unoptimized.wasm $(WASM_MAIN)
-	wasm-opt build/unoptimized.wasm -Oz --enable-bulk-memory-opt -o $@
-	#cp build/unoptimized.wasm $@
+	GOOS=js GOARCH=wasm tinygo build -no-debug -opt=1 -o $@ $(WASM_MAIN)
+	@#GOOS=js GOARCH=wasm GOTRACEBACK=all tinygo build -o $@ $(WASM_MAIN)
+	@#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js build/wasm_exec.js
+	@#GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
+	@#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o build/unoptimized.wasm $(WASM_MAIN)
+	@#wasm-opt build/unoptimized.wasm -Oz -o $@
+	@#cp build/unoptimized.wasm $@
 
 
 .PHONY: compress
 compress:
-	gzip -k -9 output/*.{js,css,wasm,html}
+	gzip -f -k -9 output/*.{js,css,wasm,html}
 
 .PHONY: clean
 clean:
-	rm -rf output/* build/*
+	rm -rf output/* build/* internal/views/*_templ.go
 
 .PHONY: deploy
 deploy: prod docker

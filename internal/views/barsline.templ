@@ -1,0 +1,57 @@
+package views
+
+import models "lesheets/internal/domain"
+
+templ barsline(line models.Line) {
+	<div class="barlines flex flex-row items-center ml-4">
+		if line.MultilineBacktick.Value != "" {
+			<div class="multiline-backtick w-130">
+				@templ.Raw(line.MultilineBacktick.Svg())
+			</div>
+		} else {
+			for _, bar := range line.Bars {
+				<div class="bar-and-annotations flex flex-col">
+					<div class={ templ.Classes("bar-note text-xs relative flex flex-row gap-1 items-end", templ.KV("left-[-0.25rem]", !bar.RepeatStart), templ.KV("left-[-0.46rem]", bar.PreviousWasRepeatEnd)) }>
+						<span class="ml-4">
+							if bar.BarNote != "" {
+								{ bar.BarNote }
+							}
+							<span class="opacity-0">.</span>
+						</span>
+					</div>
+					<div class={ templ.Classes("bar min-w-20 flex justify-items-start items-center", templ.KV("double", bar.DoubleBarEnd), templ.KV("repeat-start", bar.RepeatStart), templ.KV("repeat-end", bar.RepeatEnd)) }>
+						<div class={ templ.Classes("bar-border-left w-0 h-10 border-solid border-l relative", templ.KV("border-l-4", bar.RepeatStart)) }>
+							<span class="absolute top-[-0.7rem] left-[-0.3rem] relative block w-[0.5rem] text-xs text-center text-[0.5rem] opacity-70 print:opacity-100">{ bar.Number() }</span>
+						</div>
+						if bar.RepeatStart {
+							<div class="repeat-start-symbol h-10 border-l border-solid ml-0.5 pr-0.5"></div>
+							<div>:</div>
+						}
+						<div class="mx-2 flex flex-row flex-grow gap-2 justify-between items-center">
+							if bar.Backtick.Value == "" {
+								for _, chord := range bar.Chords {
+									@chordTpl(chord)
+								}
+							} else {
+								<div class="bt-svg" style="width:150px">
+									@templ.Raw(bar.Backtick.Svg())
+								</div>
+							}
+						</div>
+						if bar.RepeatEnd {
+							<div>:</div>
+							<div class="repeat-end-symbol h-10 border-r border-solid mr-0.5 pr-0.5"></div>
+						}
+						<div class={ templ.Classes("bar-border-right h-10", templ.KV("border-solid border-r-4", bar.RepeatEnd)) }></div>
+					</div>
+					<div class="bar-lyrics">
+						if bar.Lyrics != "" {
+							{ bar.Lyrics }
+						}
+						<span class="opacity-0">.</span>
+					</div>
+				</div>
+			}
+		}
+	</div>
+}

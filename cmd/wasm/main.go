@@ -5,17 +5,18 @@ package main
 
 import (
 	"lesheets/internal"
+	"lesheets/internal/views"
 	"syscall/js"
 )
 
-func lesheetToJson(this js.Value, args []js.Value) any {
+func lesheetToHtml(this js.Value, args []js.Value) any {
 	inputStr := args[0].String() // Convert JS string to Go string
 	song, err := internal.ParseSongFromString(inputStr)
 	if err != nil {
-		return internal.RenderError(err)
+		return js.ValueOf(internal.RenderError(err))
 	}
 	html, err := internal.RenderSongHtml(
-		internal.RenderConfig{
+		views.RenderConfig{
 			WithLiveReload: false,
 			WholeHtml:      false,
 			WithEditor:     true,
@@ -29,10 +30,10 @@ func lesheetToJson(this js.Value, args []js.Value) any {
 		html = internal.RenderError(err)
 	}
 
-	return html
+	return js.ValueOf(html)
 }
 
 func main() {
-	js.Global().Set("go_lesheetToJson", js.FuncOf(lesheetToJson))
+	js.Global().Set("go_lesheetToHtml", js.FuncOf(lesheetToHtml))
 	select {}
 }
