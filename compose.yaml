@@ -1,5 +1,5 @@
 services:
-  nasheets-web:
+  lesheets-web:
     image: lesheets:20220101.1111
     ports:
       - "8008:80"

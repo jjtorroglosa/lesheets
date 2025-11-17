@@ -95,7 +95,7 @@ func (bar *Bar) PrintBar(sb *strings.Builder, next *Bar) {
 	}
 }
 
-func (s *Song) PrintNasheet() string {
+func (s *Song) PrintLesheet() string {
 	sb := &strings.Builder{}
 
 	err := s.PrintFrontmatter(sb)

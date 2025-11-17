@@ -17,5 +17,5 @@ export const initWasm = async () => {
     }
 
     go.run(wasm.instance);
-    return { toHtml: go_nasheetToJson };
+    return { toHtml: go_lesheetToJson };
 }
