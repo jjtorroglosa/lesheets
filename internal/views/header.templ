@@ -7,10 +7,7 @@ templ header(song *models.Song) {
 		<h1>{ song.FrontMatter["title"] }</h1>
 		<p>{ song.FrontMatter["subtitle"] }</p>
 		<div class="flex flex-row gap-4 @3xl:justify-center print:justify-start">
-			<p>
-				<span style="font-family: 'music'; position:relative; top:-2px" class="text-xs mr-1"></span>
-				@song.Key()
-			</p>
+			@key(song)
 			if tempo, ok := song.FrontMatter["tempo"]; ok {
 				<p><span style="font-family: 'music'; position:relative; top:-1px"></span> = { tempo }</p>
 			}
@@ -21,4 +18,14 @@ templ header(song *models.Song) {
 			<li><p><a href="#" onclick="copySheetCode()">[copy-code]</a></p></li>
 		</ul>
 	</div>
+}
+
+templ key(song *models.Song) {
+	{{ k := song.FrontMatter["key"] }}
+	if k != "" {
+		<p>
+			<span style="font-family: 'music'; position:relative; top:-2px" class="text-xs mr-1"></span>
+			@templ.Raw(models.FormatChord(k))
+		</p>
+	}
 }

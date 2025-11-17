@@ -19,7 +19,7 @@ templ base(song *models.Song, abc string, data RenderConfig) {
 					if data.WithEditor {
 						Lesheets
 					} else {
-						{ song.FrontMatter["title"] }
+						Lesheets - { song.FrontMatter["title"] }
 					}
 				</title>
 				<link href="/compiled.css?t=2" rel="stylesheet"/>
