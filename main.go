@@ -6,6 +6,7 @@ package main
 import (
 	"embed"
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -24,7 +25,19 @@ import (
 //go:embed build/*.css build/*.js build/abc2svg.woff2 build/*.wasm
 var staticsFS embed.FS
 
+func usage() {
+	fmt.Fprintf(os.Stderr, "Usage: %s [options] <command> <file1> ... <fileN>\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "\nCommands:\n")
+	fmt.Fprintf(os.Stderr, "  watch   Watch the input files for changes, rendering the html files for them in outdir dir\n")
+	fmt.Fprintf(os.Stderr, "  serve   Run a server for the previously generated html files\n")
+	fmt.Fprintf(os.Stderr, "  html    Render html files for all the files provided as arguments\n")
+	fmt.Fprintf(os.Stderr, "  json    Print a json representation of the song\n")
+	fmt.Fprintf(os.Stderr, "\nOptions:\n")
+	flag.PrintDefaults()
+}
+
 func main() {
+	flag.Usage = usage
 	outputDir := flag.String("d", "output", "Output dir")
 	printSong := flag.Bool("p", false, "Print song")
 	printTokens := flag.Bool("t", false, "Print tokens")
@@ -35,23 +48,19 @@ func main() {
 	// Remaining non-flag arguments
 	args := flag.Args()
 	if len(args) < 1 {
-		flag.Usage()
+		usage()
 		log.Fatalf("invalid args")
 	}
-	i := 0
-	cmd := args[i]
+	cmd := args[0]
 	files := []string{}
-	dev := true
-	switch cmd {
-	case "html":
-		dev = false
-		fallthrough
-	case "watch":
-		i++
-		for ; i < len(args); i++ {
-			files = append(files, args[i])
-		}
-		err := internal.RenderListHTML(files)
+	if len(args) > 1 {
+		files = args[1:]
+	}
+	dev := cmd != "html"
+	shouldRenderIndex := cmd == "html" || cmd == "watch"
+
+	if shouldRenderIndex {
+		err := internal.RenderIndex(files)
 		if err != nil {
 			log.Fatalf("error rendering list: %v", err)
 		}
@@ -59,67 +68,145 @@ func main() {
 		if err != nil {
 			log.Fatalf("Error rendering editor: %v", err)
 		}
-	case "editor":
-		dev = false
-	case "serve":
 	}
 
-	err := ExtractStatics(*outputDir)
-	if err != nil {
-		log.Fatalf("error extracting statics: %v", err)
-	}
-
-	// Read the song file
 	switch cmd {
-	case "editor":
-		err := internal.RenderListHTML(files)
+	case "serve":
+		ServeCommand(*outputDir, 8008)
+	case "watch":
+		WatchCommand(dev, *outputDir, files, 8008)
+	case "json":
+		JsonCommand(files, *outputDir)
+	case "html":
+		HtmlCommand(files, *printTokens, *printSong, *outputDir)
+	}
+}
+
+func ServeCommand(outputDir string, port int) {
+	// Serve previously generated files (HTML/CSS) from outputDir
+	fs := http.FileServer(http.Dir(outputDir))
+
+	http.Handle("/", fs)
+	addr := fmt.Sprintf(":%d", port)
+
+	fmt.Printf("🌐 Serving files from %s at http://localhost%s\n", outputDir, addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		log.Fatalf("Server failed: %v", err)
+	}
+}
+
+func JsonCommand(files []string, outputDir string) {
+	for _, inputFile := range files {
+		_, song, err := internal.ParseSongFromFile(inputFile)
 		if err != nil {
-			log.Fatalf("error rendering list: %v", err)
+			log.Fatalf("error parsing song: %v", err)
+		}
+		j, err := json.Marshal(song)
+		if err != nil {
+			log.Fatalf("Error marshalling json: %v", err)
+		}
+		fmt.Println(string(j))
+	}
+}
+
+func HtmlCommand(files []string, printTokens bool, printSong bool, outputDir string) {
+	for _, inputFile := range files {
+		if err := extractEmbeddedStatics(outputDir); err != nil {
+			log.Fatalf("error extracting statics: %v", err)
 		}
 
-		internal.WriteEditorToHtmlFile(dev, "output/editor.html")
-	case "html":
-	case "serve":
-		serve(*outputDir, 8008)
-		return
-	case "watch":
-		watch(*outputDir, 8008, func(f string) {
-			err = render(dev, f, *outputDir)
-			if err != nil {
-				log.Printf("Error rendering: %v\n", err)
-			}
-		}, files...)
-		return
-	}
-	for _, inputFile := range files {
 		parser, song, err := internal.ParseSongFromFile(inputFile)
 		if err != nil {
 			log.Fatalf("error parsing song: %v", err)
 		}
 
-		switch cmd {
-		case "json":
-			j, err := json.Marshal(song)
-			if err != nil {
-				log.Fatalf("Error marshalling json: %v", err)
-			}
-			fmt.Println(string(j))
-		case "html":
-			if *printTokens {
-				lexer := parser.Lexer
-				lexer.PrintTokens()
-			}
+		if printTokens {
+			lexer := parser.Lexer
+			lexer.PrintTokens()
+		}
 
-			if *printSong {
-				song.PrintSong()
-			}
+		if printSong {
+			song.PrintSong()
+		}
 
-			err = render(false, inputFile, *outputDir)
-			if err != nil {
-				log.Printf("Error rendering file %s: %v\n", inputFile, err)
-			}
+		if err := render(false, inputFile, outputDir); err != nil {
+			log.Printf("Error rendering file %s: %v\n", inputFile, err)
 		}
 	}
+}
+
+func WatchCommand(dev bool, outputDir string, files []string, port int) {
+	if len(files) < 1 {
+		log.Fatal("must specify at least one file to watch")
+	}
+
+	if err := extractEmbeddedStatics(outputDir); err != nil {
+		log.Fatalf("error extracting statics: %v", err)
+	}
+	hub := internal.NewSSEHub()
+
+	onChange := func(f string) {
+		hub.Broadcast("start")
+		if err := render(dev, f, outputDir); err != nil {
+			log.Printf("Error rendering: %v\n", err)
+		}
+		hub.Broadcast("reload")
+	}
+
+	// Trigger a first render of all the files
+	for _, f := range files {
+		onChange(f)
+	}
+
+	// Start listening for events.
+	go watcherFileLoop(files, onChange)
+
+	// Serve static files from the output directory
+	fs := http.FileServer(http.Dir(outputDir))
+	http.Handle("/", fs)
+	http.Handle("/events", hub)
+	addr := fmt.Sprintf(":%d", port)
+
+	go func() {
+		fmt.Printf("🌐 Serving at http://localhost%s\n", addr)
+		if err := http.ListenAndServe(addr, nil); err != nil {
+			log.Fatalf("Server error: %v", err)
+		}
+	}()
+
+	log.Println("ready; press ^C to exit")
+	<-make(chan struct{}) // Block forever
+}
+
+func render(dev bool, inputFile string, outputDir string) error {
+	waitForFile(inputFile)
+	defer logger.LogElapsedTime("WholeRender:" + inputFile)()
+	outputFilename := strings.TrimSuffix(inputFile, ".nns") + ".html"
+	if err := os.MkdirAll("output/"+filepath.Dir(outputFilename), 0755); err != nil {
+		return fmt.Errorf("failed to create outupt dir: %w", err)
+	}
+
+	sourceCode, err := internal.ReadFile(inputFile)
+	if err != nil {
+		return fmt.Errorf("error reading input file %s: %w", inputFile, err)
+	}
+
+	song, err := internal.ParseSongFromStringWithFileName(inputFile, sourceCode)
+	if err != nil {
+		// Write the error to the output html file
+		if err2 := os.WriteFile(outputDir+"/"+outputFilename, []byte(internal.RenderError(err)), 0644); err2 != nil {
+			return errors.Join(err, err2)
+		}
+		return err
+	} else {
+		log.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
+		err = internal.WriteSongHtmlToFile(dev, sourceCode, song, outputDir+"/"+outputFilename)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func waitForFile(file string) {
@@ -140,47 +227,7 @@ func waitForFile(file string) {
 	}
 }
 
-func render(dev bool, inputFile string, outputDir string) error {
-	waitForFile(inputFile)
-	defer logger.LogElapsedTime("WholeRender:" + inputFile)()
-	start := time.Now()
-	defer func() {
-		elapsed := time.Since(start)
-		log.Printf("Whole render took: %dms", elapsed.Milliseconds())
-	}()
-
-	outputFilename := strings.TrimSuffix(inputFile, ".nns") + ".html"
-	err := os.MkdirAll("output/"+filepath.Dir(outputFilename), 0755)
-	if err != nil {
-		return fmt.Errorf("failed to create outupt dir: %w", err)
-	}
-
-	sourceCode, err := internal.ReadFile(inputFile)
-	if err != nil {
-		return fmt.Errorf("error reading input file %s: %w", inputFile, err)
-	}
-
-	song, err := internal.ParseSongFromStringWithFileName(inputFile, sourceCode)
-	if err != nil {
-		log.Printf("Error rendering: %v\n", err)
-		// Write the error to the output html file
-		err = os.WriteFile(outputDir+"/"+outputFilename, []byte(internal.RenderError(err)), 0644)
-		if err != nil {
-			return err
-		}
-	} else {
-		log.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
-		err = internal.WriteSongHtmlToFile(dev, sourceCode, song, outputDir+"/"+outputFilename)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func ExtractStatics(outputDir string) error {
-	defer logger.LogElapsedTime("ExtractStatics")()
+func extractEmbeddedStatics(outputDir string) error {
 	extensions := []string{".js", ".css", ".wasm", ".woff2", ".wasm.gz"}
 	// Walk through embedded FS and write any .js files to disk
 	err := fs.WalkDir(staticsFS, "build", func(path string, d fs.DirEntry, err error) error {
@@ -215,57 +262,14 @@ func ExtractStatics(outputDir string) error {
 	return nil
 }
 
-func serve(outputDir string, port int) {
-	// Serve static files (HTML/CSS) from outputDir
-	fs := http.FileServer(http.Dir(outputDir))
-
-	http.Handle("/", fs)
-	addr := fmt.Sprintf(":%d", port)
-
-	fmt.Printf("🌐 Serving files from %s at http://localhost%s\n", outputDir, addr)
-	if err := http.ListenAndServe(addr, nil); err != nil {
-		log.Fatalf("Server failed: %v", err)
-	}
-}
-
-func watch(outputDir string, port int, onChange func(f string), files ...string) {
-	for _, inputFile := range files {
-		onChange(inputFile)
-	}
-	hub := internal.NewSSEHub()
-
-	if len(files) < 1 {
-		log.Fatal("must specify at least one file to watch")
-	}
-
-	// Create a new watcher.
+func watcherFileLoop(files []string, onChange func(f string)) {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatalf("creating a new watcher: %v", err)
 	}
 	defer w.Close()
 
-	// Start listening for events.
-	go watcherFileLoop(w, files, func(f string) {
-		hub.Broadcast("start")
-		onChange(f)
-		hub.Broadcast("reload")
-	})
-
-	// Serve static files from the output directory
-	fs := http.FileServer(http.Dir(outputDir))
-	http.Handle("/", fs)
-	http.Handle("/events", hub)
-	addr := fmt.Sprintf(":%d", port)
-
-	go func() {
-		fmt.Printf("🌐 Serving at http://localhost%s\n", addr)
-		if err := http.ListenAndServe(addr, nil); err != nil {
-			log.Fatalf("Server error: %v", err)
-		}
-	}()
-
-	// Add all files from the commandline.
+	// Watch all files from the commandline.
 	for _, p := range files {
 		st, err := os.Lstat(p)
 		if err != nil {
@@ -276,22 +280,17 @@ func watch(outputDir string, port int, onChange func(f string), files ...string)
 			log.Fatalf("%q is a directory, not a file", p)
 		}
 
-		// Watch the directory, not the file itself.
-		err = w.Add(filepath.Dir(p))
-		if err != nil {
+		// Watch the parent directory, not the file itself.
+		if err = w.Add(filepath.Dir(p)); err != nil {
 			log.Fatalf("%q: %s", p, err)
 		}
 	}
 
-	log.Println("ready; press ^C to exit")
-	<-make(chan struct{}) // Block forever
-}
-
-func watcherFileLoop(w *fsnotify.Watcher, files []string, render func(f string)) {
 	i := 0
 	const debounceDelay = 200 * time.Millisecond
 
-	debounceTimers := make(map[string]*time.Timer)
+	// debounceTimers := make(map[string]*time.Timer)
+	debounce := createDebounce(debounceDelay)
 	for {
 		select {
 		// Read from Errors.
@@ -306,9 +305,7 @@ func watcherFileLoop(w *fsnotify.Watcher, files []string, render func(f string))
 				return
 			}
 
-			// Ignore files we're not interested in. Can use a
-			// map[string]struct{} if you have a lot of files, but for just a
-			// few files simply looping over a slice is faster.
+			// Ignore files we're not interested in.
 			var found bool
 			for _, f := range files {
 				if event.Op != fsnotify.Chmod && f == event.Name {
@@ -319,17 +316,30 @@ func watcherFileLoop(w *fsnotify.Watcher, files []string, render func(f string))
 				continue
 			}
 
-			// Just print the event nicely aligned, and keep track how many
-			// events we've seen.
+			// Print the event
 			i++
 			log.Printf("%3d %s\n", i, event.Op.String())
-			if timer, exists := debounceTimers[event.Name]; exists {
-				timer.Stop()
-			}
+			// if timer, exists := debounceTimers[event.Name]; exists {
+			// 	timer.Stop()
+			// }
 
-			debounceTimers[event.Name] = time.AfterFunc(debounceDelay, func() {
-				render(event.Name)
+			// debounceTimers[event.Name] = time.AfterFunc(debounceDelay, func() {
+			// 	onChange(event.Name)
+			// })
+			debounce(event.Name, func() {
+				onChange(event.Name)
 			})
 		}
+	}
+}
+
+func createDebounce(delay time.Duration) func(key string, fn func()) {
+	debounceTimers := map[string]*time.Timer{}
+
+	return func(key string, fn func()) {
+		if timer, exists := debounceTimers[key]; exists {
+			timer.Stop()
+		}
+		debounceTimers[key] = time.AfterFunc(delay, fn)
 	}
 }
