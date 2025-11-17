@@ -4,12 +4,13 @@ GO_FLAGS = -ldflags -w
 GO_FILES := $(shell find . -name "*.go")
 ABC2SVG := vendorjs/abc2svg-compiled.js
 JS_INPUT_FILES = $(wildcard js/* vendorjs/*.js)
-JS_OUTPUT_FILES := build/editor.js build/sheet.js build/livereload.js
+JS_OUTPUT_FILES := build/editor.js build/sheet.js build/livereload.js build/
 TMPL_FILES = $(wildcard internal/views/*.html)
-LESHEETS := ./lesheets
+LESHEETS := ./build/lesheets
 MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
 ENTR:= entr
+IN ?= examples/*.nns
 
 TAG ?= $(shell date +'%Y%m%d.%H%M')
 IMAGE_NAME := lesheets
@@ -31,11 +32,11 @@ build/compiled.css: css/styles.css
 .PHONY: editor
 editor:
 	yarn tailwindcss --input css/styles.css --output build/compiled.css
-	make js wasm lesheets && ./lesheets editor
+	make js wasm $(LESHEETS) && $(LESHEETS) editor
 
 .PHONY: dev
 dev:
-	yarn run concurrently --kill-others-on-fail \
+	yarn run concurrently \
 		"make watch-css" \
 		"make watch-wasm" \
 		"make watch-js" \
@@ -43,24 +44,23 @@ dev:
 		"make watch-run"
 
 .PHONY: prod
-prod: css wasm js build lesheets html compress
+prod: css wasm js build $(LESHEETS) html compress
 
 .PHONY: test
 test:
 	$(GO) test ./...
 
-IN ?= examples/*.nns
 
 .PHONY: watch-build
 watch-build:
 	@echo watch-build
-	ls $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) $(GO_FILES) build/wasm.wasm | \
-				entr -a make lesheets
+	ls build/wasm.wasm | \
+				entr -a make $(LESHEETS)
 
 
 .PHONY: watch-run
 watch-run:
-	ls lesheets | entr -r -s "$(LESHEETS) watch $(IN)"
+	ls $(LESHEETS) | entr -r -s "$(LESHEETS) watch $(IN)"
 
 .PHONY: run
 run:
@@ -78,7 +78,7 @@ $(JS_OUTPUT_FILES): $(JS_INPUT_FILES)
 	cp fonts/*.woff2 fonts/*.ttf build/
 	node build.mjs
 
-lesheets: $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
+$(LESHEETS): $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
 	@echo build-exec
 	$(GO) build $(GO_FLAGS) -o $@ $(MAIN)
 
@@ -102,7 +102,7 @@ build/wasm.wasm: $(GO_FILES) $(TMPL_FILES)
 	#GOOS=js GOARCH=wasm GOTRACEBACK=all TG_CACHE=~/.tinygo-cache tinygo build -no-debug -opt=1 -o build/unoptimized.wasm $(WASM_MAIN)
 	#cp $$(tinygo env TINYGOROOT)/targets/wasm_exec.js $@
 	@echo build-wasm
-	GOOS=js GOARCH=wasm GOTRACEBACK=all go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
+	GOOS=js GOARCH=wasm go build -ldflags="-s -w" -o build/unoptimized.wasm $(WASM_MAIN)
 	#GOOS=js GOARCH=wasm GOTRACEBACK=all go build -o build/unoptimized.wasm $(WASM_MAIN)
 	wasm-opt build/unoptimized.wasm -Oz --enable-bulk-memory-opt -o $@
 	#cp build/unoptimized.wasm $@
