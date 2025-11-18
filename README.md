@@ -28,7 +28,8 @@ Lesheets makes it easy to produce professional-looking chord charts in minutes.
 
 ### Nashville number system
 
-Input:
+Input ([lesheets-multiline-backtick](./docs/lesheets/lesheets-nashville.lesheet)):
+
 ```markdown
 ---
 title: Song title
@@ -67,7 +68,8 @@ Output:
 
 ### Jazz chords and rhythm
 
-Input:
+Input ([lesheets-multiline-backtick](./docs/lesheets/lesheets-abc.lesheet)):
+
 ```markdown
 ---
 title: Lesheets
@@ -103,7 +105,8 @@ Output:
 
 ### Multiline backtick
 
-Input:
+Input ([lesheets-multiline-backtick](./docs/lesheets/lesheets-multiline-backtick.lesheet)):
+
 
 ````markdown
 # Multiline backtick
