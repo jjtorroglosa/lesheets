@@ -55,7 +55,7 @@ func main() {
 	shouldRenderIndex := cmd == "html" || cmd == "watch"
 
 	if shouldRenderIndex {
-		err := internal.RenderIndex(files)
+		err := internal.RenderIndex(*outputDir, files)
 		if err != nil {
 			log.Fatalf("error rendering list: %v", err)
 		}

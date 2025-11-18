@@ -20,8 +20,11 @@ func dict(values ...any) map[string]any {
 	return m
 }
 
-func RenderIndex(inputFiles []string) error {
+func RenderIndex(outputDir string, inputFiles []string) error {
 	defer logger.LogElapsedTime("RenderList")()
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return errors.New("failed to create outupt dir: " + err.Error())
+	}
 	filename := "output/index.html"
 	f, err := os.Create(filename)
 	if err != nil {
