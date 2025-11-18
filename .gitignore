@@ -8,3 +8,5 @@ build
 !examples/*.nns
 vendorjs/abc2svg-compiled.js
 **/*_templ.go
+bin/deploy.sh
+bin/update.sh
