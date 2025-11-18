@@ -1,12 +1,31 @@
 package views
 
-import models "lesheets/internal/domain"
+import (
+	models "lesheets/internal/domain"
+	"lesheets/internal/svg"
+)
+
+templ Svg(backtick models.Backtick) {
+	{{ html, err := svg.InlineAbcToHtml("", backtick.DefaultLength, backtick.Value) }}
+	if err != nil {
+		<pre>Error rendering svg</pre>
+	}
+	@templ.Raw(html)
+}
+
+templ MultilineSvg(mb models.MultilineBacktick) {
+	{{ html, err := svg.AbcToHtml(mb.SourceFile, mb.DefaultLength, mb.Value) }}
+	if err != nil {
+		<pre>Error rendering svg</pre>
+	}
+	@templ.Raw(html)
+}
 
 templ barsline(line models.Line) {
 	<div class="barlines flex flex-row items-center ml-4">
 		if line.MultilineBacktick.Value != "" {
 			<div class="multiline-backtick w-130">
-				@templ.Raw(line.MultilineBacktick.Svg())
+				@MultilineSvg(line.MultilineBacktick)
 			</div>
 		} else {
 			for _, bar := range line.Bars {
@@ -34,7 +53,7 @@ templ barsline(line models.Line) {
 								}
 							} else {
 								<div class="bt-svg" style="width:150px">
-									@templ.Raw(bar.Backtick.Svg())
+									@Svg(bar.Backtick)
 								</div>
 							}
 						</div>

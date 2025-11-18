@@ -15,25 +15,6 @@ import (
 	lru "github.com/hashicorp/golang-lru/v2"
 )
 
-//go:embed abc2svg/user.js abc2svg/tosvg.js abc2svg/abc2svg-1.js
-var abc2svg embed.FS
-
-func loadFile(ctx *qjs.Context, filename string) (*qjs.Value, func()) {
-	filepath := "abc2svg/" + filename
-
-	code, err := abc2svg.ReadFile(filepath)
-	if err != nil {
-		panic(err)
-	}
-	result, err := ctx.Eval(filename, qjs.Code(string(code)))
-	if err != nil {
-		log.Fatal(err)
-	}
-	return result, func() {
-		result.Free()
-	}
-}
-
 var renderAbcToSvg func(string, string) (string, error)
 
 // cache entry
@@ -68,11 +49,7 @@ func RenderAbcToSvg(file, data string) (string, error) {
 	return svg, err
 }
 
-func init() {
-	loadJsRuntime()
-}
-
-func loadJsRuntime() func() {
+func LoadJsRuntime(abc2svg embed.FS) func() {
 	defer logger.LogElapsedTime("LoadQjs")()
 	rt, err := qjs.New()
 	if err != nil {
@@ -81,11 +58,11 @@ func loadJsRuntime() func() {
 
 	ctx := rt.Context()
 
-	for _, f := range []string{"user.js", "abc2svg-1.js"} {
-		_, cleanup := loadFile(ctx, f)
+	for _, f := range []string{"internal/svg/abc2svg/user.js", "vendorjs/abc2svg-1.cjs"} {
+		_, cleanup := loadFile(abc2svg, ctx, f)
 		defer cleanup()
 	}
-	result, _ := loadFile(ctx, "tosvg.js")
+	result, _ := loadFile(abc2svg, ctx, "internal/svg/abc2svg/tosvg.js")
 
 	if err != nil {
 		log.Fatal("Eval error:", err)
@@ -100,5 +77,19 @@ func loadJsRuntime() func() {
 		jsRenderFunction.Free()
 		result.Free()
 		rt.Close()
+	}
+}
+
+func loadFile(abc2svg embed.FS, ctx *qjs.Context, filename string) (*qjs.Value, func()) {
+	code, err := abc2svg.ReadFile(filename)
+	if err != nil {
+		panic(err)
+	}
+	result, err := ctx.Eval(filename, qjs.Code(string(code)))
+	if err != nil {
+		log.Fatal(err)
+	}
+	return result, func() {
+		result.Free()
 	}
 }

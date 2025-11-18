@@ -20,7 +20,7 @@ func dict(values ...any) map[string]any {
 	return m
 }
 
-func RenderListHTML(inputFiles []string) error {
+func RenderIndex(inputFiles []string) error {
 	defer logger.LogElapsedTime("RenderList")()
 	filename := "output/index.html"
 	f, err := os.Create(filename)

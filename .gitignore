@@ -4,7 +4,6 @@ index.html
 output
 build
 *.bak
-lesheets
 *.nns
 !examples/*.nns
 vendorjs/abc2svg-compiled.js
