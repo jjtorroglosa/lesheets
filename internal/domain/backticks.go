@@ -21,11 +21,3 @@ func (mb *MultilineBacktick) Svg() string {
 	}
 	return html
 }
-
-func (backtick *Backtick) Svg() string {
-	html, err := svg.InlineAbcToHtml("", backtick.DefaultLength, backtick.Value)
-	if err != nil {
-		return "<pre>Error rendering svg</pre>"
-	}
-	return html
-}
