@@ -1,13 +1,16 @@
-
+<div align="center">
 
 # Lesheets: Create beautiful Chord Charts from a simple, intuitive and easy to write DSL
 
-## Introduction
+Lesheets is a tool designed for musicians and band leaders who want to create beautiful chord charts
+from simple plain text using Jazz notation or the Nashville Number System. It allows to write simple
+chord charts, or include detailed traditional music notation with
+[ABC syntax](https://abcnotation.com/wiki/abc:standard) for the parts that you need more detail.
 
-Lesheets is a tool designed for musicians and band leaders who want to create beautiful
-chord charts from simple plain text using Jazz notation or the Nashville Number System. Whether
-you're composing music, making arrangements, or just need to share your song ideas with your band,
+Whether you're composing music, making arrangements, or just need to share your song ideas with your band,
 Lesheets makes it easy to produce professional-looking chord charts in minutes.
+
+</div>
 
 ## Table of contents
 <!-- mtoc-start -->
@@ -19,6 +22,7 @@ Lesheets makes it easy to produce professional-looking chord charts in minutes.
 * [Key Features](#key-features)
 * [Quick Start](#quick-start)
   * [Installation](#installation)
+  * [Command line interface](#command-line-interface)
 * [Syntax](#syntax)
 * [Aknowledgments](#aknowledgments)
 
@@ -81,7 +85,7 @@ columns: 2
 # Intro
 
 Cm | !push!Eb | !push!F | !push!Cm |
-. !pull!Cm . . | !push!Eb | !push!Ab G | Cm . !choke!Cm . |
+. !pull!Cm . . | !push!Eb | !push!Ab G | Cm . Cm . |
 
 # Verse
 
@@ -150,12 +154,33 @@ Go to [the online editor](https://lesheets.jtorr.eu/editor.html) and start writi
 
 ### Installation
 
-To get started with Lesheets, follow these simple steps:
+If you prefer to work locally with the CLI application:
 
 ```bash
 git clone https://github.com/jjtorroglosa/lesheets
 cd lesheets
-make dev
+make lesheets
+./build/lesheets
+
+```
+
+### Command line interface
+
+```
+$ lesheets 
+Usage: lesheets [options] <command> <file1> ... <fileN>
+
+Commands:
+  watch   Watch the input files for changes, rendering the html files for them in outdir dir
+  serve   Run a server for the previously generated html files
+  html    Render html files for all the files provided as arguments
+  json    Print a json representation of the song
+
+Options:
+  -d string
+        Output dir (default "output")
+  -p    Print song (only for the html command)
+  -t    Print tokens (only for the html command)
 ```
 
 ## Syntax

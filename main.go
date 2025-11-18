@@ -12,6 +12,7 @@ import (
 	"lesheets/internal/svg"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 //go:embed build/*.css build/*.js build/abc2svg.woff2 build/*.wasm
@@ -21,7 +22,7 @@ var staticsFS embed.FS
 var Abc2svg embed.FS
 
 func usage() {
-	fmt.Fprintf(os.Stderr, "Usage: %s [options] <command> <file1> ... <fileN>\n", os.Args[0])
+	fmt.Fprintf(os.Stderr, "Usage: %s [options] <command> <file1> ... <fileN>\n", filepath.Base(os.Args[0]))
 	fmt.Fprintf(os.Stderr, "\nCommands:\n")
 	fmt.Fprintf(os.Stderr, "  watch   Watch the input files for changes, rendering the html files for them in outdir dir\n")
 	fmt.Fprintf(os.Stderr, "  serve   Run a server for the previously generated html files\n")
@@ -34,8 +35,9 @@ func usage() {
 func main() {
 	flag.Usage = usage
 	outputDir := flag.String("d", "output", "Output dir")
-	printSong := flag.Bool("p", false, "Print song (only for the html command)")
-	printTokens := flag.Bool("t", false, "Print tokens (only for the html command)")
+	printSong := flag.Bool("print", false, "Print song in text format (only available for the html command)")
+	printTokens := flag.Bool("print-tokens", false, "Print tokens (only available for the html command)")
+	port := flag.Int("p", 8008, "The port for listening to HTTP requests for commands that start an HTTP server")
 
 	// Parse CLI args
 	flag.Parse()
@@ -67,11 +69,11 @@ func main() {
 
 	switch cmd {
 	case "serve":
-		cmds.ServeCommand(*outputDir, 8008)
+		cmds.ServeCommand(*outputDir, *port)
 	case "watch":
 		cleanup := svg.LoadJsRuntime(Abc2svg)
 		defer cleanup()
-		cmds.WatchCommand(staticsFS, dev, *outputDir, files, 8008)
+		cmds.WatchCommand(staticsFS, dev, *outputDir, files, *port)
 	case "json":
 		cmds.JsonCommand(files, *outputDir)
 	case "html":
