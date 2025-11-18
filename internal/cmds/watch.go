@@ -3,6 +3,7 @@ package cmds
 import (
 	"embed"
 	"fmt"
+	"lesheets/internal/utils"
 	"log"
 	"net/http"
 	"os"
@@ -82,8 +83,7 @@ func watcherFileLoop(files []string, onChange func(f string)) {
 	i := 0
 	const debounceDelay = 200 * time.Millisecond
 
-	// debounceTimers := make(map[string]*time.Timer)
-	debounce := createDebounce(debounceDelay)
+	debounce := utils.NewDebouncer(debounceDelay)
 	for {
 		select {
 		// Read from Errors.
@@ -112,27 +112,9 @@ func watcherFileLoop(files []string, onChange func(f string)) {
 			// Print the event
 			i++
 			log.Printf("%3d %s\n", i, event.Op.String())
-			// if timer, exists := debounceTimers[event.Name]; exists {
-			// 	timer.Stop()
-			// }
-
-			// debounceTimers[event.Name] = time.AfterFunc(debounceDelay, func() {
-			// 	onChange(event.Name)
-			// })
 			debounce(event.Name, func() {
 				onChange(event.Name)
 			})
 		}
-	}
-}
-
-func createDebounce(delay time.Duration) func(key string, fn func()) {
-	debounceTimers := map[string]*time.Timer{}
-
-	return func(key string, fn func()) {
-		if timer, exists := debounceTimers[key]; exists {
-			timer.Stop()
-		}
-		debounceTimers[key] = time.AfterFunc(delay, fn)
 	}
 }
