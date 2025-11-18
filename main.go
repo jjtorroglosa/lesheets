@@ -169,7 +169,7 @@ func render(dev bool, inputFile string, outputDir string) error {
 			return err
 		}
 	} else {
-		fmt.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
+		log.Printf("Rendering %s to %s\n", inputFile, outputDir+"/"+outputFilename)
 		err = internal.WriteSongHtmlToFile(dev, sourceCode, song, outputDir+"/"+outputFilename)
 		if err != nil {
 			return err
@@ -180,6 +180,7 @@ func render(dev bool, inputFile string, outputDir string) error {
 }
 
 func ExtractStatics(outputDir string) error {
+	defer logger.LogElapsedTime("ExtractStatics")()
 	extensions := []string{".js", ".css", ".wasm", ".woff2", ".wasm.gz"}
 	// Walk through embedded FS and write any .js files to disk
 	err := fs.WalkDir(staticsFS, "build", func(path string, d fs.DirEntry, err error) error {

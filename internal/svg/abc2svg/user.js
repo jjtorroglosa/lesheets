@@ -1,7 +1,9 @@
 var abc2svg = {
     print: print,
     printErr: function(str) {
-        std.err.printf("%s\n", str)
+        std.err.printf("%s Qjs:abc2svg:%s\n",
+            new Date().toISOString().replace(/-/g, '/').replace('T', ' ').replace(/\..+/, ''),
+            str);
     },
     quit: function() {
         std.exit(1)
