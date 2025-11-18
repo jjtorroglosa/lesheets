@@ -18,7 +18,7 @@ import (
 var staticsFS embed.FS
 
 //go:embed internal/svg/abc2svg/user.js internal/svg/abc2svg/tosvg.js vendorjs/abc2svg-1.cjs
-var abc2svg embed.FS
+var Abc2svg embed.FS
 
 func usage() {
 	fmt.Fprintf(os.Stderr, "Usage: %s [options] <command> <file1> ... <fileN>\n", os.Args[0])
@@ -69,13 +69,13 @@ func main() {
 	case "serve":
 		cmds.ServeCommand(*outputDir, 8008)
 	case "watch":
-		cleanup := svg.LoadJsRuntime(abc2svg)
+		cleanup := svg.LoadJsRuntime(Abc2svg)
 		defer cleanup()
 		cmds.WatchCommand(staticsFS, dev, *outputDir, files, 8008)
 	case "json":
 		cmds.JsonCommand(files, *outputDir)
 	case "html":
-		cleanup := svg.LoadJsRuntime(abc2svg)
+		cleanup := svg.LoadJsRuntime(Abc2svg)
 		defer cleanup()
 		cmds.HtmlCommand(staticsFS, files, *printTokens, *printSong, *outputDir)
 	default:

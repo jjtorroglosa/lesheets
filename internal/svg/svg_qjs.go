@@ -5,8 +5,8 @@ package svg
 
 import (
 	"crypto/sha256"
-	"embed"
 	"encoding/hex"
+	"io/fs"
 	"lesheets/internal/logger"
 	"log"
 	"sync"
@@ -49,7 +49,7 @@ func RenderAbcToSvg(file, data string) (string, error) {
 	return svg, err
 }
 
-func LoadJsRuntime(abc2svg embed.FS) func() {
+func LoadJsRuntime(abc2svg fs.FS) func() {
 	defer logger.LogElapsedTime("LoadQjs")()
 	rt, err := qjs.New()
 	if err != nil {
@@ -80,8 +80,8 @@ func LoadJsRuntime(abc2svg embed.FS) func() {
 	}
 }
 
-func loadFile(abc2svg embed.FS, ctx *qjs.Context, filename string) (*qjs.Value, func()) {
-	code, err := abc2svg.ReadFile(filename)
+func loadFile(abc2svg fs.FS, ctx *qjs.Context, filename string) (*qjs.Value, func()) {
+	code, err := fs.ReadFile(abc2svg, filename)
 	if err != nil {
 		panic(err)
 	}
