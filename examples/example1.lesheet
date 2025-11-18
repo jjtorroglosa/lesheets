@@ -1,0 +1,29 @@
+---
+title: Song title
+subtitle: (using Nashville Number System)
+tempo: 123
+Key: C#m
+---
+
+# I
+"guitar and vocals"
+1 | 1
+"whole band"
+1 | 5 | 4 |4
+
+# V
+||: 1 | 1 | 4 |4
+1 | 1 | 4 |4 :||
+
+# PC
+6m7 | 4 | 1 |5
+6m7 | 4 | !diamond!1 |!diamond!5
+
+#- C
+1 | 5 | 4 |5
+1 | 5 | 4 |5
+
+6m7 | 4 | 1 |5
+6m7 | 4 | 1 |57(b13b9)
+!diamond-fermata!1
+

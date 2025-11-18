@@ -1,0 +1,27 @@
+---
+title: Lesheets
+subtitle: "subtitle: You can put here the author, or anything else"
+tempo: 132bpm
+key: Cm
+columns: 2
+---
+# Intro
+
+Cm | !push!Eb | !push!F | !push!Cm |
+. !pull!Cm . . | !push!Eb | !push!Ab G | Cm . !choke!Cm . |
+
+# Verse
+
+||: `"Cm" F2"Bb"F2z2"Ab"F2 z8` | `z16` |
+`"Cm" F2"Bb"F2z2"Ab"F2 z8` | `z8 z2"G"F6` |
+`"Cm" F2"Bb"F2z2"Ab"F2 z8` | `z8 "G"F2"Ab"F2"A"F2("Bb"F2` |
+!push!Bb | `[1"Bb"F2F2 F2F2 "Cm".F4.F4  ]` :||
+`[2"Bb"F2)F2 F2F2 "Cm"F2 z6` |
+
+#- Chorus
+
+Cm | !push!Eb | !push!F |!push!Cm |
+!pull!Cm | !push!Eb | !push!Ab G | !push!Cm |
+!pull!Cm | !push!Eb | !push!Ab | !push!F |
+!pull!Cm | !push!Eb | !push!F |
+`"Cm"F2)F2 F2F2 F2F2 "Cm"F2 z6` |

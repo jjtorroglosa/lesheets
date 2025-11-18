@@ -31,8 +31,8 @@ Lesheets makes it easy to produce professional-looking chord charts in minutes.
 Input:
 ```markdown
 ---
-title: Advanced with ABC music notation for rhythm
-subtitle: "embedding ABC in backticks ``"
+title: Song title
+subtitle: (using Nashville Number System)
 tempo: 123
 Key: C#m
 ---
