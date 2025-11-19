@@ -24,6 +24,7 @@ Lesheets makes it easy to produce professional-looking chord charts in minutes.
   * [Installation](#installation)
   * [Command line interface](#command-line-interface)
 * [Syntax](#syntax)
+* [Architecture](#architecture)
 * [Aknowledgments](#aknowledgments)
 
 <!-- mtoc-end -->
@@ -32,7 +33,7 @@ Lesheets makes it easy to produce professional-looking chord charts in minutes.
 
 ### Nashville number system
 
-Input ([lesheets-multiline-backtick](./docs/lesheets/lesheets-nashville.lesheet)):
+Input ([lesheets-nashville](./docs/lesheets/lesheets-nashville.lesheet)):
 
 ```markdown
 ---
@@ -67,6 +68,8 @@ Key: C#m
 
 Output:
 
+
+
 ![Nashville number system dark-mode](./docs/img/lesheets-nashville-dark.png "Nashville number system dark")
 ![Nashville number system light-mode](./docs/img/lesheets-nashville-light.png "Nashville number system light")
 
@@ -85,7 +88,7 @@ columns: 2
 # Intro
 
 Cm | !push!Eb | !push!F | !push!Cm |
-. !pull!Cm . . | !push!Eb | !push!Ab G | Cm . Cm . |
+. !pull!Cm . . | !push!Eb | !push!Ab G | Cm . !marcato!Cm . |
 
 # Verse
 
@@ -124,7 +127,6 @@ L:1/16
 "Cmaj7"z8 CDEF GABc | "Dm"CDEF GABc CDEF GABc |
 A8 A8 |A16| "G7"C2D2 E2F2 |"Cmaj7" G2A2 B2c2 |[1 A16] :|| [2 A16] ||
 ```
-
 ````
 
 Output:
@@ -161,7 +163,6 @@ git clone https://github.com/jjtorroglosa/lesheets
 cd lesheets
 make lesheets
 ./build/lesheets
-
 ```
 
 ### Command line interface
@@ -178,9 +179,13 @@ Commands:
 
 Options:
   -d string
-        Output dir (default "output")
-  -p    Print song (only for the html command)
-  -t    Print tokens (only for the html command)
+    	Output dir (default "output")
+  -p int
+    	The port for listening to HTTP requests for commands that start an HTTP server (default 8008)
+  -print
+    	Print song in text format (only available for the html command)
+  -print-tokens
+    	Print tokens (only available for the html command)
 ```
 
 ## Syntax
@@ -218,6 +223,24 @@ Options:
   ```
   ![multicolumn](./docs/img/lesheets-multicolumn.png "multicolumn")
 
+## Architecture
+
+Here's a picture of how the lesheets executable is built:
+
+![build](docs/img/build.excalidraw.png "build")
+
+As you can see, all the assets are embedded in the final lesheets executable. Then, when you run:
+```bash
+$ lesheets html <your_input_files>
+```
+the system automatically generates an HTML file for each input song, along with all the necessary
+static assets such as JavaScript files, fonts, and CSS. In addition to these individual song pages,
+it also creates an editor.html file that provides a live, in-browser song editor.
+
+This editor will use the parsing and rendering logic implemented in go by importing the WebAssembly
+(wasm) artifact. This allows to have all the functionality directly within your browser providing an
+uninterrupted, offline writing experience.
+
 ## Aknowledgments
 
 Thanks to the developers behind the following projects for making this project possible:
@@ -226,4 +249,3 @@ Thanks to the developers behind the following projects for making this project p
 - [**Ace Editor**](https://ace.c9.io/)
 - [**Tailwind**](https://tailwindcss.com/)
 - [**fastschema/qjs**](https://github.com/fastschema/qjs): QJS is a CGO-Free, modern, secure JavaScript runtime for Go applications, built on the powerful QuickJS engine and Wazero WebAssembly runtime.
-

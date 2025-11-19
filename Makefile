@@ -144,3 +144,13 @@ build/lesheets.tgz: Dockerfile $(JS_OUTPUT_FILES) output/*
 	docker buildx build --platform linux/amd64 -t $(IMAGE_NAME):$(TAG) .
 	docker save $(IMAGE_NAME):$(TAG) | gzip > $@
 	docker load -i $@
+
+define confirm
+	@read -p "$(1)? (y/N) " ans; \
+	[ "$$ans" = "y" ]
+endef
+
+.PHONY: readme
+readme:
+	mdsh README.template.md README.md
+
