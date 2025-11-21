@@ -51,7 +51,7 @@ Key: C#m
 
 # V
 ||: 1 | 1 | 4 |4
-1 | 1 | 4 |4 :||
+    1 | 1 | 4 |4 :||
 
 # PC
 6m7 | 4 | 1 |5
@@ -248,4 +248,5 @@ Thanks to the developers behind the following projects for making this project p
 - [**Abc2svg**](https://chiselapp.com/user/moinejf/repository/abc2svg/doc/trunk/README.md)
 - [**Ace Editor**](https://ace.c9.io/)
 - [**Tailwind**](https://tailwindcss.com/)
+- [**Templ**](https://templ.guide/): Really nice templating system, but, the best feature is that it's compatible with tinygo (`html/template` is not [supported by tinygo](https://tinygo.org/docs/reference/lang-support/stdlib/#htmltemplate) at the moment of writing)
 - [**fastschema/qjs**](https://github.com/fastschema/qjs): QJS is a CGO-Free, modern, secure JavaScript runtime for Go applications, built on the powerful QuickJS engine and Wazero WebAssembly runtime.
