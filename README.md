@@ -3,7 +3,7 @@
 # Lesheets: Create beautiful Chord Charts from a simple, intuitive and easy to write DSL
 
 Lesheets is a tool designed for musicians and band leaders who want to create beautiful chord charts
-from simple plain text using Jazz notation or the Nashville Number System. It allows to write simple
+from simple plain text using Jazz notation or the Nashville Number System. It allows you to write simple
 chord charts, or include detailed traditional music notation with
 [ABC syntax](https://abcnotation.com/wiki/abc:standard) for the parts that you need more detail.
 
@@ -25,7 +25,7 @@ Lesheets makes it easy to produce professional-looking chord charts in minutes.
   * [Command line interface](#command-line-interface)
 * [Syntax](#syntax)
 * [Architecture](#architecture)
-* [Aknowledgments](#aknowledgments)
+* [Acknowledgments](#acknowledgments)
 
 <!-- mtoc-end -->
 
@@ -50,14 +50,17 @@ Key: C#m
 1 | 5 | 4 |4
 
 # V
-||: 1 | 1 | 4 |4
-    1 | 1 | 4 |4 :||
+
+||: 1 | 1 | 4 | 4
+    1 | 1 | 4 | 4 :||
 
 # PC
-6m7 | 4 | 1 |5
+
+6m7 | 4 | 1 | 5
 6m7 | 4 | !diamond!1 |!diamond!5
 
 #- C
+
 1 | 5 | 4 |5
 1 | 5 | 4 |5
 
@@ -138,15 +141,17 @@ Output:
 
 - **Easy-to-Use DSL (Domain Specific Language):** Write your songs using a simple and intuitive syntax inspired by markdown and ABC.
 - **Jazz Notation & [Nashville Number System](https://en.wikipedia.org/wiki/Nashville_Number_System):** Support for two of the most popular chord notation systems.
-- **Add Rhythm notation using [ABC music notation](https://abcnotation.com/wiki/abc:standard) via backtick notation:** Add rhythm figures inline for the unison parts using a subset of [ABC music notation](https://abcnotation.com/wiki/abc:standard).
-- **Full ABC notation via multiline backtick:**:
+- **Add rhythm figures using [ABC music notation](https://abcnotation.com/wiki/abc:standard) via
+  backtick:** Add rhythm figures inline for the unison parts using a subset of [ABC music
+  notation](https://abcnotation.com/wiki/abc:standard).
+- **Full ABC notation via multiline backtick:**
   ````text
   ```
   <abc code here>
   ```
   ````
 - **Dark and light mode**. Of course.
-- **Beautiful Chord Charts:** Export your charts as HTML, PDF.
+- **Beautiful Chord Charts:** Export your charts as HTML or PDF using your browser print dialog (this works better in Chrome based browser).
 - **Live preview editor:** Write your charts instantly previewing the end result. Save and open your
   charts to/from your computer. Print to paper or PDF for easy sharing with your band mates.
 
@@ -200,7 +205,7 @@ Options:
   L: 1/8
   ---
   ```
-  `L: 1/8` sets the default note length in inline backticks. So `AA` are two eigth notes.
+  `L: 1/8` sets the default note length in inline backticks. So `AA` are two 1/8th notes.
 * Chords and bars: `Cmaj7 | Dmin7`
 * Chords annotations: `!push!Cmaj7 | !pull!Dmin7 | !fermata!Emin7 | !marcato!Fmaj7 | !diamond!G7 | !diamond-fermata!Amin7`
   ![chord annotations](./docs/img/lesheets-chord-annotations.png "chord-annotations")
@@ -241,12 +246,12 @@ This editor will use the parsing and rendering logic implemented in go by import
 (wasm) artifact. This allows to have all the functionality directly within your browser providing an
 uninterrupted, offline writing experience.
 
-## Aknowledgments
+## Acknowledgments
 
 Thanks to the developers behind the following projects for making this project possible:
 
 - [**Abc2svg**](https://chiselapp.com/user/moinejf/repository/abc2svg/doc/trunk/README.md)
 - [**Ace Editor**](https://ace.c9.io/)
 - [**Tailwind**](https://tailwindcss.com/)
-- [**Templ**](https://templ.guide/): Really nice templating system, but, the best feature is that it's compatible with tinygo (`html/template` is not [supported by tinygo](https://tinygo.org/docs/reference/lang-support/stdlib/#htmltemplate) at the moment of writing)
+- [**Templ**](https://templ.guide/): Really nice templating system, but, the best feature is that it's compatible with TinyGo (`html/template` is not [supported by TinyGo](https://tinygo.org/docs/reference/lang-support/stdlib/#htmltemplate) at the moment of writing)
 - [**fastschema/qjs**](https://github.com/fastschema/qjs): QJS is a CGO-Free, modern, secure JavaScript runtime for Go applications, built on the powerful QuickJS engine and Wazero WebAssembly runtime.
