@@ -26,8 +26,11 @@ css:
 	mkdir -p build
 	NODE_ENV=production yarn tailwindcss --input css/styles.css --output build/compiled.css --minify
 
-build/compiled.css: css/styles.css
+build/compiled.css: css/styles.css node_modules/.bin/tailwindcss
 	NODE_ENV=production yarn tailwindcss --input css/styles.css --output build/compiled.css --minify
+
+node_modules/.bin/tailwindcss:
+	yarn install --immutable --check-cache
 
 .PHONY: editor
 editor:
@@ -84,14 +87,14 @@ watch-js:
 	node build.mjs --dev --watch
 
 .PHONY: js
-js: build/esbuild-built
-build/esbuild-built: $(JS_INPUT_FILES)
+js: $(JS_OUTPUT_FILES)
+$(JS_OUTPUT_FILES): $(JS_INPUT_FILES)
 	@echo build-js
 	cp fonts/*.woff2 fonts/*.ttf build/
 	node build.mjs
 	touch $@
 
-$(LESHEETS): $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
+$(LESHEETS): templ $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILES) build/wasm.wasm
 	@echo build-exec
 	$(GO) build $(GO_FLAGS) -o $@ $(MAIN)
 
@@ -141,3 +144,13 @@ build/lesheets.tgz: Dockerfile $(JS_OUTPUT_FILES) output/*
 	docker buildx build --platform linux/amd64 -t $(IMAGE_NAME):$(TAG) .
 	docker save $(IMAGE_NAME):$(TAG) | gzip > $@
 	docker load -i $@
+
+define confirm
+	@read -p "$(1)? (y/N) " ans; \
+	[ "$$ans" = "y" ]
+endef
+
+.PHONY: readme
+readme:
+	mdsh README.template.md README.md
+
