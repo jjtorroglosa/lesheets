@@ -2,6 +2,12 @@
 
 # Lesheets: Create beautiful Chord Charts from a simple, intuitive and easy to write DSL
 
+[![Go Version](https://img.shields.io/badge/go-1.25.1-blue.svg)](https://golang.org/)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Go Report Card](https://goreportcard.com/badge/github.com/jjtorroglosa/lesheets)](https://goreportcard.com/report/github.com/jjtorroglosa/lesheets)
+[![Last Commit](https://img.shields.io/github/last-commit/jjtorroglosa/lesheets.svg)](https://github.com/jjtorroglosa/lesheets/commits/master)
+[![Status: Experimental](https://img.shields.io/badge/Status-Experimental-orange)](#)
+
 Lesheets is a tool designed for musicians and band leaders who want to create beautiful chord charts
 from simple plain text using Jazz notation or the Nashville Number System. It allows you to write simple
 chord charts, or include detailed traditional music notation with
@@ -207,7 +213,7 @@ Options:
   ```
   `L: 1/8` sets the default note length in inline backticks. So `AA` are two 1/8th notes.
 * Chords and bars: `Cmaj7 | Dmin7`
-* Chords annotations: `!push!Cmaj7 | !pull!Dmin7 | !fermata!Emin7 | !marcato!Fmaj7 | !diamond!G7 | !diamond-fermata!Amin7`
+* Chords annotations: `!push!Cmaj7 | !hold!Dmin7 | !fermata!Emin7 | !marcato!Fmaj7 | !diamond!G7 | !diamond-fermata!Amin7`
   ![chord annotations](./docs/img/lesheets-chord-annotations.png "chord-annotations")
 * Repetitions: `||: D | E :||`
 * Bar notes: `"Full band" Dhalfdim7 | G7(b13) | Cmaj7 | %`:
