@@ -10,7 +10,7 @@ LESHEETS := ./build/lesheets
 MAIN := main.go
 WASM_MAIN := cmd/wasm/main.go
 ENTR:= entr
-IN ?= examples/*.nns
+IN ?= docs/lesheets/*.lesheet
 
 TAG ?= $(shell date +'%Y%m%d.%H%M')
 IMAGE_NAME := lesheets
@@ -79,7 +79,7 @@ watch-run:
 
 .PHONY: run
 run: $(LESHEETS)
-	$(LESHEETS) watch *.nns
+	$(LESHEETS) watch **/*.lesheet
 
 .PHONY: watch-js
 watch-js:
@@ -101,9 +101,9 @@ $(LESHEETS): templ $(GO_FILES) $(TMPL_FILES) build/compiled.css $(JS_OUTPUT_FILE
 
 .PHONY: html
 html:
-	$(LESHEETS) html examples/*.nns
+	$(LESHEETS) html docs/lesheets/*.lesheet
 
-output/%.html: examples/%.nns
+output/%.html: docs/lesheets/%.lesheet
 	$(LESHEETS) html $<
 
 
