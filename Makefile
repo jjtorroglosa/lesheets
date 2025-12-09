@@ -145,11 +145,6 @@ build/lesheets.tgz: Dockerfile $(JS_OUTPUT_FILES) output/*
 	docker save $(IMAGE_NAME):$(TAG) | gzip > $@
 	docker load -i $@
 
-define confirm
-	@read -p "$(1)? (y/N) " ans; \
-	[ "$$ans" = "y" ]
-endef
-
 .PHONY: readme
 readme:
 	mdsh README.template.md README.md
