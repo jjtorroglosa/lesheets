@@ -3,6 +3,7 @@ package internal
 import (
 	"bytes"
 	"errors"
+	"html/template"
 	"lesheets/internal/domain"
 	"lesheets/internal/logger"
 	"lesheets/internal/views"
@@ -116,8 +117,10 @@ func WriteSongHtmlToFile(dev bool, sourceCode string, song *domain.Song, filenam
 	return nil
 }
 
-func RenderError(err error) string {
+func RenderError(err error) []byte {
 	buf := bytes.Buffer{}
-	// template.HTMLEscape(&buf, []byte(err.Error()))
-	return "<pre>" + buf.String() + "</pre>"
+	buf.WriteString("<pre>")
+	template.HTMLEscape(&buf, []byte(err.Error()))
+	buf.WriteString("</pre>")
+	return buf.Bytes()
 }
